@@ -1,35 +1,22 @@
 /* Service worker: офлайн-режим и мгновенный запуск */
-const VERSION = 'v1.1.0';
+const VERSION = 'v1.2.0';
 const CACHE = 'studenthub-' + VERSION;
 
 const PRECACHE = [
   './',
   './index.html',
-  './manifest.webmanifest',
-  './assets/css/styles.css',
-  './shared/seed.js',
-  './assets/js/icons.js',
-  './assets/js/api.js',
-  './assets/js/store.js',
-  './assets/js/ui.js',
-  './assets/js/ai.js',
-  './assets/js/views-explore.js',
-  './assets/js/views-community.js',
-  './assets/js/views-roadmap.js',
-  './assets/js/views-chats.js',
-  './assets/js/views-profile.js',
-  './assets/js/views-admin.js',
-  './assets/js/views-install.js',
-  './assets/js/app.js',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-maskable-512.png'
+  './pwa/manifest.webmanifest',
+  './pwa/icons/icon-192.png',
+  './pwa/icons/icon-512.png',
+  './pwa/icons/icon-maskable-512.png'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      .then((cache) => cache.addAll(PRECACHE).catch(() => {}))
+      .then((cache) => Promise.all(
+        PRECACHE.map((url) => cache.add(url).catch(() => {}))
+      ))
       .then(() => self.skipWaiting())
   );
 });

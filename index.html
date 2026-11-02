@@ -1335,6 +1335,56 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 .alert { padding: 12px 14px; border-radius: 12px; font-size: 13px; margin-bottom: 12px; }
 .alert--danger { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
 
+/* ═══════════════════════════════════════════════════════════════
+   Установленное приложение (standalone / PWA).
+   Окно приложения — не браузер: прокручивается только контент,
+   окно не «прыгает» из-за смены высоты документа, нижнее меню
+   больше не липнет к вьюпорту, а стоит в сетке оболочки.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (display-mode: standalone), (display-mode: minimal-ui) {
+  html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+}
+
+@media (max-width: 899px) {
+  html.pwa-standalone,
+  html.pwa-standalone body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  html.pwa-standalone #root { height: 100%; }
+
+  html.pwa-standalone .app {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  html.pwa-standalone .app > .screen {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 26px;
+  }
+
+  html.pwa-standalone .app > .screen.screen--chat,
+  html.pwa-standalone .app > .screen.screen--flush { padding-bottom: 0; }
+
+  /* меню — обычная строка сетки, а не sticky: ничего не дёргается */
+  html.pwa-standalone .app > .tabbar {
+    position: static;
+    bottom: auto;
+    flex: 0 0 auto;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -6750,6 +6800,14 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
   let lastRouteKey = null;
 
+  /* Меняем hash без «прыжка»: history.replaceState не вызывает hashchange,
+     поэтому стартовый экран рисуется один раз, а не двумя кадрами подряд. */
+  function setHash(hash) {
+    if (location.hash === hash) return;
+    try { history.replaceState(null, '', hash); }
+    catch (e) { location.replace(hash); }
+  }
+
   /* экраны, доступные без входа */
   const PUBLIC = ['auth', 'install'];
 
@@ -6758,17 +6816,15 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
     // гард: без сессии — только вход и экран установки
     if (!store.isAuthed && PUBLIC.indexOf(route.name) === -1) {
-      if (location.hash !== '#/auth') {
-        location.replace('#/auth');
-        return;
-      }
+      setHash('#/auth');
       route = { name: 'auth', params: [] };
     }
 
     // авторизованному на экране входа делать нечего
     if (store.isAuthed && route.name === 'auth') {
-      location.replace(store.isOrgManager ? '#/org' : '#/explore');
-      return;
+      const target = store.isOrgManager ? '#/org' : '#/explore';
+      setHash(target);
+      route = { name: target.slice(2), params: [] };
     }
 
     const key = location.hash || '#/explore';
@@ -6858,6 +6914,15 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     store.init();
     install.init();
 
+    // приложению в отдельном окне нужен свой app-shell (см. styles.css)
+    function markStandalone() {
+      document.documentElement.classList.toggle('pwa-standalone', install.isStandalone());
+    }
+    markStandalone();
+    if (window.matchMedia) {
+      try { window.matchMedia('(display-mode: standalone)').addEventListener('change', markStandalone); } catch (e) {}
+    }
+
     store.on(() => render());
 
     window.addEventListener('hashchange', render);
@@ -6873,7 +6938,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     window.addEventListener('offline', () => ui.toast('Нет интернета — работаем из кэша'));
     window.addEventListener('online', () => ui.toast('Снова онлайн'));
 
-    if (!location.hash) location.hash = '#/explore';
+    if (!location.hash) setHash('#/explore');
     render();
 
     // сессия по сохранённому токену + данные из D1
@@ -6891,7 +6956,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     // service worker (в однофайловой сборке лежит рядом в ./pwa/)
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./pwa/sw.js').catch((err) => console.warn('SW не зарегистрирован:', err.message));
+        navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('SW не зарегистрирован:', err.message));
       });
     }
   }
