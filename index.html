@@ -1150,9 +1150,9 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       goals,
       tasks,
       applications,
-      // при первом запуске сразу открыт демо-профиль ученика,
-      // чтобы подбор и роадмап были «живыми» с первой секунды
-      session: { userId: 'u_me' },
+      // стартовое состояние — гость. Вход только через экран авторизации
+      // (в облаке — по токену из /api/auth/login, офлайн — по локальной проверке)
+      session: { userId: null },
       settings: { theme: 'system', installDismissed: false, onboardingDone: false },
       meta: { seededAt: iso(t), mode: 'demo' }
     };
@@ -1267,6 +1267,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   'use strict';
 
   const OUTBOX_KEY = 'studenthub:outbox:v1';
+  const TOKEN_KEY = 'studenthub:token:v1';
 
   /* технические ошибки браузера → понятный текст */
   function humanize(e) {
@@ -1292,9 +1293,22 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
     enabled() { return !!this.base; },
 
+    /* ── токен сессии ── */
+    token() {
+      try { return localStorage.getItem(TOKEN_KEY) || ''; } catch (e) { return ''; }
+    },
+    setToken(t) {
+      try {
+        if (t) localStorage.setItem(TOKEN_KEY, t);
+        else localStorage.removeItem(TOKEN_KEY);
+      } catch (e) { /* приватный режим */ }
+    },
+
     headers() {
-      const u = SH.store && SH.store.currentUser;
-      return { 'content-type': 'application/json', 'x-user-id': (u && u.id) || 'u_me' };
+      const h = { 'content-type': 'application/json' };
+      const t = this.token();
+      if (t) h.authorization = 'Bearer ' + t;
+      return h;
     },
 
     async request(method, path, body, timeout) {
@@ -1314,6 +1328,36 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       } finally {
         clearTimeout(timer);
       }
+    },
+
+    /* ── авторизация ── */
+
+    async login(login, password) {
+      const data = await this.request('POST', '/api/auth/login', { login, password });
+      this.setToken(data.token);
+      return data.user;
+    },
+
+    async register(payload) {
+      const data = await this.request('POST', '/api/auth/register', payload);
+      this.setToken(data.token);
+      return data.user;
+    },
+
+    async me() {
+      if (!this.token()) return null;
+      try {
+        const data = await this.request('GET', '/api/auth/me');
+        return data.user || null;
+      } catch (e) {
+        if (/401|истекла|Нужен вход/i.test(e.message || '')) this.setToken('');
+        return null;
+      }
+    },
+
+    async logout() {
+      try { await this.request('POST', '/api/auth/logout'); } catch (e) { /* не критично */ }
+      this.setToken('');
     },
 
     /* ── старт: дослать очередь и забрать снапшот ── */
@@ -1473,6 +1517,13 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
   const uid = (p) => (p || 'id') + '_' + Math.random().toString(36).slice(2, 9);
 
+  function humanizeNet(msg) {
+    if (/Failed to fetch|NetworkError|ERR_FAILED|abort/i.test(msg)) {
+      return 'Сервер недоступен — проверь соединение и адрес API';
+    }
+    return msg;
+  }
+
   const store = {
     CATEGORIES,
     TASK_STATUS,
@@ -1499,43 +1550,102 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       return id ? state.users.find((u) => u.id === id) || null : null;
     },
     get isAuthed() { return !!state.session.userId; },
-    get isAdmin() { const u = store.currentUser; return !!u && u.role === 'admin'; },
-
-    login(email, password) {
-      const user = state.users.find(
-        (u) => u.email.toLowerCase() === String(email).trim().toLowerCase() &&
-               (!u.password || u.password === password)
-      );
-      if (!user) return { ok: false, error: 'Неверная почта или пароль' };
-      state.session.userId = user.id;
-      emit('auth');
-      return { ok: true, user };
+    get isAdmin() {
+      const u = store.currentUser;
+      return !!u && u.role === 'admin';
     },
 
-    loginAsDemos(role) {
-      const user = state.users.find((u) => (role === 'admin' ? u.role === 'admin' : u.id === 'u_me'));
-      if (!user) return { ok: false };
-      state.session.userId = user.id;
-      emit('auth');
-      return { ok: true, user };
+    /* ── вход: облако, а при недоступности — локальная проверка ── */
+
+    async login(login, password) {
+      if (SH.api && SH.api.enabled()) {
+        try {
+          const user = await SH.api.login(login, password);
+          await store.afterLogin(user);
+          return { ok: true, user, cloud: true };
+        } catch (e) {
+          const msg = String(e.message || e);
+          // сервер ответил «неверный пароль» — локально не подменяем
+          if (/Неверный|занят|Введите/i.test(msg)) return { ok: false, error: msg };
+          // сервер недоступен — пробуем офлайн-режим на демо-аккаунтах
+          const local = store.localLogin(login, password);
+          if (local.ok) {
+            local.warning = 'Сервер недоступен — вход локальный, данные не синхронизируются';
+            return local;
+          }
+          return { ok: false, error: humanizeNet(msg) };
+        }
+      }
+      return store.localLogin(login, password);
     },
 
-    register({ name, email, password, grade, school }) {
-      if (state.users.some((u) => u.email.toLowerCase() === email.trim().toLowerCase())) {
-        return { ok: false, error: 'Такая почта уже зарегистрирована' };
+    /** Проверка по локальным демо-данным (офлайн-режим). */
+    localLogin(login, password) {
+      const key = String(login || '').trim().toLowerCase();
+      const user = state.users.find((u) => {
+        const byEmail = String(u.email || '').toLowerCase() === key;
+        const byLogin = (u.logins || []).map((l) => String(l).toLowerCase()).includes(key);
+        return (byEmail || byLogin) && (!u.password || u.password === password);
+      });
+      if (!user) return { ok: false, error: 'Неверный логин или пароль' };
+      state.session.userId = user.id;
+      emit('auth');
+      return { ok: true, user, local: true };
+    },
+
+    async register({ name, login, password, grade, school }) {
+      if (SH.api && SH.api.enabled()) {
+        try {
+          const user = await SH.api.register({ name, login, password, grade, school });
+          await store.afterLogin(user);
+          return { ok: true, user, cloud: true };
+        } catch (e) {
+          const msg = String(e.message || e);
+          if (/занят|Введите|Пароль|Логин/i.test(msg)) return { ok: false, error: msg };
+          return { ok: false, error: humanizeNet(msg) };
+        }
+      }
+
+      const key = String(login || '').trim().toLowerCase();
+      if (state.users.some((u) => String(u.email || '').toLowerCase() === key)) {
+        return { ok: false, error: 'Такой логин уже занят' };
       }
       const user = {
-        id: uid('u'), name: name.trim(), email: email.trim(), password,
+        id: uid('u'), name: String(name).trim(), email: key, password,
         role: 'student', grade: grade || '', school: school || 'Школа №1520',
         city: 'Москва', color: 'mint', skills: [], interests: [], rating: 10
       };
       state.users.push(user);
       state.session.userId = user.id;
       emit('auth');
-      return { ok: true, user };
+      return { ok: true, user, local: true };
     },
 
-    logout() {
+    /** Общая часть после успешного входа: тянем данные и ставим сессию. */
+    async afterLogin(user) {
+      const snapshot = await SH.api.bootstrap();
+      if (snapshot) store.hydrate(snapshot);
+      if (!state.users.some((u) => u.id === user.id)) state.users.push(user);
+      state.session.userId = user.id;
+      emit('auth');
+      return true;
+    },
+
+    /** Восстановление сессии по сохранённому токену при запуске. */
+    async restoreSession() {
+      if (!SH.api || !SH.api.enabled() || !SH.api.token()) return false;
+      const user = await SH.api.me();
+      if (!user) return false;
+      const snapshot = await SH.api.bootstrap();
+      if (snapshot) store.hydrate(snapshot);
+      if (!state.users.some((u) => u.id === user.id)) state.users.push(user);
+      state.session.userId = user.id;
+      emit('restore');
+      return true;
+    },
+
+    async logout() {
+      if (SH.api && SH.api.enabled()) await SH.api.logout();
       state.session.userId = null;
       emit('auth');
     },
@@ -1757,9 +1867,10 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         cloud: true,
         syncedAt: remote.serverTime || new Date().toISOString()
       });
-      // если демо-пользователь «пропал» из базы — возвращаем сессию в безопасное состояние
-      if (!state.users.some((u) => u.id === state.session.userId)) {
-        state.session.userId = state.users[0] ? state.users[0].id : null;
+      // если активный пользователь «пропал» из базы — разлогиниваем.
+      // Пустая сессия остаётся пустой: никаких подстановок первого попавшегося аккаунта.
+      if (state.session.userId && !state.users.some((u) => u.id === state.session.userId)) {
+        state.session.userId = null;
       }
       emit('hydrate');
       return true;
@@ -3368,9 +3479,10 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     },
 
     logout() {
-      ui.confirmSheet('Выйти?', 'Ты сможешь войти снова под той же почтой.', 'Выйти', () => {
-        store.logout();
-        SH.app.go('#/explore');
+      ui.confirmSheet('Выйти?', 'Сессия на сервере будет закрыта, токен удалён из браузера.', 'Выйти', async () => {
+        await store.logout();
+        ui.toast('Вы вышли');
+        SH.app.go('#/auth');
       });
     }
   };
@@ -3379,12 +3491,14 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
   function auth(mode) {
     const isLogin = mode !== 'register';
+    const cloud = !!(SH.api && SH.api.enabled());
+
     return (
-      '<div class="screen" style="padding-top:calc(var(--safe-t) + 34px)">' +
-        '<div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:26px">' +
-          SH.logoMark(64) +
+      '<div class="screen" style="padding-top:calc(var(--safe-t) + 30px)">' +
+        '<div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:24px">' +
+          SH.logoMark(66) +
           '<h1 style="font-size:26px;letter-spacing:-0.8px;margin:16px 0 6px">Student Hub</h1>' +
-          '<p class="muted" style="margin:0;font-size:14px;max-width:300px;line-height:1.5">' +
+          '<p class="muted" style="margin:0;font-size:14px;max-width:310px;line-height:1.5">' +
             'Возможности, команды и личный план — в одном приложении для школы.</p>' +
         '</div>' +
 
@@ -3394,59 +3508,96 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         '</div>' +
 
         (isLogin
-          ? ui.field('auth-email', 'Почта', { type: 'email', value: 'aziz@school.ru', autocomplete: 'email' }) +
-            ui.field('auth-pass', 'Пароль', { type: 'password', value: 'demo', autocomplete: 'current-password', style: 'margin-top:12px' })
+          ? ui.field('auth-login', 'Логин или почта', { value: '', placeholder: 'aziz@school.ru', autocomplete: 'username' }) +
+            ui.field('auth-pass', 'Пароль', { type: 'password', value: '', autocomplete: 'current-password', style: 'margin-top:12px' })
           : ui.field('auth-name', 'Имя и фамилия', { placeholder: 'Азиз Рахимов' }) +
-            ui.field('auth-email', 'Почта', { type: 'email', placeholder: 'you@school.ru', style: 'margin-top:12px' }) +
-            ui.field('auth-pass', 'Пароль', { type: 'password', placeholder: 'Минимум 4 символа', style: 'margin-top:12px' }) +
+            ui.field('auth-login', 'Логин', { placeholder: 'aziz или aziz@school.ru', style: 'margin-top:12px' }) +
+            ui.field('auth-pass', 'Пароль', { type: 'password', placeholder: 'Минимум 6 символов', style: 'margin-top:12px' }) +
             ui.field('auth-grade', 'Класс', { placeholder: '10 класс', style: 'margin-top:12px' })) +
 
         '<div id="auth-error"></div>' +
 
-        '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.profile.submitAuth(\'' + (isLogin ? 'login' : 'register') + '\')">' +
+        '<button class="btn btn--brand btn--block mt-16" id="auth-submit" ' +
+          'onclick="SH.views.profile.submitAuth(\'' + (isLogin ? 'login' : 'register') + '\')">' +
           (isLogin ? 'Войти' : 'Создать аккаунт') + icon('arrowRight', 18) + '</button>' +
 
-        '<div class="divider"></div>' +
-        '<p class="center small muted" style="margin:0 0 12px">Демо-доступ для хакатона</p>' +
-        '<div class="row" style="gap:10px">' +
-          '<button class="btn btn--soft grow" onclick="SH.views.profile.demo(\'student\')">' + icon('person', 17) + 'Ученик</button>' +
-          '<button class="btn btn--soft grow" onclick="SH.views.profile.demo(\'admin\')">' + icon('shield', 17) + 'Админ</button>' +
+        '<div class="ai-note mt-16">' + icon('shield') +
+          '<div>' + (cloud
+            ? 'Вход проверяется на сервере. Пароли хранятся в виде PBKDF2-хеша, в браузере — только токен сессии.'
+            : 'Сервер недоступен: вход проверяется локально на демо-данных.') + '</div>' +
         '</div>' +
-        '<p class="center small muted mt-16" style="line-height:1.5">Демо-профиль: <b>aziz@school.ru</b> / <b>demo</b><br>' +
-          'Админ: <b>admin@school.ru</b> / <b>admin</b></p>' +
+
+        '<div class="divider"></div>' +
+        '<div class="card" style="background:var(--chip);border:0">' +
+          '<div class="small muted" style="margin-bottom:8px">Тестовые аккаунты</div>' +
+          '<div class="row" style="justify-content:space-between;margin-bottom:6px">' +
+            '<span class="small">Ученик</span><code class="small">aziz@school.ru / demo</code></div>' +
+          '<div class="row" style="justify-content:space-between">' +
+            '<span class="small">Администратор</span><code class="small">root · пароль отдельно</code></div>' +
+        '</div>' +
+        '<p class="center small muted mt-16" style="line-height:1.5">' +
+          'Пароль root выдан владельцу проекта и хранится в <b>dist/ROOT_CREDENTIALS.txt</b>.</p>' +
       '</div>'
     );
   }
 
-  function submitAuth(kind) {
-    const v = (id) => (document.getElementById(id) || {}).value || '';
-    const errBox = document.getElementById('auth-error');
-    let res;
-    if (kind === 'login') {
-      res = store.login(v('auth-email'), v('auth-pass'));
+  function setBusy(busy) {
+    const btn = document.getElementById('auth-submit');
+    if (!btn) return;
+    if (busy) {
+      btn.setAttribute('data-label', btn.innerHTML);
+      btn.innerHTML = 'Проверяю…';
+      btn.disabled = true;
     } else {
-      if (!v('auth-name').trim()) return showErr('Введи имя');
-      if (!/^\S+@\S+\.\S+$/.test(v('auth-email'))) return showErr('Проверь почту');
-      if (v('auth-pass').length < 4) return showErr('Пароль слишком короткий');
-      res = store.register({ name: v('auth-name'), email: v('auth-email'), password: v('auth-pass'), grade: v('auth-grade') });
+      if (btn.getAttribute('data-label')) btn.innerHTML = btn.getAttribute('data-label');
+      btn.disabled = false;
     }
-    if (!res.ok) return showErr(res.error);
-    ui.toast('Добро пожаловать, ' + res.user.name.split(' ')[0]);
-    SH.app.go('#/explore');
+  }
 
-    function showErr(msg) {
-      if (errBox) errBox.innerHTML = '<p class="field-error">' + e(msg) + '</p>';
+  function authError(msg) {
+    const box = document.getElementById('auth-error');
+    if (box) box.innerHTML = '<p class="field-error">' + e(msg) + '</p>';
+  }
+
+  async function submitAuth(kind) {
+    const v = (id) => (document.getElementById(id) || {}).value || '';
+    const login = v('auth-login').trim();
+    const password = v('auth-pass');
+
+    if (!login) return authError('Введите логин');
+    if (!password) return authError('Введите пароль');
+
+    setBusy(true);
+    let res;
+
+    if (kind === 'login') {
+      res = await store.login(login, password);
+    } else {
+      const name = v('auth-name').trim();
+      if (!name) { setBusy(false); return authError('Введите имя'); }
+      if (password.length < 6) { setBusy(false); return authError('Пароль минимум 6 символов'); }
+      res = await store.register({ name, login, password, grade: v('auth-grade').trim() });
     }
+
+    setBusy(false);
+    if (!res || !res.ok) return authError((res && res.error) || 'Не удалось войти');
+
+    ui.toast(res.warning || ('Добро пожаловать, ' + res.user.name.split(' ')[0]));
+    SH.app.go(res.user.role === 'admin' ? '#/admin' : '#/explore');
   }
 
   SH.views = SH.views || {};
   SH.views.profile = Object.assign({ html, auth, submitAuth }, actions);
+  /* демо-вход оставлен только для локального режима без сервера */
   SH.views.profile.demo = function (role) {
-    const res = store.loginAsDemos(role);
-    if (res.ok) {
-      ui.toast(role === 'admin' ? 'Вход как администратор' : 'Вход как ученик');
-      SH.app.go(role === 'admin' ? '#/admin' : '#/explore');
-    }
+    store.localLogin(role === 'admin' ? 'admin' : 'aziz@school.ru', 'demo').then((res) => {
+      if (res.ok) {
+        ui.toast('Локальный вход');
+        SH.app.go(role === 'admin' ? '#/admin' : '#/explore');
+      } else {
+        ui.toast('Нужен вход через форму');
+      }
+    });
   };
 })(window.SH = window.SH || {});
 
@@ -3470,8 +3621,9 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   function html() {
     if (!store.isAdmin) {
       return '<div class="app app--wide"><div class="screen">' +
-        ui.empty('lock', 'Доступ только для администратора', 'Войди как админ: admin@school.ru / admin',
-          '<button class="btn btn--brand" onclick="SH.views.profile.demo(\'admin\')">Войти как админ</button>') +
+        ui.empty('lock', 'Доступ только для администратора',
+          'Войди под аккаунтом root (логины root или admin) — пароль выдан владельцу проекта.',
+          '<button class="btn btn--brand" onclick="SH.app.go(\'#/auth\')">Перейти ко входу</button>') +
         '</div></div>';
     }
 
@@ -3998,7 +4150,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       case 'chats': return { html: SH.views.chats.html() };
       case 'chat': return { html: SH.views.chats.thread(p1), mount: (root) => SH.views.chats.mountThread(root, p1) };
       case 'profile': return { html: SH.views.profile.html() };
-      case 'auth': return { html: SH.views.profile.auth(p2 === 'register' ? 'register' : 'login') };
+      case 'auth': return { html: SH.views.profile.auth(p1 === 'register' ? 'register' : 'login') };
       case 'install': return { html: SH.views.install.html() };
       case 'admin': return { html: SH.views.admin.html(), wide: true };
       default: return { html: SH.views.explore.html(), mount: SH.views.explore.mount };
@@ -4007,8 +4159,27 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
   let lastRouteKey = null;
 
+  /* экраны, доступные без входа */
+  const PUBLIC = ['auth', 'install'];
+
   function render() {
-    const route = parse();
+    let route = parse();
+
+    // гард: без сессии — только вход и экран установки
+    if (!store.isAuthed && PUBLIC.indexOf(route.name) === -1) {
+      if (location.hash !== '#/auth') {
+        location.replace('#/auth');
+        return;
+      }
+      route = { name: 'auth', params: [] };
+    }
+
+    // авторизованному на экране входа делать нечего
+    if (store.isAuthed && route.name === 'auth') {
+      location.replace('#/explore');
+      return;
+    }
+
     const key = location.hash || '#/explore';
     const root = document.getElementById('root');
     const view = screenFor(route);
@@ -4090,14 +4261,16 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     if (!location.hash) location.hash = '#/explore';
     render();
 
-    // облако: локальный режим уже отрисован, теперь в фоне тянем данные из D1
+    // сессия по сохранённому токену + данные из D1
     if (SH.api && SH.api.enabled()) {
-      SH.api.bootstrap().then((snapshot) => {
-        if (snapshot && store.hydrate(snapshot)) {
-          const pending = SH.api.outbox().length;
-          if (pending) ui.toast('Связь вернулась — ' + pending + ' изменений дослано');
-        }
-      });
+      store.restoreSession().then((restored) => {
+        if (restored) render();
+        // публичные данные (события) подтягиваем и без входа —
+        // экран входа показывает живой контент
+        return SH.api.bootstrap();
+      }).then((snapshot) => {
+        if (snapshot && store.hydrate(snapshot)) render();
+      }).catch(() => {});
     }
 
     // service worker (в однофайловой сборке лежит рядом в ./pwa/)
@@ -4118,5 +4291,5 @@ SH.api.configure('https://kk-test-project-s4ewq.warfacewtat.workers.dev');
 if (SH.ai) SH.ai.endpoint = 'https://kk-test-project-s4ewq.warfacewtat.workers.dev/ai';
 
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5446c508b689daf',t:'MTc5MzYzNTk3MA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5446c508b689daf',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
