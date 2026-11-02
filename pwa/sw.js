@@ -5,7 +5,7 @@ const CACHE = 'studenthub-' + VERSION;
 const PRECACHE = [
   './',
   './index.html',
-  './pwa/manifest.webmanifest',
+  './manifest.webmanifest',
   './pwa/icons/icon-192.png',
   './pwa/icons/icon-512.png',
   './pwa/icons/icon-maskable-512.png'
