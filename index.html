@@ -7027,6 +7027,11 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       ? ''
       : buildTabbar(activeTab, aux);
 
+    // запоминаем позицию прокрутки: фоновое обновление данных не должно
+    // выбрасывать пользователя в начало экрана
+    const prevScreen = root.querySelector('.screen');
+    const prevScroll = prevScreen ? prevScreen.scrollTop : 0;
+
     root.innerHTML =
       (view.wide ? '' : '<div class="app">') +
       view.html +
@@ -7052,6 +7057,9 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       if (scroller) scroller.scrollTop = 0;
       window.scrollTo(0, 0);
       if (history.scrollRestoration) history.scrollRestoration = 'manual';
+    } else if (prevScroll) {
+      const scroller = root.querySelector('.screen');
+      if (scroller) scroller.scrollTop = prevScroll;
     }
     document.title = pageTitle(route);
   }
@@ -7086,6 +7094,10 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
   async function resync(minGap) {
     if (!store.isAuthed || !SH.api || !SH.api.enabled()) return false;
+    // не перерисовываем экран, пока пользователь печатает или открыт лист
+    const focused = document.activeElement;
+    if (focused && /^(INPUT|TEXTAREA)$/.test(focused.tagName)) return false;
+    if (document.querySelector('.sheet, .modal')) return false;
     const gap = typeof minGap === 'number' ? minGap : 15000;
     if (Date.now() - lastResync < gap) return false;
     lastResync = Date.now();
@@ -7148,6 +7160,9 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       if (document.visibilityState === 'visible') resync(45000);
     });
 
+    // пока приложение открыто, раз в минуту проверяем, не появилось ли нового
+    setInterval(() => { if (!document.hidden) resync(90000); }, 60000);
+
     if (!location.hash) setHash('#/explore');
     render();
 
@@ -7163,10 +7178,29 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       }).catch(() => {});
     }
 
-    // service worker (в однофайловой сборке лежит рядом в ./pwa/)
+    // service worker: офлайн + автообновление приложения
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('SW не зарегистрирован:', err.message));
+      window.addEventListener('load', async () => {
+        try {
+          const reg = await navigator.serviceWorker.register('./sw.js');
+          const hadController = !!navigator.serviceWorker.controller;
+          let reloading = false;
+
+          // новый воркер занял место старого → перезагружаем приложение один раз
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!hadController || reloading) return;
+            reloading = true;
+            location.reload();
+          });
+
+          // проверяем обновление при запуске и при возврате в приложение
+          if (hadController) reg.update().catch(() => {});
+          document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) reg.update().catch(() => {});
+          });
+        } catch (err) {
+          console.warn('SW не зарегистрирован:', err.message);
+        }
       });
     }
   }
