@@ -7186,11 +7186,19 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           const hadController = !!navigator.serviceWorker.controller;
           let reloading = false;
 
-          // новый воркер занял место старого → перезагружаем приложение один раз
+          // новый воркер занял место старого → перезагружаем приложение один раз,
+          // но не выдёргиваем экран из-под пальцев: ждём, пока пользователь не печатает
           navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (!hadController || reloading) return;
-            reloading = true;
-            location.reload();
+            const attempt = () => {
+              const f = document.activeElement;
+              const busy = (f && /^(INPUT|TEXTAREA)$/.test(f.tagName)) ||
+                document.querySelector('.sheet, .modal');
+              if (busy) { setTimeout(attempt, 15000); return; }
+              reloading = true;
+              location.reload();
+            };
+            attempt();
           });
 
           // проверяем обновление при запуске и при возврате в приложение
