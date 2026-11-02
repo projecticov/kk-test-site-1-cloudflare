@@ -1,0 +1,4122 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+<title>Student Hub — возможности, команды и план для школьников</title>
+<meta name="description" content="Student Hub — приложение для школьников: олимпиады, курсы, стажировки, поиск команды и личный роадмап. Устанавливается на главный экран без магазина приложений.">
+
+<!-- PWA -->
+<link rel="manifest" href="./pwa/manifest.webmanifest">
+<meta name="theme-color" content="#F7F7FA">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Student Hub">
+
+<!-- соцсети -->
+<meta property="og:title" content="Student Hub">
+<meta property="og:description" content="Возможности, команды и личный план — в одном приложении для школы.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="./icons/icon-512.png">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<style>
+/* ==========================================================================
+   Student Hub — дизайн-система
+   Палитра и радиусы перенесены 1:1 из Flutter-прототипа (lib/theme/app_colors.dart)
+   ========================================================================== */
+
+:root {
+  --primary: #6c5ce7;
+  --primary-dark: #5849c2;
+  --primary-soft: #efecff;
+
+  --mint: #b9f5d0;
+  --sky: #bfe3ff;
+  --sun: #ffe8a3;
+  --blush: #fbc7da;
+  --lavender: #d9ccfb;
+
+  --success: #2ecc71;
+  --warning: #e67e22;
+  --danger: #e74c3c;
+
+  --text: #14151a;
+  --muted: #6b7280;
+  --surface: #ffffff;
+  --bg: #f7f7fa;
+  --border: #e7e7ec;
+  --chip: #f1f1f5;
+
+  --r-card: 16px;
+  --r-input: 14px;
+  --r-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(20, 21, 26, 0.04);
+  --shadow-md: 0 8px 24px rgba(20, 21, 26, 0.08);
+  --shadow-lg: 0 20px 50px rgba(20, 21, 26, 0.16);
+  --shadow-primary: 0 10px 26px rgba(108, 92, 231, 0.32);
+
+  --nav-h: 64px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+
+  color-scheme: light;
+}
+
+html[data-theme='dark'] {
+  --text: #f2f2f5;
+  --muted: #9ca3af;
+  --surface: #1c1d22;
+  --bg: #121317;
+  --border: #2c2d33;
+  --chip: #23242b;
+  --primary-soft: #221f3a;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+@media (min-width: 900px) {
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(700px 480px at 12% -8%, rgba(108, 92, 231, 0.16), transparent 62%),
+      radial-gradient(620px 420px at 92% 6%, rgba(185, 245, 208, 0.18), transparent 60%),
+      radial-gradient(520px 420px at 70% 96%, rgba(255, 232, 163, 0.16), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+input, textarea, select { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+svg { display: block; }
+
+/* ─────────────────────────── оболочка ─────────────────────────── */
+
+#root { position: relative; z-index: 1; }
+
+.app {
+  position: relative;
+  max-width: 540px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 900px) {
+  .app {
+    margin: 24px auto;
+    min-height: calc(100dvh - 48px);
+    border-radius: 34px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    background: var(--bg);
+  }
+}
+
+.app--wide { max-width: 1180px; }
+
+.screen {
+  flex: 1;
+  padding: 0 20px calc(var(--nav-h) + var(--safe-b) + 26px);
+  animation: screen-in 0.26s cubic-bezier(0.22, 0.9, 0.28, 1);
+}
+
+@keyframes screen-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.screen--flush { padding-left: 0; padding-right: 0; }
+
+.screen-head {
+  padding-top: calc(var(--safe-t) + 14px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.screen-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.9px;
+  margin: 0;
+}
+
+.screen-sub { color: var(--muted); font-size: 13px; margin: 2px 0 0; }
+
+.spacer { flex: 1; }
+
+/* ─────────────────────────── нижняя навигация ─────────────────────────── */
+
+.tabbar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  height: calc(var(--nav-h) + var(--safe-b));
+  padding-bottom: var(--safe-b);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-top: 1px solid var(--border);
+}
+
+@media (min-width: 900px) {
+  .app .tabbar { border-radius: 0 0 34px 34px; }
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: color 0.18s ease;
+  position: relative;
+}
+
+.tab svg { width: 23px; height: 23px; }
+
+.tab[aria-selected='true'] { color: var(--text); }
+
+.tab[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  width: 26px;
+  height: 3px;
+  border-radius: 3px;
+  background: var(--primary);
+  animation: tab-pop 0.24s ease;
+}
+
+@keyframes tab-pop {
+  from { transform: scaleX(0); opacity: 0; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+
+.tab .dot-badge {
+  position: absolute;
+  top: 10px;
+  right: 50%;
+  margin-right: -16px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  border: 2px solid var(--surface);
+}
+
+/* ─────────────────────────── типографика / утилиты ─────────────────────────── */
+
+.h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.9px; }
+.h2 { font-size: 19px; font-weight: 800; letter-spacing: -0.4px; }
+.h3 { font-size: 16px; font-weight: 700; letter-spacing: -0.2px; }
+.body { font-size: 14.5px; }
+.small { font-size: 12.5px; }
+.muted { color: var(--muted); }
+.center { text-align: center; }
+.mt-8 { margin-top: 8px; } .mt-12 { margin-top: 12px; } .mt-16 { margin-top: 16px; }
+.mt-20 { margin-top: 20px; } .mt-24 { margin-top: 24px; } .mt-32 { margin-top: 32px; }
+.row { display: flex; align-items: center; gap: 10px; }
+.row-top { display: flex; align-items: flex-start; gap: 10px; }
+.wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+.grow { flex: 1; min-width: 0; }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.section-head {
+  display: flex;
+  align-items: center;
+  margin: 22px 0 12px;
+}
+.section-head:first-child { margin-top: 4px; }
+.section-link {
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ─────────────────────────── кнопки ─────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 50px;
+  padding: 0 20px;
+  border-radius: var(--r-input);
+  font-size: 15px;
+  font-weight: 650;
+  transition: transform 0.12s ease, opacity 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+}
+.btn:active { transform: scale(0.975); }
+.btn svg { width: 18px; height: 18px; }
+
+.btn--primary { background: var(--text); color: var(--bg); }
+html[data-theme='dark'] .btn--primary { background: #fff; color: #14151a; }
+
+.btn--brand { background: var(--primary); color: #fff; box-shadow: var(--shadow-primary); }
+.btn--brand:active { box-shadow: 0 4px 14px rgba(108, 92, 231, 0.3); }
+
+.btn--soft { background: var(--chip); color: var(--text); }
+.btn--outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn--ghost { background: transparent; color: var(--muted); }
+.btn--danger { background: rgba(231, 76, 60, 0.12); color: var(--danger); }
+.btn--block { display: flex; width: 100%; }
+.btn--sm { height: 38px; padding: 0 14px; font-size: 13.5px; border-radius: 12px; }
+.btn--xs { height: 32px; padding: 0 12px; font-size: 12.5px; border-radius: 10px; gap: 6px; }
+.btn--xs svg { width: 15px; height: 15px; }
+.btn:disabled { opacity: 0.5; pointer-events: none; }
+
+.icon-btn {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: var(--chip);
+  color: var(--text);
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+.icon-btn:active { transform: scale(0.94); }
+.icon-btn svg { width: 20px; height: 20px; }
+.icon-btn--plain { background: transparent; }
+.icon-btn--brand { background: var(--primary); color: #fff; }
+
+/* ─────────────────────────── поля ─────────────────────────── */
+
+.field { position: relative; }
+.field input,
+.field textarea,
+.field select {
+  width: 100%;
+  min-height: 50px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-input);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  font-size: 15px;
+}
+.field textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
+.field input::placeholder, .field textarea::placeholder { color: var(--muted); }
+.field input:focus, .field textarea:focus, .field select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3.5px rgba(108, 92, 231, 0.13);
+}
+.field-label { font-size: 12.5px; font-weight: 650; color: var(--muted); margin: 0 0 6px 2px; }
+.field-error { color: var(--danger); font-size: 12.5px; margin: 6px 0 0 2px; }
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 46px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
+  background: var(--chip);
+  color: var(--muted);
+}
+.search input {
+  flex: 1;
+  border: 0;
+  background: none;
+  outline: none;
+  color: var(--text);
+  font-size: 14.5px;
+  min-width: 0;
+}
+.search input::placeholder { color: var(--muted); }
+.search svg { width: 18px; height: 18px; flex: 0 0 auto; }
+
+/* ─────────────────────────── пилюли / чипы ─────────────────────────── */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  background: var(--chip);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 650;
+  transition: background 0.16s ease, color 0.16s ease;
+  white-space: nowrap;
+}
+.pill svg { width: 15px; height: 15px; }
+.pill[aria-pressed='true'] { background: var(--text); color: var(--bg); }
+html[data-theme='dark'] .pill[aria-pressed='true'] { background: #fff; color: #14151a; }
+.pill-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.pill-row::-webkit-scrollbar { display: none; }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: var(--r-pill);
+  background: var(--chip);
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--text);
+  white-space: nowrap;
+}
+.tag--mint { background: var(--mint); color: #0f5132; }
+.tag--sky { background: var(--sky); color: #0b3a5c; }
+.tag--sun { background: var(--sun); color: #6b5300; }
+.tag--blush { background: var(--blush); color: #6d1f3c; }
+.tag--lav { background: var(--lavender); color: #3f2a8a; }
+.tag--dark { background: rgba(20, 21, 26, 0.62); color: #fff; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.tag--glass { background: rgba(255, 255, 255, 0.92); color: #14151a; }
+
+/* ─────────────────────────── карточки ─────────────────────────── */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  padding: 16px;
+}
+.card--flat { border: 0; }
+.card--tap { transition: transform 0.14s ease, box-shadow 0.18s ease; }
+.card--tap:active { transform: scale(0.985); }
+
+/* ─────────────────────────── аватар ─────────────────────────── */
+
+.avatar {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-weight: 800;
+  color: #14151a;
+  background: var(--sun);
+  overflow: hidden;
+  user-select: none;
+}
+.avatar--28 { width: 28px; height: 28px; font-size: 12px; }
+.avatar--32 { width: 32px; height: 32px; font-size: 13px; }
+.avatar--40 { width: 40px; height: 40px; font-size: 15px; }
+.avatar--56 { width: 56px; height: 56px; font-size: 20px; }
+.avatar--brand { background: var(--primary); color: #fff; }
+
+/* ─────────────────────────── обложки событий (без картинок из сети) ─────────────────────────── */
+
+.cover {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-card);
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+.cover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.65), transparent 42%),
+    radial-gradient(circle at 82% 78%, rgba(255, 255, 255, 0.4), transparent 46%);
+}
+.cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.4) 1px, transparent 1px);
+  background-size: 14px 14px;
+  opacity: 0.5;
+  mix-blend-mode: soft-light;
+}
+.cover__glyph { position: relative; z-index: 1; opacity: 0.92; }
+.cover--hackathon { background: linear-gradient(135deg, #d7ecff, #a8d4ff); }
+.cover--course { background: linear-gradient(135deg, #ece4ff, #cfc0fb); }
+.cover--fellowship { background: linear-gradient(135deg, #d8fbe6, #a6eec3); }
+.cover--internship { background: linear-gradient(135deg, #ffe1ec, #ffbdd5); }
+.cover--competition { background: linear-gradient(135deg, #dbeaff, #b6d4ff); }
+.cover--olympiad { background: linear-gradient(135deg, #fff3cd, #ffe08a); }
+.cover--event { background: linear-gradient(135deg, #ffe4ee, #ffc6db); }
+
+/* ─────────────────────────── горизонтальный скролл ─────────────────────────── */
+
+.hscroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 2px 20px 4px;
+  margin: 0 -20px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.hscroll::-webkit-scrollbar { display: none; }
+.hscroll > * { scroll-snap-align: start; flex: 0 0 auto; }
+
+/* ─────────────────────────── список ─────────────────────────── */
+
+.list { display: flex; flex-direction: column; gap: 10px; }
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+}
+
+/* ─────────────────────────── прогресс ─────────────────────────── */
+
+.progress {
+  height: 6px;
+  border-radius: 6px;
+  background: var(--chip);
+  overflow: hidden;
+}
+.progress > i {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: var(--primary);
+  transition: width 0.5s cubic-bezier(0.22, 0.9, 0.28, 1);
+}
+
+/* ─────────────────────────── шиты / модалки ─────────────────────────── */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(12, 12, 16, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  opacity: 0;
+  animation: fade-in 0.2s ease forwards;
+}
+@keyframes fade-in { to { opacity: 1; } }
+
+.sheet {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  z-index: 91;
+  width: 100%;
+  max-width: 540px;
+  max-height: 88dvh;
+  overflow-y: auto;
+  padding: 10px 20px calc(24px + var(--safe-b));
+  background: var(--surface);
+  border-radius: 26px 26px 0 0;
+  box-shadow: var(--shadow-lg);
+  animation: sheet-up 0.3s cubic-bezier(0.22, 0.9, 0.28, 1);
+}
+.sheet__grab {
+  width: 42px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--border);
+  margin: 4px auto 16px;
+}
+@keyframes sheet-up {
+  from { transform: translate(-50%, 14%); opacity: 0.4; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+.sheet--closing { animation: sheet-down 0.2s ease forwards; }
+@keyframes sheet-down { to { transform: translate(-50%, 100%); opacity: 0.2; } }
+
+@media (min-width: 900px) {
+  .sheet {
+    bottom: auto;
+    top: 50%;
+    border-radius: 24px;
+    transform: translate(-50%, -50%);
+    animation: modal-in 0.24s cubic-bezier(0.22, 0.9, 0.28, 1);
+  }
+  @keyframes modal-in {
+    from { transform: translate(-50%, -46%) scale(0.97); opacity: 0; }
+    to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  }
+}
+
+/* ─────────────────────────── тост ─────────────────────────── */
+
+.toast-wrap {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--nav-h) + var(--safe-b) + 18px);
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  pointer-events: none;
+  width: min(100% - 32px, 420px);
+}
+.toast {
+  background: #14151a;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: var(--r-pill);
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+  animation: toast-in 0.24s cubic-bezier(0.22, 0.9, 0.28, 1);
+  max-width: 100%;
+  text-align: center;
+}
+html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
+@keyframes toast-in {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+/* ─────────────────────────── пустые состояния ─────────────────────────── */
+
+.empty {
+  text-align: center;
+  padding: 46px 20px;
+  color: var(--muted);
+}
+.empty__icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 14px;
+  border-radius: 20px;
+  display: grid;
+  place-items: center;
+  background: var(--chip);
+  color: var(--muted);
+}
+.empty__icon svg { width: 28px; height: 28px; }
+.empty h3 { margin: 0 0 6px; color: var(--text); font-size: 16px; }
+.empty p { margin: 0; font-size: 13.5px; line-height: 1.5; }
+
+/* ─────────────────────────── скелетоны ─────────────────────────── */
+
+.skel {
+  background: linear-gradient(90deg, var(--chip) 25%, color-mix(in srgb, var(--chip) 60%, var(--surface)) 50%, var(--chip) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s infinite linear;
+  border-radius: 10px;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ─────────────────────────── установка PWA ─────────────────────────── */
+
+.install-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: linear-gradient(120deg, #6c5ce7, #8b7cf6 60%, #a99bff);
+  color: #fff;
+  box-shadow: var(--shadow-primary);
+}
+.install-banner__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.18);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+.install-banner__icon svg { width: 21px; height: 21px; }
+.install-banner__btn {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  background: #fff;
+  color: #4a3bb8;
+  font-size: 13px;
+  font-weight: 750;
+  flex: 0 0 auto;
+}
+
+.steps { display: grid; gap: 12px; }
+.step { display: flex; gap: 12px; align-items: flex-start; }
+.step__num {
+  width: 26px; height: 26px; flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  display: grid; place-items: center;
+  font-size: 13px; font-weight: 800;
+}
+.step__body { font-size: 13.5px; line-height: 1.5; }
+.step__body b { font-weight: 700; }
+
+/* ─────────────────────────── админка ─────────────────────────── */
+
+.admin {
+  display: grid;
+  grid-template-columns: 232px 1fr;
+  min-height: 100dvh;
+}
+.admin__side {
+  border-right: 1px solid var(--border);
+  padding: 20px 14px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.admin__brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 18px; }
+.admin__brand b { font-size: 15px; letter-spacing: -0.3px; }
+.admin__nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.admin__nav svg { width: 18px; height: 18px; }
+.admin__nav[aria-current='true'] { background: var(--primary-soft); color: var(--primary); font-weight: 700; }
+.admin__main { padding: 24px 28px 60px; min-width: 0; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  padding: 14px 16px;
+}
+.stat b { display: block; font-size: 26px; font-weight: 800; letter-spacing: -1px; }
+.stat span { font-size: 12.5px; color: var(--muted); }
+
+.table { width: 100%; border-collapse: collapse; }
+.table th {
+  text-align: left;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  font-weight: 700;
+  padding: 0 12px 10px;
+}
+.table td { padding: 12px; border-top: 1px solid var(--border); font-size: 13.5px; vertical-align: middle; }
+.table tr:hover td { background: color-mix(in srgb, var(--chip) 45%, transparent); }
+
+@media (max-width: 860px) {
+  .admin { grid-template-columns: 1fr; }
+  .admin__side {
+    flex-direction: row;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 10px;
+    gap: 6px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .admin__brand { padding: 0 10px 0 4px; }
+  .admin__nav { white-space: nowrap; }
+  .admin__main { padding: 18px 16px 60px; }
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ─────────────────────────── разное ─────────────────────────── */
+
+.divider { height: 1px; background: var(--border); margin: 18px 0; }
+.hide { display: none !important; }
+
+.chip-scroll { margin: 0 -20px; padding: 0 20px; }
+
+.hero {
+  position: relative;
+  border-radius: 22px;
+  padding: 20px;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(135deg, #4c3fd0, #6c5ce7 45%, #8f7ef7);
+  box-shadow: var(--shadow-primary);
+}
+.hero h2 { margin: 0 0 6px; font-size: 20px; letter-spacing: -0.4px; }
+.hero p { margin: 0; font-size: 13.5px; color: rgba(255, 255, 255, 0.82); line-height: 1.5; }
+.hero__glow {
+  position: absolute;
+  width: 220px; height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(185, 245, 208, 0.5), transparent 68%);
+  right: -70px; top: -90px;
+  pointer-events: none;
+}
+
+.match-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 750;
+  background: rgba(255, 255, 255, 0.94);
+  color: #2b1f7a;
+}
+
+.ai-note {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--primary-soft);
+  border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ai-note svg { width: 17px; height: 17px; flex: 0 0 auto; color: var(--primary); margin-top: 1px; }
+
+.switch {
+  width: 46px; height: 28px;
+  border-radius: 999px;
+  background: var(--chip);
+  position: relative;
+  transition: background 0.2s ease;
+  flex: 0 0 auto;
+}
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.switch[aria-checked='true'] { background: var(--success); }
+.switch[aria-checked='true']::after { transform: translateX(18px); }
+
+/* скрытые подписи для доступности */
+.sr {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ─────────────────────────── карточки событий ─────────────────────────── */
+
+.event-hero { position: relative; border-radius: 18px; overflow: hidden; }
+.event-hero .cover { border-radius: 18px; }
+.event-hero__overlay {
+  position: absolute; inset: auto 0 0 0;
+  padding: 14px;
+  background: linear-gradient(transparent, rgba(10, 10, 14, 0.82) 58%);
+  color: #fff;
+  display: flex; align-items: flex-end; gap: 10px;
+}
+.event-hero__title { font-weight: 800; font-size: 16px; line-height: 1.25; letter-spacing: -0.2px; }
+.event-hero__meta { color: rgba(255,255,255,.76); font-size: 11.5px; margin-top: 2px; }
+.event-hero__badges { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+.event-hero__cta {
+  flex: 0 0 auto;
+  background: #fff; color: #14151a;
+  border-radius: 999px; padding: 8px 13px;
+  font-size: 12px; font-weight: 700;
+}
+
+.mini-card { width: 156px; }
+.mini-card .cover { height: 92px; border-radius: 16px; }
+.mini-card__title { font-weight: 700; font-size: 13px; margin-top: 8px; line-height: 1.3; }
+.mini-card__meta { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+
+.rank-badge {
+  width: 26px; height: 26px; flex: 0 0 auto;
+  border-radius: 9px; display: grid; place-items: center;
+  font-size: 12px; font-weight: 800;
+  background: var(--chip); color: var(--muted);
+}
+.rank-badge--top { background: var(--sun); color: #6b5300; }
+
+.trend-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.trend-row:last-child { border-bottom: 0; }
+
+.meta-row { display: flex; align-items: flex-start; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.meta-row:last-child { border-bottom: 0; }
+.meta-row svg { width: 17px; height: 17px; color: var(--muted); margin-top: 2px; flex: 0 0 auto; }
+.meta-row b { display: block; font-size: 13.5px; font-weight: 650; }
+.meta-row span { font-size: 12px; color: var(--muted); }
+
+/* ─────────────────────────── чаты ─────────────────────────── */
+
+.chat-scroll { display: flex; flex-direction: column; gap: 8px; padding: 4px 0 16px; }
+.chat-bubble { max-width: 78%; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.45; }
+.chat-bubble--own { background: var(--primary); color: #fff; border-bottom-right-radius: 6px; align-self: flex-end; }
+.chat-bubble--other { background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 6px; align-self: flex-start; }
+.chat-time { font-size: 10.5px; opacity: 0.62; margin-top: 4px; }
+
+.composer {
+  position: sticky; bottom: 0;
+  display: flex; gap: 8px; align-items: center;
+  padding: 10px 0 calc(10px + var(--safe-b));
+  background: linear-gradient(transparent, var(--bg) 30%);
+}
+.composer .field { flex: 1; }
+.composer input { min-height: 46px; border-radius: 999px; }
+
+/* ─────────────────────────── профиль ─────────────────────────── */
+
+.readiness {
+  border-radius: 18px;
+  padding: 16px;
+  color: #fff;
+  background: linear-gradient(140deg, #1b1d26, #14151a 60%, #24263a);
+}
+.readiness__label { font-size: 11.5px; color: rgba(255,255,255,.62); }
+.readiness__value { font-size: 12.5px; font-weight: 800; color: var(--mint); }
+.readiness .progress { background: rgba(255,255,255,.16); }
+
+.chip-add {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border-radius: 999px;
+  border: 1px dashed var(--border); color: var(--muted);
+  font-size: 11.5px; font-weight: 650;
+}
+.chip-remove { margin-left: 2px; opacity: .55; font-weight: 800; }
+
+/* ─────────────────────────── адаптив админки ─────────────────────────── */
+
+@media (max-width: 1080px) {
+  .admin-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 860px) {
+  .admin__brand b { white-space: nowrap; }
+  .admin__brand div { white-space: nowrap; }
+}
+
+@media (max-width: 700px) {
+  .admin .table { min-width: 620px; }
+  .admin .card { overflow-x: auto; }
+}
+
+/* тост по центру, чтобы не сливаться с контентом */
+.toast-wrap {
+  left: 50%;
+  right: auto;
+}
+
+</style>
+</head>
+<body>
+
+<div id="root">
+  <!-- скелетон на время загрузки скриптов -->
+  <div class="app">
+    <div class="screen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;gap:14px">
+      <div class="skel" style="width:64px;height:64px;border-radius:20px"></div>
+      <div class="skel" style="width:160px;height:14px"></div>
+      <div class="skel" style="width:110px;height:11px"></div>
+    </div>
+  </div>
+</div>
+
+<noscript>
+  <div style="padding:40px 24px;text-align:center;font-family:-apple-system,sans-serif">
+    <h1 style="font-size:22px">Student Hub</h1>
+    <p style="color:#6b7280">Для работы приложения включи JavaScript.</p>
+  </div>
+</noscript>
+<script>
+(function () {
+  'use strict';
+
+  /**
+   * Единый источник демо-данных.
+   * Используется и фронтендом (localStorage-режим), и воркером Cloudflare
+   * (первичное наполнение D1) — данные не расходятся между клиентом и сервером.
+   */
+  function buildSeed(nowMs) {
+    const t = nowMs || Date.now();
+    const DAY = 864e5;
+    const iso = (d) => new Date(d).toISOString();
+    const inDays = (n) => iso(t + n * DAY);
+
+    const users = [
+      { id: 'u_admin', name: 'Ирина Соколова', email: 'admin@school.ru', password: 'admin', role: 'admin', position: 'Завуч по учебной работе', city: 'Москва', school: 'Школа №1520', color: 'lavender' },
+      { id: 'u_me', name: 'Азиз Рахимов', email: 'aziz@school.ru', password: 'demo', role: 'student', grade: '10 класс', city: 'Москва', school: 'Школа №1520', color: 'sun', skills: ['Python', 'HTML/CSS', 'Figma'], interests: ['ИИ', 'Хакатоны', 'Дизайн'], rating: 78 },
+      { id: 'u1', name: 'Мария Ковалёва', email: 'maria@school.ru', role: 'student', grade: '11 класс', city: 'Москва', school: 'Школа №1520', color: 'blush', skills: ['Математика', 'C++'], interests: ['Олимпиады'] },
+      { id: 'u2', name: 'Тимур Алиев', email: 'timur@school.ru', role: 'student', grade: '10 класс', city: 'Москва', school: 'Школа №1520', color: 'sky', skills: ['React', 'Node.js'], interests: ['Веб', 'Стартапы'] },
+      { id: 'u3', name: 'Дана Сеитова', email: 'dana@school.ru', role: 'student', grade: '9 класс', city: 'Москва', school: 'Школа №1520', color: 'mint', skills: ['Биология', 'Химия'], interests: ['Наука'] },
+      { id: 'u4', name: 'Егор Волков', email: 'egor@school.ru', role: 'student', grade: '11 класс', city: 'Москва', school: 'Школа №1520', color: 'lavender', skills: ['Java', 'Android'], interests: ['Мобильная разработка'] },
+      { id: 'u5', name: 'Алина Жукова', email: 'alina@school.ru', role: 'student', grade: '8 класс', city: 'Москва', school: 'Школа №1520', color: 'sun', skills: ['Английский'], interests: ['Эссе', 'История'] },
+      { id: 'u6', name: 'Роман Гусев', email: 'roman@school.ru', role: 'student', grade: '10 класс', city: 'Москва', school: 'Школа №1520', color: 'sky', skills: ['Робототехника'], interests: ['Инженерия'] },
+      { id: 'u7', name: 'Пётр Иванов', email: 'petr@school.ru', role: 'teacher', position: 'Учитель информатики', school: 'Школа №1520', color: 'mint' },
+      { id: 'u8', name: 'Софья Лебедева', email: 'sofia@school.ru', role: 'student', grade: '9 класс', city: 'Москва', school: 'Школа №1520', color: 'blush', skills: ['Графический дизайн'], interests: ['Искусство'] }
+    ];
+
+    const events = [
+      {
+        id: 'e1', title: 'Хакатон «AI для школы»', category: 'hackathon', organizer: 'Кружок ИИ · Школа №1520',
+        format: 'Онлайн', isFree: true, applicants: 128, views: 640,
+        deadlineDate: inDays(5), eligibility: '8–11 классы', location: null,
+        tags: ['ИИ', 'Команда 3–4', '48 часов'], status: 'published',
+        description: 'Два дня, чтобы собрать прототип, который решает настоящую задачу школы: расписание, навигация по кабинетам, помощь с домашкой. Наставники — выпускники и студенты МФТИ. Лучший проект школа внедряет у себя.'
+      },
+      {
+        id: 'e2', title: 'Городская олимпиада по информатике', category: 'olympiad', organizer: 'Департамент образования',
+        format: 'Офлайн', isFree: true, applicants: 412, views: 1580,
+        deadlineDate: inDays(9), eligibility: '7–11 классы', location: 'Москва, ул. Тверская, 12',
+        tags: ['Алгоритмы', 'C++', 'Python'], status: 'published',
+        description: 'Отборочный тур городской олимпиады. Два уровня сложности, победители едут на всероссийский этап. Решение задач в течение 4 часов.'
+      },
+      {
+        id: 'e3', title: 'Летняя школа по Data Science', category: 'course', organizer: 'ВШЭ · Факультет компьютерных наук',
+        format: 'Гибрид', isFree: true, applicants: 96, views: 880,
+        deadlineDate: inDays(21), eligibility: '9–11 классы', location: 'Москва / онлайн',
+        tags: ['Python', 'Pandas', '3 недели'], status: 'published',
+        description: 'Три недели практики: разберёшь реальный датасет, соберёшь первую модель и защитишь проект перед менторами. По итогам — сертификат и рекомендация для портфолио.'
+      },
+      {
+        id: 'e4', title: 'Стажировка для школьников в IT-компании', category: 'internship', organizer: 'Яндекс · Образовательные проекты',
+        format: 'Гибрид', isFree: false, applicants: 340, views: 2140,
+        deadlineDate: inDays(14), eligibility: '10–11 классы', location: 'Москва, офис на Льва Толстого',
+        tags: ['Оплачиваемая', 'Frontend', 'Ментор'], status: 'published',
+        description: 'Два месяца в команде продукта: реальные задачи, код-ревью и ментор. Нужен базовый опыт в одном из языков и желание разбираться в чужом коде.'
+      },
+      {
+        id: 'e5', title: 'Конкурс школьных проектов «Стартап»', category: 'competition', organizer: 'Фонд «Талант»',
+        format: 'Офлайн', isFree: true, applicants: 74, views: 430,
+        deadlineDate: inDays(30), eligibility: '8–11 классы', location: 'Москва, Технопарк',
+        tags: ['Питч', 'Приз 100 000 ₽', 'Команда'], status: 'published',
+        description: 'Питч-конкурс для школьных команд. Нужна идея, прототип и умение рассказать о ней за 3 минуты. Финалисты получают менторскую поддержку и грант на развитие.'
+      },
+      {
+        id: 'e6', title: 'Курс по веб-разработке с нуля', category: 'course', organizer: 'Онлайн-школа Skillbox',
+        format: 'Онлайн', isFree: true, applicants: 512, views: 3020,
+        deadlineDate: inDays(40), eligibility: 'Все классы', location: null,
+        tags: ['HTML', 'CSS', 'JavaScript'], status: 'published',
+        description: 'Самый быстрый способ собрать первое портфолио: HTML, CSS, JavaScript и один законченный сайт в конце. Домашки проверяют кураторы.'
+      },
+      {
+        id: 'e7', title: 'Международная олимпиада по математике', category: 'olympiad', organizer: 'IMO Committee',
+        format: 'Офлайн', isFree: true, applicants: 940, views: 4100,
+        deadlineDate: inDays(25), eligibility: '9–11 классы', location: 'Разные города',
+        tags: ['Математика', 'Отбор'], status: 'published',
+        description: 'Региональный отборочный тур. Задачи уровня IMO, шесть задач, два дня по 4,5 часа. Победители получают приглашение в национальную сборную.'
+      },
+      {
+        id: 'e8', title: 'Школьный научный фестиваль', category: 'event', organizer: 'Школа №1520 · Научное общество',
+        format: 'Офлайн', isFree: true, applicants: 58, views: 210,
+        deadlineDate: inDays(3), eligibility: 'Все классы', location: 'Актовый зал, 3 этаж',
+        tags: ['Наука', 'Выставка', 'Своя школа'], status: 'published',
+        description: 'Один день, чтобы показать свой проект: стенды, эксперименты и короткие выступления. Можно прийти без проекта — просто посмотреть и найти команду.'
+      },
+      {
+        id: 'e9', title: 'Стипендия «Талант» на обучение', category: 'fellowship', organizer: 'Образовательный фонд',
+        format: 'Онлайн', isFree: true, applicants: 205, views: 1200,
+        deadlineDate: inDays(18), eligibility: '9–11 классы', location: null,
+        tags: ['Грант', 'Портфолио', 'Мотивационное письмо'], status: 'published',
+        description: 'Ежемесячная стипендия на дополнительное обучение: языки, курсы, олимпиадные школы. Нужно портфолио достижений и мотивационное письмо на 500 слов.'
+      },
+      {
+        id: 'e10', title: 'Инженерный буткемп: роботы', category: 'course', organizer: 'Политехнический музей',
+        format: 'Офлайн', isFree: false, applicants: 43, views: 390,
+        deadlineDate: inDays(11), eligibility: '8–11 классы', location: 'Москва, Политех',
+        tags: ['Робототехника', 'Ардуино', '2 недели'], status: 'published',
+        description: 'Две недели в лаборатории: собираем автономного робота, программируем контроллеры, в конце — гонки на время и демо-день для родителей.'
+      },
+      {
+        id: 'e11', title: 'Волонтёрская программа «Школа — району»', category: 'event', organizer: 'Штаб волонтёров Москвы',
+        format: 'Офлайн', isFree: true, applicants: 31, views: 140,
+        deadlineDate: inDays(7), eligibility: '8–11 классы', location: 'Районные площадки',
+        tags: ['Волонтёрство', 'Часы в портфолио'], status: 'published',
+        description: 'Помогаем младшим классам с домашкой и проводим мастер-классы. Часы засчитываются в индивидуальные достижения.'
+      },
+      {
+        id: 'e12', title: 'Конкурс эссе «Город будущего»', category: 'competition', organizer: 'МГУ · Школа юного журналиста',
+        format: 'Онлайн', isFree: true, applicants: 87, views: 500,
+        deadlineDate: inDays(12), eligibility: '8–11 классы', location: null,
+        tags: ['Эссе', 'Литература', 'Гуманитарное'], status: 'draft',
+        description: 'Эссе на 3000 знаков о том, каким будет твой город через двадцать лет. Победители публикуются в школьном альманахе и получают приглашение на лекции МГУ.'
+      }
+    ];
+
+    const posts = [
+      { id: 'p1', authorId: 'u2', text: 'Ищу двух человек в команду на хакатон «AI для школы». Нужен дизайнер и кто-нибудь, кто умеет говорить с людьми 😅 Пишите в личку.', createdAt: iso(t - 2 * 3600e3), likes: 14, replies: 3, status: 'published', tag: 'Поиск команды' },
+      { id: 'p2', authorId: 'u1', text: 'Кто-нибудь готовится к городской олимпиаде по информатике? Разбираю задачи прошлых лет, могу объяснить, как решать задачу про графы. Собираемся в 105 кабинете.', createdAt: iso(t - 26 * 3600e3), likes: 22, replies: 7, status: 'published', tag: 'Учёба' },
+      { id: 'p3', authorId: 'u3', text: 'Подала заявку на стипендию «Талант». Если кто-то тоже подаёт — давайте вместе вычитывать мотивационные письма, глаза замыливаются.', createdAt: iso(t - 3 * DAY), likes: 9, replies: 4, status: 'published', tag: 'Стипендия' },
+      { id: 'p4', authorId: 'u5', text: 'Продаю решённые варианты ЕГЭ по истории. Пишите, недорого.', createdAt: iso(t - 4 * DAY), likes: 1, replies: 0, status: 'flagged', tag: '' }
+    ];
+
+    const teams = [
+      { id: 'tm1', title: 'Команда на хакатон «AI для школы»', description: 'Нужен фронтенд и дизайнер. Есть идея: PWA, которая заменяет школьный дневник и добавляет ИИ-подбор мероприятий.', type: 'Хакатон', spotsOpen: 2, tags: ['ИИ', 'Web', 'PWA'], leadId: 'u2', members: ['u2'], createdAt: iso(t - 2 * 3600e3), status: 'open' },
+      { id: 'tm2', title: 'Проект на конкурс «Стартап»', description: 'Ищем человека с опытом в экономике — посчитать unit-экономику и собрать финансовую модель для питча.', type: 'Конкурс', spotsOpen: 1, tags: ['Стартапы', 'Питч', 'Экономика'], leadId: 'u4', members: ['u4', 'u6'], createdAt: iso(t - 2 * DAY), status: 'open' },
+      { id: 'tm3', title: 'Школьный научный стенд', description: 'Делаем стенд про микропластик в воде. Нужны биологи и один человек, который оформит постер.', type: 'Фестиваль', spotsOpen: 2, tags: ['Наука', 'Биология', 'Оформление'], leadId: 'u3', members: ['u3', 'u8'], createdAt: iso(t - 3 * DAY), status: 'open' }
+    ];
+
+    const chats = [
+      { id: 'c1', title: 'AI для школы · команда', memberIds: ['u_me', 'u2', 'u8'], lastAt: iso(t - 40 * 60e3), unread: 2,
+        messages: [
+          { id: 'm1', authorId: 'u2', text: 'Привет! Закинул структуру прототипа, посмотрите в репозитории.', at: iso(t - 5 * 3600e3) },
+          { id: 'm2', authorId: 'u8', text: 'Вижу, красиво. А если сделать установку на главный экран прямо из шапки?', at: iso(t - 4 * 3600e3) },
+          { id: 'm3', authorId: 'u_me', text: 'Да, сделаем баннер + инструкцию на три шага. Главное — чтобы ставилось в один тап.', at: iso(t - 2 * 3600e3) },
+          { id: 'm4', authorId: 'u2', text: 'Ок. Тогда я беру админку и подключение данных.', at: iso(t - 50 * 60e3) },
+          { id: 'm5', authorId: 'u8', text: 'Скиньте, где смотреть кейсы, я подготовлю вопросы ментору.', at: iso(t - 40 * 60e3) }
+        ] },
+      { id: 'c2', title: 'Олимпиадники · информатика', memberIds: ['u_me', 'u1', 'u4'], lastAt: iso(t - 6 * 3600e3), unread: 0,
+        messages: [
+          { id: 'm1', authorId: 'u1', text: 'Сегодня разбираем задачу про дерево отрезков, приходите в 105.', at: iso(t - 7 * 3600e3) },
+          { id: 'm2', authorId: 'u_me', text: 'Буду. Можно мне прошлогодние варианты?', at: iso(t - 6 * 3600e3) }
+        ] },
+      { id: 'c3', title: 'Классный руководитель', memberIds: ['u_me', 'u_admin'], lastAt: iso(t - 2 * DAY), unread: 0,
+        messages: [
+          { id: 'm1', authorId: 'u_admin', text: 'Напоминаю: заявки на школьный фестиваль принимаются до пятницы.', at: iso(t - 2 * DAY) }
+        ] }
+    ];
+
+    const goals = [
+      { id: 'g1', userId: 'u_me', title: 'Поступить на IT-направление в вузы', createdAt: iso(t - 12 * DAY) }
+    ];
+
+    const tasks = [
+      { id: 'tk1', goalId: 'g1', userId: 'u_me', title: 'Собрать портфолио из 3 проектов', dateLabel: 'до 20 ноября', status: 'done' },
+      { id: 'tk2', goalId: 'g1', userId: 'u_me', title: 'Пройти курс по веб-разработке', dateLabel: 'до 5 декабря', status: 'done' },
+      { id: 'tk3', goalId: 'g1', userId: 'u_me', title: 'Подать заявку на городскую олимпиаду', dateLabel: 'до 11 ноября', status: 'current' },
+      { id: 'tk4', goalId: 'g1', userId: 'u_me', title: 'Выступить с проектом на школьном фестивале', dateLabel: '14 ноября', status: 'planned' },
+      { id: 'tk5', goalId: 'g1', userId: 'u_me', title: 'Подготовить мотивационное письмо на стипендию', dateLabel: 'до 20 ноября', status: 'planned' }
+    ];
+
+    const applications = [
+      { id: 'a1', eventId: 'e6', userId: 'u_me', status: 'accepted', createdAt: iso(t - 9 * DAY) },
+      { id: 'a2', eventId: 'e1', userId: 'u_me', status: 'pending', createdAt: iso(t - 1 * DAY) },
+      { id: 'a3', eventId: 'e2', userId: 'u1', status: 'accepted', createdAt: iso(t - 4 * DAY) },
+      { id: 'a4', eventId: 'e4', userId: 'u2', status: 'pending', createdAt: iso(t - 2 * DAY) },
+      { id: 'a5', eventId: 'e9', userId: 'u3', status: 'pending', createdAt: iso(t - 3 * DAY) }
+    ];
+
+    return {
+      version: 1,
+      users,
+      events,
+      posts,
+      teams,
+      chats,
+      goals,
+      tasks,
+      applications,
+      // при первом запуске сразу открыт демо-профиль ученика,
+      // чтобы подбор и роадмап были «живыми» с первой секунды
+      session: { userId: 'u_me' },
+      settings: { theme: 'system', installDismissed: false, onboardingDone: false },
+      meta: { seededAt: iso(t), mode: 'demo' }
+    };
+  }
+
+  if (typeof globalThis !== 'undefined') globalThis.buildSeed = buildSeed;
+  if (typeof window !== 'undefined') {
+    window.SH = window.SH || {};
+    window.SH.buildSeed = buildSeed;
+  }
+})();
+
+/* Иконки — stroke-набор в стиле Lucide, инлайн-SVG (без внешних запросов). */
+(function (SH) {
+  'use strict';
+
+  const P = {
+    explore: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.1 4.9-4.9 2.1 2.1-4.9z"/>',
+    groups: '<path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7" r="3.2"/><path d="M22 20v-1.5a4 4 0 0 0-3-3.87"/><path d="M16.5 4.2a3.2 3.2 0 0 1 0 5.6"/>',
+    map: '<path d="m9 4-6 3v13l6-3 6 3 6-3V4l-6 3z"/><path d="M9 4v13M15 7v13"/>',
+    chat: '<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.8-.9L3 21l1.9-5a8.4 8.4 0 0 1-.9-3.8 8.4 8.4 0 0 1 8.4-8.4A8.4 8.4 0 0 1 21 11.5z"/>',
+    person: '<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>',
+    bell: '<path d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 7.5-2.5 7.5h17S18 14.5 18 8.5z"/><path d="M13.7 20a2 2 0 0 1-3.4 0"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+    tune: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/>',
+    sparkles: '<path d="m12 3 1.9 4.9L19 9.8l-5.1 1.9L12 17l-1.9-5.3L5 9.8l5.1-1.9z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>',
+    fire: '<path d="M12 22c4 0 6.5-2.7 6.5-6.2 0-4.6-4.3-6.3-4.3-10.3 0-.9-.5-2.5-1.4-3.5 0 3.2-2.4 4.4-4.2 6.6-1.2 1.5-2.6 3.3-2.6 6C6 18.7 8.4 22 12 22z"/><path d="M12 22c-1.9 0-3-1.3-3-3 0-2 2-2.8 2-5 1.4 1 4 2.3 4 5 0 1.7-1.2 3-3 3z"/>',
+    trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 5H5.5A2.5 2.5 0 0 0 8 9.5M16 5h2.5A2.5 2.5 0 0 1 16 9.5"/><path d="M12 13v3M9 20h6M10 20l.5-4h3l.5 4"/>',
+    arrowRight: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    arrowLeft: '<path d="M19 12H5M11 18l-6-6 6-6"/>',
+    chevronRight: '<path d="m9 6 6 6-6 6"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    send: '<path d="M21.5 2.5 2.5 10l7.6 3.4L13.5 21z"/><path d="m10.1 13.4 4.4-4.4"/>',
+    check: '<path d="m4 12.5 5 5 11-11"/>',
+    checkCircle: '<circle cx="12" cy="12" r="9"/><path d="m8.2 12.2 2.6 2.6 5-5"/>',
+    circle: '<circle cx="12" cy="12" r="9"/>',
+    close: '<path d="M6 6l12 12M18 6 6 18"/>',
+    install: '<rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M12 7v6M9.5 10.5 12 13l2.5-2.5"/><path d="M10.5 18.5h3"/>',
+    share: '<path d="M12 15V3M8.5 6.5 12 3l3.5 3.5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
+    sun: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/>',
+    moon: '<path d="M20 14.2A8.2 8.2 0 0 1 9.8 4 8.4 8.4 0 1 0 20 14.2z"/>',
+    logout: '<path d="M15 17l5-5-5-5"/><path d="M20 12H9"/><path d="M12 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/>',
+    users: '<circle cx="9" cy="8" r="3.4"/><path d="M3 19a6 6 0 0 1 12 0"/><path d="M16 5.2a3.4 3.4 0 0 1 0 6.6M17.5 19a5.6 5.6 0 0 0-1.3-3.6"/>',
+    briefcase: '<rect x="3" y="7.5" width="18" height="12.5" rx="3"/><path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5"/><path d="M3 12.5h18"/>',
+    book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v3H6.5A2.5 2.5 0 0 1 4 20.5z"/>',
+    cap: '<path d="m2.5 9 9.5-4.5L21.5 9 12 13.5z"/><path d="M6.5 11v4.5c0 2 2.5 3.5 5.5 3.5s5.5-1.5 5.5-3.5V11"/><path d="M21.5 9v5"/>',
+    building: '<rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M10 21v-2.5h4V21"/>',
+    trash: '<path d="M4 7h16M9.5 7V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v2"/><path d="M6.5 7l.8 12A2 2 0 0 0 9.3 21h5.4a2 2 0 0 0 2-1.9l.8-12"/>',
+    edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 2.6 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.7-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.6a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21.4 11a2 2 0 1 1 0 4z"/>',
+    grid: '<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>',
+    chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    shield: '<path d="M12 3l7.5 3v6c0 4.6-3.2 8.2-7.5 9.5C7.7 20.2 4.5 16.6 4.5 12V6z"/><path d="m9 12 2.2 2.2L15.5 10"/>',
+    flag: '<path d="M5 21V4"/><path d="M5 4.5c4-2.2 7 2.2 11 0V14c-4 2.2-7-2.2-11 0z"/>',
+    download: '<path d="M12 3v12M7.5 10.5 12 15l4.5-4.5"/><path d="M4 18v1.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V18"/>',
+    wifiOff: '<path d="M2 3l19 19"/><path d="M8.5 15.7a5 5 0 0 1 7 0"/><path d="M5 12.2a10 10 0 0 1 4-2.4M12 12h.01M2 8.8a15 15 0 0 1 5.5-3M16 5.9A15 15 0 0 1 22 8.8M12 19.5h.01"/>',
+    more: '<circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/>',
+    lock: '<rect x="4.5" y="10.5" width="15" height="10.5" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
+    mail: '<rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="m3.5 6.5 8.5 6 8.5-6"/>',
+    eye: '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/>',
+    heart: '<path d="M12 20s-7.5-4.7-7.5-9.4A4.1 4.1 0 0 1 12 7.6a4.1 4.1 0 0 1 7.5 3C19.5 15.3 12 20 12 20z"/>',
+    message: '<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.8-.9L3 21l1.9-5a8.4 8.4 0 0 1-.9-3.8 8.4 8.4 0 0 1 8.4-8.4A8.4 8.4 0 0 1 21 11.5z"/>',
+    pin: '<path d="M12 21s-6.5-6-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
+    wifi: '<path d="M5 12.2a10 10 0 0 1 14 0M8.5 15.7a5 5 0 0 1 7 0"/><path d="M12 19.5h.01"/>',
+    bolt: '<path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z"/>',
+    save: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M7 3v6h8V3M7 21v-7h10v7"/>',
+    star: '<path d="m12 3 2.8 5.8 6.2.9-4.5 4.4 1 6.3L12 17.5 6.5 20.4l1-6.3L3 9.7l6.2-.9z"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+    file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+    filter: '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
+    refresh: '<path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1"/><path d="M21 3v5h-5"/>'
+  };
+
+  SH.icon = function (name, size) {
+    const d = P[name] || P.circle;
+    return (
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" ' +
+      'stroke-linecap="round" stroke-linejoin="round"' +
+      (size ? ' width="' + size + '" height="' + size + '"' : '') +
+      ' aria-hidden="true">' + d + '</svg>'
+    );
+  };
+
+  SH.logoMark = function (size) {
+    const s = size || 34;
+    return (
+      '<svg width="' + s + '" height="' + s + '" viewBox="0 0 48 48" fill="none" aria-hidden="true">' +
+      '<rect width="48" height="48" rx="13" fill="url(#shg)"/>' +
+      '<defs><linearGradient id="shg" x1="0" y1="0" x2="48" y2="48">' +
+      '<stop stop-color="#7A6BF2"/><stop offset="1" stop-color="#4A3BB2"/></linearGradient></defs>' +
+      '<path d="M24 13.5 38 19.5 24 25.5 10 19.5z" fill="#fff"/>' +
+      '<path d="M17 21.6v4.6c0 2.2 3.1 4 7 4s7-1.8 7-4v-4.6L24 24.6z" fill="#EDEAFF"/>' +
+      '<path d="m37.4 19.6.6 6.6" stroke="#B9F5D0" stroke-width="2" stroke-linecap="round"/>' +
+      '<circle cx="38" cy="27.6" r="1.9" fill="#FFE8A3"/></svg>'
+    );
+  };
+})(window.SH = window.SH || {});
+
+/* ==========================================================================
+   Клиентский слой облака.
+   Работает по принципу «local-first»: интерфейс всегда отвечает мгновенно,
+   а изменения уезжают на воркер Cloudflare в фоне.
+
+   - Есть сеть  → данные приходят из D1 (GET /api/bootstrap), правки пишутся в базу.
+   - Нет сети   → приложение живёт на localStorage, изменения копятся в очереди
+                  (outbox) и досылаются, как только связь появится.
+   ========================================================================== */
+(function (SH) {
+  'use strict';
+
+  const OUTBOX_KEY = 'studenthub:outbox:v1';
+
+  /* технические ошибки браузера → понятный текст */
+  function humanize(e) {
+    const raw = String((e && e.message) || e || '');
+    if (/Failed to fetch|NetworkError|ERR_FAILED|aborted|abort/i.test(raw)) {
+      return 'воркер недоступен — проверь, что код задеплоен и адрес верный';
+    }
+    if (/CORS/i.test(raw)) return 'CORS: в воркере задай ALLOW_ORIGIN с адресом сайта';
+    return raw;
+  }
+
+  const api = {
+    base: '',            // задаётся при сборке: SH.api.configure('https://...workers.dev')
+    mode: 'local',       // 'cloud' | 'local'
+    status: 'unknown',   // 'unknown' | 'online' | 'offline'
+    lastError: '',
+    lastSync: null,
+
+    configure(base) {
+      this.base = String(base || '').replace(/\/+$/, '');
+      return this;
+    },
+
+    enabled() { return !!this.base; },
+
+    headers() {
+      const u = SH.store && SH.store.currentUser;
+      return { 'content-type': 'application/json', 'x-user-id': (u && u.id) || 'u_me' };
+    },
+
+    async request(method, path, body, timeout) {
+      if (!this.base) throw new Error('API не настроен');
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), timeout || 8000);
+      try {
+        const res = await fetch(this.base + path, {
+          method,
+          headers: this.headers(),
+          body: body === undefined ? undefined : JSON.stringify(body),
+          signal: ctrl.signal
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+        return data;
+      } finally {
+        clearTimeout(timer);
+      }
+    },
+
+    /* ── старт: дослать очередь и забрать снапшот ── */
+    async bootstrap() {
+      if (!this.enabled()) {
+        this.status = 'disabled';
+        return null;
+      }
+      try {
+        const pending = this.outbox().length;
+        if (pending) await this.flush();
+        const data = await this.request('GET', '/api/bootstrap');
+        if (!data || !data.ok || !Array.isArray(data.users)) {
+          throw new Error('воркер отвечает, но API не найден — проверь, что код задеплоен');
+        }
+        this.mode = 'cloud';
+        this.status = 'online';
+        this.lastError = '';
+        this.lastSync = Date.now();
+        return data;
+      } catch (e) {
+        this.mode = 'local';
+        this.status = 'offline';
+        this.lastError = humanize(e);
+        return null;
+      }
+    },
+
+    /* ── запись: сразу или через очередь ── */
+    push(method, path, body) {
+      if (!this.enabled()) return;
+      this.request(method, path, body)
+        .then(() => {
+          this.status = 'online';
+          this.lastSync = Date.now();
+        })
+        .catch((e) => {
+          this.status = 'offline';
+          this.lastError = humanize(e);
+          this.enqueue({ method, path, body });
+        });
+    },
+
+    enqueue(op) {
+      try {
+        const list = this.outbox();
+        list.push(Object.assign({ ts: Date.now() }, op));
+        localStorage.setItem(OUTBOX_KEY, JSON.stringify(list.slice(-200)));
+      } catch (e) { /* приватный режим — просто теряем очередь */ }
+    },
+
+    outbox() {
+      try { return JSON.parse(localStorage.getItem(OUTBOX_KEY) || '[]'); }
+      catch (e) { return []; }
+    },
+
+    async flush() {
+      const list = this.outbox();
+      if (!list.length || !this.enabled()) return 0;
+      const rest = [];
+      let done = 0;
+      for (const op of list) {
+        try {
+          await this.request(op.method, op.path, op.body);
+          done += 1;
+        } catch (e) {
+          // 409/404 — операция уже неактуальна, не копим мёртвый груз
+          const fatal = /409|404|не найден/i.test(e.message || '');
+          if (!fatal) rest.push(op);
+        }
+      }
+      try { localStorage.setItem(OUTBOX_KEY, JSON.stringify(rest)); } catch (e) {}
+      return done;
+    },
+
+    async health() {
+      try {
+        const data = await this.request('GET', '/api/health', undefined, 5000);
+        return data;
+      } catch (e) {
+        return { ok: false, error: e.message };
+      }
+    },
+
+    /* ── ИИ через воркер (с откатом на локальный режим в SH.ai) ── */
+    async ask(prompt, model) {
+      const data = await this.request('POST', '/ai', { prompt, model }, 20000);
+      if (!data || !data.text) throw new Error('пустой ответ модели');
+      return data.text;
+    }
+  };
+
+  SH.api = api;
+})(window.SH = window.SH || {});
+
+/* ==========================================================================
+   Слой данных.
+   Сейчас — localStorage (демо-режим, работает офлайн и без бэкенда).
+   Чтобы переключиться на реальный бэкенд, достаточно заменить read/write
+   на fetch к Cloudflare Worker — интерфейс SH.store не меняется.
+   ========================================================================== */
+(function (SH) {
+  'use strict';
+
+  const KEY = 'studenthub:v1';
+  const DAY = 864e5;
+  const now = () => Date.now();
+  const iso = (d) => new Date(d).toISOString();
+
+  const CATEGORIES = {
+    hackathon: { label: 'Хакатон', glyph: 'bolt' },
+    course: { label: 'Курс', glyph: 'book' },
+    fellowship: { label: 'Стипендия', glyph: 'star' },
+    internship: { label: 'Стажировка', glyph: 'briefcase' },
+    competition: { label: 'Конкурс', glyph: 'trophy' },
+    olympiad: { label: 'Олимпиада', glyph: 'cap' },
+    event: { label: 'Событие', glyph: 'calendar' }
+  };
+
+  const TASK_STATUS = { planned: 'Запланировано', current: 'В работе', done: 'Готово' };
+
+  /* ─────────────────────────── сид демо-данных ─────────────────────────── */
+
+  function seed() {
+    // сами данные лежат в shared/seed.js — один источник для клиента и воркера
+    return SH.buildSeed(now());
+  }
+
+  /* ─────────────────────────── ядро ─────────────────────────── */
+
+  let state = null;
+  const listeners = new Set();
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.version === 1) return parsed;
+      }
+    } catch (e) {
+      console.warn('Не удалось прочитать локальные данные', e);
+    }
+    const fresh = seed();
+    try { localStorage.setItem(KEY, JSON.stringify(fresh)); } catch (e) { /* приватный режим */ }
+    return fresh;
+  }
+
+  function persist() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignore */ }
+  }
+
+  function emit(reason) {
+    persist();
+    listeners.forEach((fn) => fn(state, reason));
+  }
+
+  const uid = (p) => (p || 'id') + '_' + Math.random().toString(36).slice(2, 9);
+
+  const store = {
+    CATEGORIES,
+    TASK_STATUS,
+    uid,
+
+    init() {
+      state = load();
+      applyTheme(state.settings.theme);
+      return state;
+    },
+
+    get state() { return state; },
+
+    on(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+
+    commit(mutator, reason) {
+      mutator(state);
+      emit(reason || 'update');
+    },
+
+    /* ── сессия ── */
+    get currentUser() {
+      const id = state.session.userId;
+      return id ? state.users.find((u) => u.id === id) || null : null;
+    },
+    get isAuthed() { return !!state.session.userId; },
+    get isAdmin() { const u = store.currentUser; return !!u && u.role === 'admin'; },
+
+    login(email, password) {
+      const user = state.users.find(
+        (u) => u.email.toLowerCase() === String(email).trim().toLowerCase() &&
+               (!u.password || u.password === password)
+      );
+      if (!user) return { ok: false, error: 'Неверная почта или пароль' };
+      state.session.userId = user.id;
+      emit('auth');
+      return { ok: true, user };
+    },
+
+    loginAsDemos(role) {
+      const user = state.users.find((u) => (role === 'admin' ? u.role === 'admin' : u.id === 'u_me'));
+      if (!user) return { ok: false };
+      state.session.userId = user.id;
+      emit('auth');
+      return { ok: true, user };
+    },
+
+    register({ name, email, password, grade, school }) {
+      if (state.users.some((u) => u.email.toLowerCase() === email.trim().toLowerCase())) {
+        return { ok: false, error: 'Такая почта уже зарегистрирована' };
+      }
+      const user = {
+        id: uid('u'), name: name.trim(), email: email.trim(), password,
+        role: 'student', grade: grade || '', school: school || 'Школа №1520',
+        city: 'Москва', color: 'mint', skills: [], interests: [], rating: 10
+      };
+      state.users.push(user);
+      state.session.userId = user.id;
+      emit('auth');
+      return { ok: true, user };
+    },
+
+    logout() {
+      state.session.userId = null;
+      emit('auth');
+    },
+
+    updateUser(patch) {
+      const u = store.currentUser;
+      if (!u) return;
+      Object.assign(u, patch);
+      emit('profile');
+      SH.api && SH.api.push('PATCH', '/api/users/' + u.id, patch);
+    },
+
+    /* ── события ── */
+    events({ includeDrafts } = {}) {
+      return state.events.filter((e) => includeDrafts || e.status === 'published');
+    },
+    event(id) { return state.events.find((e) => e.id === id); },
+    saveEvent(ev) {
+      const exists = ev.id && state.events.some((e) => e.id === ev.id);
+      if (exists) {
+        Object.assign(state.events.find((e) => e.id === ev.id), ev);
+      } else {
+        const fresh = Object.assign({ id: uid('e'), status: 'published', views: 0, applicants: 0, tags: [] }, ev);
+        state.events.unshift(fresh);
+        ev.id = fresh.id;
+      }
+      emit('events');
+      const saved = state.events.find((e) => e.id === ev.id);
+      if (SH.api) SH.api.push(exists ? 'PATCH' : 'POST', exists ? '/api/events/' + ev.id : '/api/events', saved);
+    },
+    deleteEvent(id) {
+      state.events = state.events.filter((e) => e.id !== id);
+      emit('events');
+      SH.api && SH.api.push('DELETE', '/api/events/' + id);
+    },
+    isApplied(eventId) {
+      const u = store.currentUser;
+      if (!u) return false;
+      return state.applications.some((a) => a.eventId === eventId && a.userId === u.id);
+    },
+    apply(eventId) {
+      const u = store.currentUser;
+      if (!u) return { ok: false, error: 'Нужен вход' };
+      if (store.isApplied(eventId)) return { ok: false, error: 'Заявка уже отправлена' };
+      const app = { id: uid('a'), eventId, userId: u.id, status: 'pending', createdAt: iso(now()) };
+      state.applications.unshift(app);
+      const ev = store.event(eventId);
+      if (ev) ev.applicants = (ev.applicants || 0) + 1;
+      emit('applications');
+      SH.api && SH.api.push('POST', '/api/applications', { id: app.id, eventId });
+      return { ok: true };
+    },
+    myApplications() {
+      const u = store.currentUser;
+      if (!u) return [];
+      return state.applications.filter((a) => a.userId === u.id);
+    },
+
+    /* ── сообщество ── */
+    posts({ includeHidden } = {}) {
+      return state.posts
+        .filter((p) => includeHidden || p.status === 'published')
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    },
+    addPost(text) {
+      const u = store.currentUser;
+      if (!u) return { ok: false };
+      const post = { id: uid('p'), authorId: u.id, text, createdAt: iso(now()), likes: 0, replies: 0, status: 'published', tag: '' };
+      state.posts.unshift(post);
+      emit('posts');
+      SH.api && SH.api.push('POST', '/api/posts', { id: post.id, text, tag: '' });
+      return { ok: true };
+    },
+    likePost(id) {
+      const p = state.posts.find((x) => x.id === id);
+      if (p) {
+        p.likes += 1; p.liked = !p.liked; emit('posts');
+        SH.api && SH.api.push('POST', '/api/posts/' + id + '/like');
+      }
+    },
+    setPostStatus(id, status) {
+      const p = state.posts.find((x) => x.id === id);
+      if (p) {
+        p.status = status; emit('posts');
+        SH.api && SH.api.push('PATCH', '/api/posts/' + id, { status });
+      }
+    },
+    deletePost(id) {
+      state.posts = state.posts.filter((p) => p.id !== id);
+      emit('posts');
+      SH.api && SH.api.push('DELETE', '/api/posts/' + id);
+    },
+
+    teams() { return state.teams.filter((t) => t.status === 'open'); },
+    addTeam(draft) {
+      const u = store.currentUser;
+      if (!u) return { ok: false };
+      const team = Object.assign({ id: uid('tm'), leadId: u.id, members: [u.id], createdAt: iso(now()), status: 'open' }, draft);
+      state.teams.unshift(team);
+      emit('teams');
+      SH.api && SH.api.push('POST', '/api/teams', team);
+      return { ok: true };
+    },
+    joinTeam(id) {
+      const u = store.currentUser;
+      const team = state.teams.find((t) => t.id === id);
+      if (!u || !team) return { ok: false };
+      if (!team.members.includes(u.id)) {
+        team.members.push(u.id);
+        team.spotsOpen = Math.max(0, team.spotsOpen - 1);
+        emit('teams');
+        SH.api && SH.api.push('POST', '/api/teams/' + id + '/join');
+      }
+      return { ok: true };
+    },
+
+    /* ── чаты ── */
+    chats() {
+      const u = store.currentUser;
+      if (!u) return [];
+      return state.chats
+        .filter((c) => c.memberIds.includes(u.id))
+        .sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt));
+    },
+    chat(id) { return state.chats.find((c) => c.id === id); },
+    sendMessage(chatId, text) {
+      const u = store.currentUser;
+      const chat = store.chat(chatId);
+      if (!u || !chat || !text.trim()) return;
+      const msg = { id: uid('m'), authorId: u.id, text: text.trim(), at: iso(now()), own: true };
+      chat.messages.push(msg);
+      chat.lastAt = msg.at;
+      chat.unread = 0;
+      emit('chats');
+      SH.api && SH.api.push('POST', '/api/chats/' + chatId + '/messages', { id: msg.id, text: msg.text });
+    },
+    readChat(id) {
+      const c = store.chat(id);
+      if (c && c.unread) {
+        c.unread = 0; emit('chats');
+        SH.api && SH.api.push('POST', '/api/chats/' + id + '/read');
+      }
+    },
+    unreadTotal() {
+      return store.chats().reduce((s, c) => s + (c.unread || 0), 0);
+    },
+
+    /* ── роадмап ── */
+    goals() {
+      const u = store.currentUser;
+      return u ? state.goals.filter((g) => g.userId === u.id) : [];
+    },
+    addGoal(title) {
+      const u = store.currentUser;
+      if (!u) return null;
+      const g = { id: uid('g'), userId: u.id, title, createdAt: iso(now()) };
+      state.goals.push(g);
+      emit('goals');
+      SH.api && SH.api.push('POST', '/api/goals', { id: g.id, title });
+      return g;
+    },
+    deleteGoal(id) {
+      state.goals = state.goals.filter((g) => g.id !== id);
+      state.tasks = state.tasks.filter((t) => t.goalId !== id);
+      emit('goals');
+      SH.api && SH.api.push('DELETE', '/api/goals/' + id);
+    },
+    tasks(goalId) {
+      const u = store.currentUser;
+      return state.tasks.filter((t) => t.userId === (u ? u.id : null) && (!goalId || t.goalId === goalId));
+    },
+    goalProgress(goalId) {
+      const list = state.tasks.filter((t) => t.goalId === goalId);
+      if (!list.length) return 0;
+      return Math.round((list.filter((t) => t.status === 'done').length / list.length) * 100);
+    },
+    toggleTask(id) {
+      const t = state.tasks.find((x) => x.id === id);
+      if (!t) return;
+      t.status = t.status === 'done' ? 'planned' : 'done';
+      emit('tasks');
+      SH.api && SH.api.push('PATCH', '/api/tasks/' + id, { status: t.status });
+    },
+    addTask(goalId, title, dateLabel) {
+      const u = store.currentUser;
+      if (!u) return;
+      const task = { id: uid('tk'), goalId, userId: u.id, title, dateLabel: dateLabel || '', status: 'planned' };
+      state.tasks.push(task);
+      emit('tasks');
+      SH.api && SH.api.push('POST', '/api/tasks', task);
+    },
+    replaceTasks(goalId, list) {
+      state.tasks = state.tasks.filter((t) => t.goalId !== goalId);
+      const u = store.currentUser;
+      list.forEach((t, i) => {
+        state.tasks.push({ id: uid('tk'), goalId, userId: u ? u.id : null, title: t.title, dateLabel: t.dateLabel || '', status: i === 0 ? 'current' : 'planned' });
+      });
+      emit('tasks');
+      SH.api && SH.api.push('PUT', '/api/goals/' + goalId + '/plan', { tasks: list });
+    },
+
+    /* ── настройки ── */
+    setTheme(theme) {
+      state.settings.theme = theme;
+      applyTheme(theme);
+      emit('settings');
+    },
+    dismissInstall() {
+      state.settings.installDismissed = true;
+      emit('settings');
+    },
+    /** Применить снапшот из облака (D1) поверх локального состояния. */
+    hydrate(remote) {
+      if (!remote || !Array.isArray(remote.users) || !remote.users.length) return false;
+      ['users', 'events', 'posts', 'teams', 'chats', 'goals', 'tasks', 'applications'].forEach((f) => {
+        if (Array.isArray(remote[f])) state[f] = remote[f];
+      });
+      state.meta = Object.assign({}, state.meta, {
+        cloud: true,
+        syncedAt: remote.serverTime || new Date().toISOString()
+      });
+      // если демо-пользователь «пропал» из базы — возвращаем сессию в безопасное состояние
+      if (!state.users.some((u) => u.id === state.session.userId)) {
+        state.session.userId = state.users[0] ? state.users[0].id : null;
+      }
+      emit('hydrate');
+      return true;
+    },
+
+    reset() {
+      state = seed();
+      applyTheme(state.settings.theme);
+      emit('reset');
+    },
+
+    /* ── админ-статистика ── */
+    stats() {
+      const students = state.users.filter((u) => u.role === 'student').length;
+      const active = state.applications.length;
+      return {
+        students,
+        events: state.events.filter((e) => e.status === 'published').length,
+        drafts: state.events.filter((e) => e.status === 'draft').length,
+        applications: active,
+        pending: state.applications.filter((a) => a.status === 'pending').length,
+        flagged: state.posts.filter((p) => p.status === 'flagged').length,
+        posts: state.posts.filter((p) => p.status === 'published').length
+      };
+    },
+    userById(id) { return state.users.find((u) => u.id === id) || { name: 'Неизвестный', color: 'sky' }; }
+  };
+
+  function applyTheme(theme) {
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const resolved = theme === 'system' ? (prefersDark ? 'dark' : 'light') : theme;
+    document.documentElement.setAttribute('data-theme', resolved);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', resolved === 'dark' ? '#121317' : '#F7F7FA');
+  }
+
+  SH.applyTheme = applyTheme;
+  SH.store = store;
+})(window.SH = window.SH || {});
+
+/* UI-утилиты: форматирование, тосты, шиты, мелкие компоненты. */
+(function (SH) {
+  'use strict';
+
+  const MONTHS = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function plural(n, one, few, many) {
+    const a = Math.abs(n) % 100, b = a % 10;
+    if (a > 10 && a < 20) return many;
+    if (b > 1 && b < 5) return few;
+    if (b === 1) return one;
+    return many;
+  }
+
+  function relTime(dateStr) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const min = Math.round(diff / 6e4);
+    if (min < 1) return 'только что';
+    if (min < 60) return min + ' мин назад';
+    const h = Math.round(min / 60);
+    if (h < 24) return h + ' ' + plural(h, 'час', 'часа', 'часов') + ' назад';
+    const d = Math.round(h / 24);
+    if (d === 1) return 'вчера';
+    if (d < 7) return d + ' ' + plural(d, 'день', 'дня', 'дней') + ' назад';
+    return shortDate(dateStr);
+  }
+
+  function shortDate(dateStr) {
+    const d = new Date(dateStr);
+    return d.getDate() + ' ' + MONTHS[d.getMonth()];
+  }
+
+  function deadlineInfo(dateStr) {
+    const end = new Date(dateStr).getTime();
+    const days = Math.ceil((end - Date.now()) / 864e5);
+    if (days < 0) return { label: 'Дедлайн прошёл', tone: 'muted', urgent: false };
+    if (days === 0) return { label: 'Сегодня последний день', tone: 'danger', urgent: true };
+    if (days === 1) return { label: 'Остался 1 день', tone: 'danger', urgent: true };
+    if (days <= 4) return { label: 'Осталось ' + days + ' дня', tone: 'warning', urgent: true };
+    return { label: 'До ' + shortDate(dateStr), tone: 'muted', urgent: false };
+  }
+
+  function initials(name) {
+    if (!name) return '?';
+    const parts = String(name).trim().split(/\s+/);
+    return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
+  }
+
+  const AVATAR_BG = {
+    sun: '#FFE8A3', mint: '#B9F5D0', sky: '#BFE3FF',
+    blush: '#FBC7DA', lavender: '#D9CCFB', brand: '#6C5CE7'
+  };
+
+  function avatar(user, size) {
+    const u = user || {};
+    const bg = AVATAR_BG[u.color] || AVATAR_BG.sun;
+    const fg = u.color === 'brand' ? '#fff' : '#14151a';
+    return '<span class="avatar avatar--' + (size || 40) + '" style="background:' + bg + ';color:' + fg + '">' +
+      esc(initials(u.name)) + '</span>';
+  }
+
+  function cover(event, height, radius) {
+    const cat = SH.store.CATEGORIES[event.category] || SH.store.CATEGORIES.event;
+    return '<div class="cover cover--' + event.category + '" style="height:' + (height || 150) + 'px;' +
+      (radius != null ? 'border-radius:' + radius + 'px;' : '') + '">' +
+      '<span class="cover__glyph" style="opacity:.9;color:rgba(20,21,26,.42)">' +
+        SH.icon(cat.glyph, Math.round((height || 150) * 0.34)) +
+      '</span></div>';
+  }
+
+  /* ── тосты ── */
+  let toastHost = null;
+  function toast(text, ms) {
+    if (!toastHost) {
+      toastHost = document.createElement('div');
+      toastHost.className = 'toast-wrap';
+      document.body.appendChild(toastHost);
+    }
+    const el = document.createElement('div');
+    el.className = 'toast';
+    el.textContent = text;
+    toastHost.appendChild(el);
+    setTimeout(() => {
+      el.style.transition = 'opacity .25s ease, transform .25s ease';
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(8px)';
+      setTimeout(() => el.remove(), 260);
+    }, ms || 2400);
+  }
+
+  /* ── шиты ── */
+  let openSheet = null;
+  function sheet(opts) {
+    closeSheet();
+    const scrim = document.createElement('div');
+    scrim.className = 'scrim';
+
+    const el = document.createElement('div');
+    el.className = 'sheet';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.innerHTML =
+      '<div class="sheet__grab"></div>' +
+      (opts.title ? '<h2 class="h2" style="margin:0 0 4px">' + esc(opts.title) + '</h2>' : '') +
+      (opts.subtitle ? '<p class="small muted" style="margin:0 0 14px">' + esc(opts.subtitle) + '</p>' : '') +
+      '<div class="sheet__body">' + (opts.body || '') + '</div>';
+
+    document.body.appendChild(scrim);
+    document.body.appendChild(el);
+
+    function destroy() {
+      el.classList.add('sheet--closing');
+      scrim.style.transition = 'opacity .18s ease';
+      scrim.style.opacity = '0';
+      setTimeout(() => { el.remove(); scrim.remove(); }, 200);
+      openSheet = null;
+      document.body.style.overflow = '';
+    }
+
+    scrim.addEventListener('click', () => { if (opts.dismissible !== false) destroy(); });
+    el.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', destroy));
+    document.body.style.overflow = 'hidden';
+
+    openSheet = { el, destroy };
+    if (typeof opts.onMount === 'function') opts.onMount(el, destroy);
+    return { el, destroy };
+  }
+
+  function closeSheet() {
+    if (openSheet) openSheet.destroy();
+  }
+
+  function confirmSheet(title, text, confirmLabel, onConfirm) {
+    sheet({
+      title: title,
+      body:
+        '<p class="body muted" style="margin:0 0 20px">' + esc(text) + '</p>' +
+        '<div class="row" style="gap:10px">' +
+          '<button class="btn btn--soft grow" data-close>Отмена</button>' +
+          '<button class="btn btn--danger grow" id="confirm-yes">' + esc(confirmLabel || 'Удалить') + '</button>' +
+        '</div>',
+      onMount(el, destroy) {
+        el.querySelector('#confirm-yes').addEventListener('click', () => {
+          destroy();
+          onConfirm && onConfirm();
+        });
+      }
+    });
+  }
+
+  /* ── поля форм ── */
+  function field(id, label, opts) {
+    const o = opts || {};
+    const input = o.textarea
+      ? '<textarea id="' + id + '" placeholder="' + esc(o.placeholder || '') + '">' + esc(o.value || '') + '</textarea>'
+      : '<input id="' + id + '" type="' + (o.type || 'text') + '" value="' + esc(o.value || '') +
+        '" placeholder="' + esc(o.placeholder || '') + '" ' + (o.autocomplete ? 'autocomplete="' + o.autocomplete + '"' : '') + '>';
+    return '<div class="field"' + (o.style ? ' style="' + o.style + '"' : '') + '>' +
+      (label ? '<label class="field-label" for="' + id + '">' + esc(label) + '</label>' : '') +
+      input + '</div>';
+  }
+
+  function select(id, label, options, value) {
+    return '<div class="field">' +
+      (label ? '<label class="field-label" for="' + id + '">' + esc(label) + '</label>' : '') +
+      '<select id="' + id + '">' + options.map((o) =>
+        '<option value="' + esc(o.value) + '"' + (o.value === value ? ' selected' : '') + '>' + esc(o.label) + '</option>'
+      ).join('') + '</select></div>';
+  }
+
+  function empty(icon, title, text, actionHtml) {
+    return '<div class="empty">' +
+      '<div class="empty__icon">' + SH.icon(icon || 'sparkles') + '</div>' +
+      '<h3>' + esc(title) + '</h3>' +
+      '<p>' + esc(text) + '</p>' +
+      (actionHtml ? '<div class="mt-16">' + actionHtml + '</div>' : '') +
+      '</div>';
+  }
+
+  function tag(text, tone) {
+    return '<span class="tag' + (tone ? ' tag--' + tone : '') + '">' + esc(text) + '</span>';
+  }
+
+  function skeletonList(n) {
+    let out = '<div class="list">';
+    for (let i = 0; i < (n || 3); i++) {
+      out += '<div class="card" style="display:flex;gap:12px;align-items:center">' +
+        '<div class="skel" style="width:52px;height:52px;border-radius:14px"></div>' +
+        '<div style="flex:1"><div class="skel" style="height:12px;width:70%;margin-bottom:8px"></div>' +
+        '<div class="skel" style="height:10px;width:45%"></div></div></div>';
+    }
+    return out + '</div>';
+  }
+
+  function debounce(fn, ms) {
+    let t;
+    return function () {
+      const args = arguments, ctx = this;
+      clearTimeout(t);
+      t = setTimeout(() => fn.apply(ctx, args), ms || 220);
+    };
+  }
+
+  SH.ui = {
+    esc, plural, relTime, shortDate, deadlineInfo, initials, avatar, cover,
+    toast, sheet, closeSheet, confirmSheet, field, select, empty, tag, skeletonList, debounce,
+    MONTHS
+  };
+})(window.SH = window.SH || {});
+
+/* ==========================================================================
+   ИИ-модуль.
+   Сейчас работает локально (детерминированно, без сети) — это демо-режим,
+   который всегда доступен офлайн и не упирается в лимиты.
+   Для боевого режима: SH.ai.endpoint = '<URL Cloudflare Worker>' — тогда
+   запросы уйдут через прокси на Gemini, а при ошибке автоматически
+   откатятся на локальный расчёт (fallback).
+   ========================================================================== */
+(function (SH) {
+  'use strict';
+
+  const ai = {
+    endpoint: '',            // например 'https://student-hub-ai.<account>.workers.dev/ai'
+    model: 'gemini-2.0-flash',
+
+    /* ── стабильный «рандом» по строке ── */
+    hash(str) {
+      let h = 2166136261;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return Math.abs(h);
+    },
+
+    /* ── подбор: насколько событие подходит ученику ── */
+    matchPercent(event, user) {
+      // без профиля (или с пустыми интересами) скоринг вырождается —
+      // тогда разводим проценты по хешу, чтобы карточки не выглядели одинаково
+      if (!user || !((user.interests || []).length || (user.skills || []).length)) {
+        return 46 + (ai.hash(event.id + ((user && user.id) || '')) % 27);
+      }
+      const interests = (user.interests || []).map((s) => s.toLowerCase());
+      const skills = (user.skills || []).map((s) => s.toLowerCase());
+      const hay = (event.tags || []).concat([event.title, event.description, event.category])
+        .join(' ').toLowerCase();
+
+      let score = 30;
+      interests.forEach((i) => { if (hay.includes(i)) score += 16; });
+      skills.forEach((s) => { if (hay.includes(s)) score += 11; });
+
+      const catBoost = {
+        'ИИ': 'hackathon', 'Хакатоны': 'hackathon', 'Дизайн': 'competition',
+        'Олимпиады': 'olympiad', 'Веб': 'course', 'Стартапы': 'competition',
+        'Наука': 'event', 'Мобильная разработка': 'internship'
+      };
+      (user.interests || []).forEach((i) => { if (catBoost[i] === event.category) score += 12; });
+
+      score += ai.hash(event.id + (user.id || '')) % 7;
+      return Math.max(34, Math.min(98, score));
+    },
+
+    /* ── объяснение подбора человеческим языком ── */
+    explain(event, user) {
+      if (!user) return 'Заполни интересы в профиле — и подбор станет персональным.';
+      const interests = user.interests || [];
+      const skills = user.skills || [];
+      const hay = (event.tags || []).concat([event.title, event.description]).join(' ').toLowerCase();
+      const hitInterests = interests.filter((i) => hay.includes(i.toLowerCase()));
+      const hitSkills = skills.filter((s) => hay.includes(s.toLowerCase()));
+
+      const chunks = [];
+      if (hitInterests.length) chunks.push('совпадает с интересами: ' + hitInterests.slice(0, 2).join(', '));
+      if (hitSkills.length) chunks.push('совпадает с навыками: ' + hitSkills.slice(0, 2).join(', '));
+
+      if (chunks.length) {
+        return 'Подходит на ' + ai.matchPercent(event, user) + '% — ' + chunks.join('; ') + '.';
+      }
+      return 'Подходит на ' + ai.matchPercent(event, user) + '% — это направление пока не в твоих интересах, но даёт смежный опыт.';
+    },
+
+    /* ── рекомендация топ-событий ── */
+    recommend(events, user, limit) {
+      return events
+        .map((e) => Object.assign({}, e, { match: ai.matchPercent(e, user) }))
+        .sort((a, b) => b.match - a.match)
+        .slice(0, limit || 3);
+    },
+
+    /* ── генерация роадмапа под цель ── */
+    generateRoadmap(goalTitle) {
+      const t = String(goalTitle).toLowerCase();
+      const base = [];
+
+      if (/поступ|вуз|универс|итмо|мфти|вшэ/.test(t)) {
+        base.push(
+          { title: 'Определить 3 целевых вуза и направления', dateLabel: 'эта неделя' },
+          { title: 'Пройти пробное тестирование / диагностику', dateLabel: 'через 2 недели' },
+          { title: 'Собрать портфолио: 2 проекта + 1 олимпиада', dateLabel: 'до конца месяца' },
+          { title: 'Подготовить мотивационное письмо', dateLabel: 'до конца месяца' },
+          { title: 'Подать документы в первый вуз', dateLabel: 'через 2 месяца' }
+        );
+      } else if (/олимпиад|математ|информ|программ/.test(t)) {
+        base.push(
+          { title: 'Разобрать задачи прошлых лет (10 штук)', dateLabel: 'эта неделя' },
+          { title: 'Закрыть слабые темы: графы и динамика', dateLabel: 'через 2 недели' },
+          { title: 'Решить два тренировочных варианта на время', dateLabel: 'через 3 недели' },
+          { title: 'Зарегистрироваться на отборочный тур', dateLabel: 'до дедлайна' }
+        );
+      } else if (/портфол|проект|прилож|сайт|стартап/.test(t)) {
+        base.push(
+          { title: 'Выбрать идею проекта и описать её в одном абзаце', dateLabel: 'эта неделя' },
+          { title: 'Собрать прототип за 5 дней', dateLabel: 'через 2 недели' },
+          { title: 'Показать прототип трём людям и собрать фидбек', dateLabel: 'через 2 недели' },
+          { title: 'Оформить кейс в портфолио', dateLabel: 'через 3 недели' },
+          { title: 'Выступить с проектом на школьном фестивале', dateLabel: 'через месяц' }
+        );
+      } else if (/язык|англ|ielts|toefl/.test(t)) {
+        base.push(
+          { title: 'Пройти тест на текущий уровень', dateLabel: 'эта неделя' },
+          { title: 'Заниматься 20 минут каждый день', dateLabel: 'ежедневно' },
+          { title: 'Раз в неделю — разговорная практика', dateLabel: 'еженедельно' },
+          { title: 'Сдать пробный экзамен', dateLabel: 'через 2 месяца' }
+        );
+      } else {
+        base.push(
+          { title: 'Разбить цель на 4 измеримых шага', dateLabel: 'эта неделя' },
+          { title: 'Выбрать первый шаг и начать', dateLabel: 'через 3 дня' },
+          { title: 'Проверить прогресс и скорректировать план', dateLabel: 'через 2 недели' },
+          { title: 'Добавить в план одно мероприятие из Explore', dateLabel: 'через месяц' }
+        );
+      }
+      return base;
+    },
+
+    /* ── дайджест недели для админа ── */
+    digest() {
+      const s = SH.store.stats();
+      return [
+        'За неделю ' + s.applications + ' заявок от учеников — на ' + Math.max(1, Math.round(s.applications * 0.3)) + ' больше, чем на прошлой.',
+        'Самое популярное направление — хакатоны и курсы по программированию: их открывают в 3 раза чаще, чем остальные.',
+        s.pending + ' заявок ждут проверки. ' + (s.drafts ? s.drafts + ' событие в черновиках — стоит опубликовать.' : 'Черновиков нет, всё опубликовано.'),
+        'Рекомендация: у ' + Math.max(2, Math.round(s.students * 0.25)) + ' учеников пустые интересы в профиле — из-за этого подбор работает хуже. Отправьте им напоминание.'
+      ];
+    },
+
+    /* ── запрос к реальному бэкенду (если задан endpoint) ── */
+    async complete(prompt) {
+      if (!ai.endpoint) return null;
+      try {
+        const res = await fetch(ai.endpoint, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ prompt, model: ai.model })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        return data.text || null;
+      } catch (e) {
+        console.warn('AI fallback на локальный режим:', e.message);
+        return null;
+      }
+    }
+  };
+
+  SH.ai = ai;
+})(window.SH = window.SH || {});
+
+/* Экран Explore + карточка события */
+(function (SH) {
+  'use strict';
+  const { ui, store, ai, icon } = SH;
+  const e = ui.esc;
+
+  let filter = 'forYou';
+  let query = '';
+
+  function filteredEvents() {
+    const user = store.currentUser;
+    let list = store.events();
+    list = list.map((ev) => ({ ev, match: ai.matchPercent(ev, user) }));
+
+    if (filter === 'trending') list.sort((a, b) => (b.ev.views + b.ev.applicants * 3) - (a.ev.views + a.ev.applicants * 3));
+    else if (filter === 'competitions') list = list.filter((x) => ['competition', 'olympiad', 'hackathon'].includes(x.ev.category));
+    else list.sort((a, b) => b.match - a.match);
+
+    if (query.trim()) {
+      const q = query.trim().toLowerCase();
+      list = list.filter(({ ev }) =>
+        (ev.title + ' ' + ev.organizer + ' ' + (ev.tags || []).join(' ')).toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }
+
+  function heroCard({ ev, match }) {
+    const cat = store.CATEGORIES[ev.category] || store.CATEGORIES.event;
+    const dl = ui.deadlineInfo(ev.deadlineDate);
+    return (
+      '<article class="event-hero card--tap" onclick="SH.app.go(\'#/event/' + ev.id + '\')" style="cursor:pointer">' +
+        ui.cover(ev, 172) +
+        '<div class="event-hero__badges">' +
+          '<span class="tag tag--dark">' + e(cat.label) + '</span>' +
+          (ev.isFree ? '<span class="tag tag--mint">Бесплатно</span>' : '') +
+          '<span class="spacer"></span>' +
+          '<span class="match-badge">' + icon('sparkles', 11) + ' ' + match + '%</span>' +
+        '</div>' +
+        '<div class="event-hero__overlay">' +
+          '<div class="grow">' +
+            '<div class="event-hero__title">' + e(ev.title) + '</div>' +
+            '<div class="event-hero__meta">' + e(ev.organizer) + ' · ' + e(dl.label) + '</div>' +
+          '</div>' +
+          '<span class="event-hero__cta">Открыть</span>' +
+        '</div>' +
+      '</article>'
+    );
+  }
+
+  function miniCard({ ev }) {
+    const cat = store.CATEGORIES[ev.category] || store.CATEGORIES.event;
+    return (
+      '<article class="mini-card card--tap" onclick="SH.app.go(\'#/event/' + ev.id + '\')" style="cursor:pointer">' +
+        ui.cover(ev, 92) +
+        '<div class="mini-card__title">' + e(ev.title) + '</div>' +
+        '<div class="mini-card__meta">' + e(cat.label) + ' · ' + e(ui.deadlineInfo(ev.deadlineDate).label) + '</div>' +
+      '</article>'
+    );
+  }
+
+  function trendRow({ ev }, i) {
+    const cat = store.CATEGORIES[ev.category] || store.CATEGORIES.event;
+    return (
+      '<div class="trend-row card--tap" onclick="SH.app.go(\'#/event/' + ev.id + '\')" style="cursor:pointer">' +
+        '<span class="rank-badge' + (i < 3 ? ' rank-badge--top' : '') + '">' + (i + 1) + '</span>' +
+        '<div class="grow">' +
+          '<div class="ellipsis" style="font-weight:650;font-size:14px">' + e(ev.title) + '</div>' +
+          '<div class="small muted ellipsis">' + e(cat.label) + ' · ' + ev.applicants + ' заявок</div>' +
+        '</div>' +
+        '<span class="muted">' + icon('chevronRight', 18) + '</span>' +
+      '</div>'
+    );
+  }
+
+  function installBanner() {
+    if (SH.install.isStandalone() || store.state.settings.installDismissed) return '';
+    return (
+      '<div class="install-banner" style="margin-bottom:18px">' +
+        '<span class="install-banner__icon">' + icon('install', 21) + '</span>' +
+        '<div class="grow" style="min-width:0">' +
+          '<div style="font-size:13.5px;font-weight:750">Добавь Student Hub на главный экран</div>' +
+          '<div style="font-size:11.5px;opacity:.82">Три шага — и приложение как обычное</div>' +
+        '</div>' +
+        '<button class="install-banner__btn" onclick="SH.app.go(\'#/install\')">Открыть</button>' +
+      '</div>'
+    );
+  }
+
+  function html() {
+    const user = store.currentUser;
+    const list = filteredEvents();
+    const picked = list.slice(0, 3);
+    const popular = list.slice(0, 8);
+    const trending = list.slice().sort((a, b) => (b.ev.views) - (a.ev.views)).slice(0, 5);
+
+    return (
+      '<div class="screen">' +
+        '<div class="screen-head">' +
+          '<div class="grow">' +
+            '<h1 class="screen-title">Explore</h1>' +
+            '<p class="screen-sub">' + (user ? 'Привет, ' + e(user.name.split(' ')[0]) + ' 👋' : 'Возможности для школьников') + '</p>' +
+          '</div>' +
+          '<button class="icon-btn icon-btn--plain" onclick="SH.views.explore.showNotifications()" aria-label="Уведомления" style="position:relative">' +
+            icon('bell', 22) +
+            '<span style="position:absolute;top:9px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--danger)"></span>' +
+          '</button>' +
+          '<button onclick="SH.app.go(\'#/profile\')" aria-label="Профиль">' + ui.avatar(user, 32) + '</button>' +
+        '</div>' +
+
+        installBanner() +
+
+        '<div class="row" style="margin-bottom:14px">' +
+          '<div class="search grow">' + icon('search') +
+            '<input id="explore-search" placeholder="Найти олимпиаду, курс, стажировку…" value="' + e(query) + '">' +
+          '</div>' +
+          '<button class="icon-btn" onclick="SH.views.explore.openFilters()" aria-label="Фильтры">' + icon('tune', 20) + '</button>' +
+        '</div>' +
+
+        '<div class="pill-row" style="margin-bottom:6px">' +
+          pill('forYou', 'sparkles', 'Для тебя') +
+          pill('trending', 'fire', 'В тренде') +
+          pill('competitions', 'trophy', 'Конкурсы') +
+        '</div>' +
+
+        (list.length === 0
+          ? ui.empty('search', 'Ничего не нашлось', 'Попробуй другой запрос или сбрось фильтр.')
+          : '' +
+            (picked.length ? '<div class="section-head"><span class="h2 grow">Подобрано для тебя</span>' +
+              '<span class="section-link" onclick="SH.app.go(\'#/all/picked\')">Все</span></div>' +
+              '<div class="list">' + picked.map(heroCard).join('') + '</div>' : '') +
+
+            (popular.length ? '<div class="section-head"><span class="h2 grow">Популярно рядом</span></div>' : '') +
+            (popular.length ? '<div class="hscroll">' + popular.map(miniCard).join('') + '</div>' : '') +
+
+            (trending.length ? '<div class="section-head"><span class="h2 grow">Тренды недели</span></div>' : '') +
+            (trending.length ? '<div class="card" style="padding:4px 16px">' + trending.map(trendRow).join('') + '</div>' : '') +
+            '<div style="height:8px"></div>'
+        ) +
+      '</div>'
+    );
+  }
+
+  function pill(id, ico, label) {
+    return '<button class="pill" aria-pressed="' + (filter === id) + '" onclick="SH.views.explore.setFilter(\'' + id + '\')">' +
+      icon(ico) + e(label) + '</button>';
+  }
+
+  function mount(root) {
+    const input = root.querySelector('#explore-search');
+    if (input) {
+      input.addEventListener('input', ui.debounce((ev) => {
+        query = ev.target.value;
+        const pos = ev.target.selectionStart;
+        SH.app.render();
+        const again = document.querySelector('#explore-search');
+        if (again) { again.focus(); again.setSelectionRange(pos, pos); }
+      }, 260));
+    }
+  }
+
+  /* ── карточка события ── */
+  function detail(id) {
+    const ev = store.event(id);
+    if (!ev) return '<div class="screen">' + ui.empty('info', 'Событие не найдено', 'Возможно, его сняли с публикации.') + '</div>';
+    const user = store.currentUser;
+    const cat = store.CATEGORIES[ev.category] || store.CATEGORIES.event;
+    const match = ai.matchPercent(ev, user);
+    const dl = ui.deadlineInfo(ev.deadlineDate);
+    const applied = store.isApplied(ev.id);
+
+    return (
+      '<div class="screen screen--flush" style="padding-bottom:120px">' +
+        '<div style="position:relative">' +
+          ui.cover(ev, 216, 0) +
+          '<button class="icon-btn" onclick="SH.app.back()" aria-label="Назад" ' +
+            'style="position:absolute;top:calc(var(--safe-t) + 12px);left:16px;background:rgba(255,255,255,.9)">' +
+            icon('arrowLeft', 20) + '</button>' +
+          '<button class="icon-btn" onclick="SH.views.explore.share(\'' + ev.id + '\')" aria-label="Поделиться" ' +
+            'style="position:absolute;top:calc(var(--safe-t) + 12px);right:16px;background:rgba(255,255,255,.9)">' +
+            icon('share', 19) + '</button>' +
+        '</div>' +
+
+        '<div style="padding:0 20px">' +
+          '<div class="wrap mt-16" style="margin-bottom:10px">' +
+            '<span class="tag tag--lav">' + e(cat.label) + '</span>' +
+            '<span class="match-badge" style="background:var(--primary-soft);color:var(--primary)">' +
+              icon('sparkles', 11) + ' ' + match + '% совпадение</span>' +
+            (ev.isFree ? '<span class="tag tag--mint">Бесплатно</span>' : '<span class="tag">Платно</span>') +
+          '</div>' +
+
+          '<h1 style="font-size:24px;line-height:1.2;letter-spacing:-0.7px;margin:0 0 6px">' + e(ev.title) + '</h1>' +
+          '<p class="muted" style="margin:0 0 14px;font-size:13.5px">' + e(ev.organizer) + '</p>' +
+
+          '<div class="ai-note">' + icon('sparkles') +
+            '<div><b>Почему это тебе:</b> ' + e(ai.explain(ev, user)) + '</div>' +
+          '</div>' +
+
+          '<div class="card mt-16" style="padding:4px 16px">' +
+            metaRow('calendar', dl.label, ui.shortDate(ev.deadlineDate) + ' — последний день подачи') +
+            metaRow('wifi', ev.format, ev.location || 'Можно участвовать из дома') +
+            metaRow('users', ev.eligibility || 'Все желающие', 'Кто может участвовать') +
+            metaRow('chart', ev.applicants + ' заявок', ev.views + ' просмотров') +
+          '</div>' +
+
+          '<div class="section-head"><span class="h2">О событии</span></div>' +
+          '<p class="body" style="margin:0;line-height:1.62;color:var(--text)">' + e(ev.description) + '</p>' +
+
+          '<div class="wrap mt-16">' + (ev.tags || []).map((t) => ui.tag(t)).join('') + '</div>' +
+
+          '<div class="section-head"><span class="h2">Похожие</span></div>' +
+        '</div>' +
+
+        '<div class="hscroll">' +
+          store.events().filter((x) => x.id !== ev.id && x.category === ev.category).slice(0, 4)
+            .map((x) => miniCard({ ev: x })).join('') +
+          store.events().filter((x) => x.id !== ev.id && x.category !== ev.category).slice(0, 2)
+            .map((x) => miniCard({ ev: x })).join('') +
+        '</div>' +
+
+        '<div style="position:fixed;left:0;right:0;bottom:0;padding:12px 20px calc(12px + var(--safe-b));' +
+          'background:linear-gradient(transparent,var(--bg) 26%);max-width:540px;margin:0 auto;display:flex;gap:10px;z-index:30">' +
+          '<button class="icon-btn" style="width:50px;height:50px;background:var(--chip)" ' +
+            'onclick="SH.views.explore.addToRoadmap(\'' + ev.id + '\')" aria-label="В роадмап">' + icon('map', 20) + '</button>' +
+          (applied
+            ? '<button class="btn btn--soft grow" disabled>' + icon('checkCircle') + 'Заявка отправлена</button>'
+            : '<button class="btn btn--brand grow" onclick="SH.views.explore.apply(\'' + ev.id + '\')">' +
+                'Подать заявку' + icon('arrowRight') + '</button>') +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function metaRow(ico, title, sub) {
+    return '<div class="meta-row">' + icon(ico) + '<div><b>' + e(title) + '</b><span>' + e(sub) + '</span></div></div>';
+  }
+
+  /* ── действия ── */
+  const actions = {
+    setFilter(f) { filter = f; SH.app.render(); },
+    openFilters() {
+      ui.sheet({
+        title: 'Фильтры',
+        subtitle: 'Сузим подборку под тебя',
+        body:
+          '<div class="field-label">Направление</div>' +
+          '<div class="wrap" style="margin-bottom:18px">' +
+            Object.keys(store.CATEGORIES).map((k) =>
+              '<button class="pill" aria-pressed="' + (filter === 'cat:' + k) + '" ' +
+              'onclick="SH.views.explore.pickCategory(\'' + k + '\')">' + e(store.CATEGORIES[k].label) + '</button>'
+            ).join('') +
+          '</div>' +
+          '<div class="field-label">Только бесплатные</div>' +
+          '<div class="row" style="justify-content:space-between;padding:12px 0">' +
+            '<span class="small muted">Скрыть платные события</span>' +
+            '<button class="switch" role="switch" aria-checked="false" id="free-switch"></button>' +
+          '</div>',
+        onMount(el) {
+          el.querySelector('#free-switch').addEventListener('click', (ev) => {
+            const on = ev.currentTarget.getAttribute('aria-checked') === 'true';
+            ev.currentTarget.setAttribute('aria-checked', String(!on));
+            ui.toast(on ? 'Платные события снова видны' : 'Показаны только бесплатные');
+          });
+        }
+      });
+    },
+    pickCategory(k) { filter = 'cat:' + k; ui.closeSheet(); SH.app.render(); ui.toast('Фильтр: ' + store.CATEGORIES[k].label); },
+    showNotifications() {
+      ui.sheet({
+        title: 'Уведомления',
+        body:
+          '<div class="list">' +
+          notification('calendar', 'Дедлайн через 3 дня', 'Школьный научный фестиваль закрывает приём заявок', 'var(--sun)') +
+          notification('sparkles', 'Новый подбор', 'ИИ нашёл 4 события под твои интересы', 'var(--lavender)') +
+          notification('message', 'Сообщение в команде', 'Тимур: «Закинул структуру прототипа»', 'var(--sky)') +
+          '</div>'
+      });
+    },
+    apply(id) {
+      if (!store.isAuthed) { SH.app.go('#/auth'); return; }
+      const res = store.apply(id);
+      if (res.ok) {
+        ui.toast('Заявка отправлена ✓');
+        SH.app.render();
+      } else ui.toast(res.error);
+    },
+    addToRoadmap(id) {
+      const ev = store.event(id);
+      if (!store.isAuthed) { SH.app.go('#/auth'); return; }
+      let goal = store.goals()[0];
+      if (!goal) goal = store.addGoal('Мои цели');
+      store.addTask(goal.id, 'Подать заявку: ' + ev.title, 'до ' + ui.shortDate(ev.deadlineDate));
+      ui.toast('Добавлено в роадмап');
+    },
+    share(id) {
+      const url = location.origin + location.pathname + '#/event/' + id;
+      if (navigator.share) navigator.share({ title: 'Student Hub', url }).catch(() => {});
+      else if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => ui.toast('Ссылка скопирована'));
+      else ui.toast(url);
+    }
+  };
+
+  function notification(ico, title, sub, bg) {
+    return '<div class="item">' +
+      '<span class="empty__icon" style="width:40px;height:40px;border-radius:12px;background:' + bg + ';color:#14151a">' +
+      icon(ico, 19) + '</span>' +
+      '<div class="grow"><div style="font-weight:650;font-size:13.5px">' + e(title) + '</div>' +
+      '<div class="small muted">' + e(sub) + '</div></div></div>';
+  }
+
+  /* ── общий список событий ── */
+  function all(mode) {
+    const user = store.currentUser;
+    const list = store.events().map((ev) => ({ ev, match: ai.matchPercent(ev, user) }));
+    list.sort((a, b) => b.match - a.match);
+    return (
+      '<div class="screen">' +
+        '<div class="screen-head">' +
+          '<button class="icon-btn icon-btn--plain" onclick="SH.app.back()">' + icon('arrowLeft', 21) + '</button>' +
+          '<h1 class="screen-title" style="font-size:22px">' + (mode === 'picked' ? 'Подобрано для тебя' : 'Все события') + '</h1>' +
+        '</div>' +
+        '<div class="list">' + list.map(heroCard).join('') + '</div>' +
+      '</div>'
+    );
+  }
+
+  SH.views = SH.views || {};
+  SH.views.explore = Object.assign({ html, mount, detail, all }, actions);
+})(window.SH = window.SH || {});
+
+/* Сообщество: поиск команды + обсуждения */
+(function (SH) {
+  'use strict';
+  const { ui, store, icon } = SH;
+  const e = ui.esc;
+
+  let tab = 'team';
+
+  function teamCard(t) {
+    const lead = store.userById(t.leadId);
+    const joined = store.currentUser && t.members.includes(store.currentUser.id);
+    return (
+      '<article class="card">' +
+        '<div class="row" style="margin-bottom:10px">' +
+          '<span class="tag tag--lav">' + e(t.type) + '</span>' +
+          '<span class="spacer"></span>' +
+          '<span class="tag tag--blush">' + t.spotsOpen + ' мест свободно</span>' +
+        '</div>' +
+        '<h3 class="h3" style="margin:0 0 6px">' + e(t.title) + '</h3>' +
+        '<p class="small muted" style="margin:0 0 10px;line-height:1.5">' + e(t.description) + '</p>' +
+        '<div class="wrap" style="margin-bottom:12px">' + (t.tags || []).map((x) => ui.tag(x)).join('') + '</div>' +
+        '<div class="row">' +
+          ui.avatar(lead, 28) +
+          '<span class="small muted grow">Ведёт ' + e(lead.name) + ' · ' + t.members.length + ' в команде</span>' +
+          (joined
+            ? '<button class="btn btn--soft btn--sm" disabled>' + icon('check', 15) + 'Ты в команде</button>'
+            : '<button class="btn btn--primary btn--sm" onclick="SH.views.community.join(\'' + t.id + '\')">Присоединиться</button>') +
+        '</div>' +
+      '</article>'
+    );
+  }
+
+  function postCard(p) {
+    const author = store.userById(p.authorId);
+    return (
+      '<article class="card" style="padding:14px">' +
+        '<div class="row" style="margin-bottom:10px">' +
+          ui.avatar(author, 32) +
+          '<div class="grow" style="min-width:0">' +
+            '<div style="font-weight:650;font-size:13.5px">' + e(author.name) + '</div>' +
+            '<div class="small muted">' + e(author.grade || author.position || '') + (author.grade ? ' · ' : '') + e(ui.relTime(p.createdAt)) + '</div>' +
+          '</div>' +
+          (p.tag ? '<span class="tag">' + e(p.tag) + '</span>' : '') +
+        '</div>' +
+        '<p style="margin:0 0 12px;font-size:14.5px;line-height:1.55">' + e(p.text) + '</p>' +
+        '<div class="row muted small">' +
+          '<button class="row" style="gap:5px" onclick="SH.views.community.like(\'' + p.id + '\')">' +
+            icon('heart', 16) + p.likes +
+          '</button>' +
+          '<span class="row" style="gap:5px">' + icon('message', 16) + p.replies + '</span>' +
+          '<span class="spacer"></span>' +
+          '<button class="small muted" onclick="SH.views.community.reply(\'' + p.id + '\')">Ответить</button>' +
+        '</div>' +
+      '</article>'
+    );
+  }
+
+  function html() {
+    const teams = store.teams();
+    const posts = store.posts();
+
+    return (
+      '<div class="screen">' +
+        '<div class="screen-head">' +
+          '<div class="grow">' +
+            '<h1 class="screen-title">Сообщество</h1>' +
+            '<p class="screen-sub">Команды и разговоры школы</p>' +
+          '</div>' +
+          '<button class="icon-btn icon-btn--plain" onclick="SH.views.community.info()" aria-label="О сообществе">' +
+            icon('info', 21) +
+          '</button>' +
+        '</div>' +
+
+        '<div class="pill-row" style="margin-bottom:16px">' +
+          '<button class="pill" aria-pressed="' + (tab === 'team') + '" onclick="SH.views.community.setTab(\'team\')">' +
+            icon('users') + 'Найти команду</button>' +
+          '<button class="pill" aria-pressed="' + (tab === 'posts') + '" onclick="SH.views.community.setTab(\'posts\')">' +
+            icon('message') + 'Обсуждения</button>' +
+        '</div>' +
+
+        (tab === 'team'
+          ? '<button class="btn btn--brand btn--block" onclick="SH.views.community.newTeam()">' +
+              icon('plus') + 'Создать заявку на команду</button>' +
+            '<div class="list mt-16">' +
+              (teams.length ? teams.map(teamCard).join('') :
+                ui.empty('users', 'Пока нет открытых команд', 'Создай первую — тебе ответят те, кому нужна компания.')) +
+            '</div>'
+          : composer() + '<div class="list mt-16">' +
+              (posts.length ? posts.map(postCard).join('') :
+                ui.empty('message', 'Тишина', 'Напиши первым — расскажи, что ищешь или что нашёл.')) +
+            '</div>') +
+      '</div>'
+    );
+  }
+
+  function composer() {
+    return (
+      '<div class="card" style="padding:12px">' +
+        '<div class="row-top">' +
+          ui.avatar(store.currentUser, 32) +
+          '<div class="field grow">' +
+            '<textarea id="post-text" placeholder="Чем поделиться со школой?" ' +
+              'style="min-height:64px;border:0;background:transparent;padding:6px 0;resize:none"></textarea>' +
+          '</div>' +
+        '</div>' +
+        '<div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px">' +
+          '<button class="btn btn--soft btn--sm" onclick="SH.views.community.postTag()">' + icon('flag', 15) + 'Тема</button>' +
+          '<button class="btn btn--brand btn--sm" onclick="SH.views.community.publish()">' + icon('send', 15) + 'Опубликовать</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  const actions = {
+    setTab(t) { tab = t; SH.app.render(); },
+
+    publish() {
+      if (!store.isAuthed) { SH.app.go('#/auth'); return; }
+      const el = document.getElementById('post-text');
+      const text = el ? el.value.trim() : '';
+      if (!text) { ui.toast('Напиши что-нибудь'); return; }
+      store.addPost(text);
+      ui.toast('Опубликовано');
+      SH.app.render();
+    },
+
+    postTag() { ui.toast('Тема выбирается автоматически по тексту'); },
+
+    like(id) { store.likePost(id); SH.app.render(); },
+
+    reply(id) {
+      const p = store.posts().find((x) => x.id === id);
+      const author = store.userById(p.authorId);
+      ui.sheet({
+        title: 'Ответ',
+        subtitle: author.name + ': «' + p.text.slice(0, 70) + '…»',
+        body:
+          ui.field('reply-text', '', { textarea: true, placeholder: 'Твой ответ…' }) +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.community.sendReply(\'' + id + '\')">Отправить</button>'
+      });
+    },
+
+    sendReply(id) {
+      const el = document.getElementById('reply-text');
+      if (!el || !el.value.trim()) { ui.toast('Пустой ответ'); return; }
+      const p = store.posts().find((x) => x.id === id);
+      p.replies += 1;
+      store.commit(() => {}, 'posts');
+      ui.closeSheet();
+      ui.toast('Ответ отправлен');
+      SH.app.render();
+    },
+
+    join(id) {
+      if (!store.isAuthed) { SH.app.go('#/auth'); return; }
+      store.joinTeam(id);
+      ui.toast('Ты в команде — чат создан');
+      SH.app.render();
+    },
+
+    newTeam() {
+      if (!store.isAuthed) { SH.app.go('#/auth'); return; }
+      ui.sheet({
+        title: 'Новая заявка на команду',
+        subtitle: 'Коротко: что делаете и кого не хватает',
+        body:
+          ui.field('team-title', 'Название', { placeholder: 'Например: команда на хакатон' }) +
+          ui.field('team-desc', 'Описание', { textarea: true, placeholder: 'Кого ищете и чем будете заниматься', style: 'margin-top:12px' }) +
+          '<div class="row" style="gap:12px;margin-top:12px">' +
+            '<div class="grow">' + ui.select('team-type', 'Тип', [
+              { value: 'Хакатон', label: 'Хакатон' },
+              { value: 'Конкурс', label: 'Конкурс' },
+              { value: 'Фестиваль', label: 'Фестиваль' },
+              { value: 'Проект', label: 'Проект' }
+            ]) + '</div>' +
+            '<div style="width:120px">' + ui.field('team-spots', 'Мест', { type: 'number', value: '2' }) + '</div>' +
+          '</div>' +
+          ui.field('team-tags', 'Теги через запятую', { placeholder: 'ИИ, дизайн, Python', style: 'margin-top:12px' }) +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.community.createTeam()">Опубликовать</button>',
+        onMount(el) {
+          setTimeout(() => { const t = el.querySelector('#team-title'); if (t) t.focus(); }, 120);
+        }
+      });
+    },
+
+    createTeam() {
+      const val = (id) => (document.getElementById(id) || {}).value || '';
+      const title = val('team-title').trim();
+      if (!title) { ui.toast('Добавь название'); return; }
+      store.addTeam({
+        title,
+        description: val('team-desc').trim() || 'Без описания',
+        type: val('team-type'),
+        spotsOpen: Math.max(1, parseInt(val('team-spots'), 10) || 1),
+        tags: val('team-tags').split(',').map((s) => s.trim()).filter(Boolean)
+      });
+      ui.closeSheet();
+      ui.toast('Заявка опубликована');
+      tab = 'team';
+      SH.app.render();
+    },
+
+    info() {
+      ui.sheet({
+        title: 'Как это работает',
+        body:
+          '<div class="steps">' +
+          '<div class="step"><span class="step__num">1</span><div class="step__body"><b>Найди команду</b> — или создай заявку, если не хватает людей.</div></div>' +
+          '<div class="step"><span class="step__num">2</span><div class="step__body"><b>Присоединись</b> — тебе автоматически откроется чат команды.</div></div>' +
+          '<div class="step"><span class="step__num">3</span><div class="step__body"><b>Обсуждайте в разделе «Чаты»</b> — история сохраняется, ничего не теряется.</div></div>' +
+          '</div>'
+      });
+    }
+  };
+
+  SH.views = SH.views || {};
+  SH.views.community = Object.assign({ html }, actions);
+  SH.views.community.getTab = () => tab;
+})(window.SH = window.SH || {});
+
+/* Роадмап: цели и задачи */
+(function (SH) {
+  'use strict';
+  const { ui, store, ai, icon } = SH;
+  const e = ui.esc;
+
+  let selectedGoalId = null;
+
+  function html() {
+    if (!store.isAuthed) {
+      return '<div class="screen">' +
+        '<div class="screen-head"><h1 class="screen-title">Роадмап</h1></div>' +
+        ui.empty('map', 'Личный план на экране', 'Войди, чтобы собрать цели, задачи и трекать прогресс.',
+          '<button class="btn btn--brand" onclick="SH.app.go(\'#/auth\')">Войти</button>') +
+        '</div>';
+    }
+
+    const goals = store.goals();
+    if (!selectedGoalId && goals.length) selectedGoalId = goals[0].id;
+    const goal = goals.find((g) => g.id === selectedGoalId) || goals[0] || null;
+    if (goal) selectedGoalId = goal.id;
+
+    const tasks = goal ? store.tasks(goal.id) : [];
+    const done = tasks.filter((t) => t.status === 'done').length;
+    const progress = goal ? store.goalProgress(goal.id) : 0;
+
+    return (
+      '<div class="screen">' +
+        '<div class="screen-head">' +
+          '<div class="grow">' +
+            '<h1 class="screen-title">Роадмап</h1>' +
+            '<p class="screen-sub">От цели — к конкретным шагам</p>' +
+          '</div>' +
+          '<button class="icon-btn icon-btn--plain" onclick="SH.views.roadmap.addGoal()" aria-label="Новая цель">' +
+            icon('plus', 22) +
+          '</button>' +
+        '</div>' +
+
+        '<div class="hscroll" style="margin-bottom:18px">' +
+          goals.map((g) => goalChip(g)).join('') +
+          '<button class="chip-add" style="align-self:stretch;flex-direction:column;justify-content:center;min-width:92px" ' +
+            'onclick="SH.views.roadmap.addGoal()">' + icon('plus', 16) + 'Цель</button>' +
+        '</div>' +
+
+        (goal
+          ? '' +
+            '<div class="card" style="background:var(--mint);border:0;color:#0f3d29;padding:18px">' +
+              '<div class="row" style="margin-bottom:4px">' +
+                '<span class="small" style="opacity:.7;font-weight:650">Активная цель</span>' +
+                '<span class="spacer"></span>' +
+                '<button onclick="SH.views.roadmap.deleteGoal(\'' + goal.id + '\')" aria-label="Удалить цель" style="opacity:.55">' +
+                  icon('trash', 17) + '</button>' +
+              '</div>' +
+              '<h2 style="margin:0 0 12px;font-size:18px;letter-spacing:-0.4px">' + e(goal.title) + '</h2>' +
+              '<div class="progress" style="background:rgba(255,255,255,.6)">' +
+                '<i style="width:' + progress + '%;background:#0f3d29"></i>' +
+              '</div>' +
+              '<div class="row small" style="margin-top:8px;opacity:.75">' +
+                '<span>' + done + ' из ' + tasks.length + ' шагов</span><span class="spacer"></span>' +
+                '<span>' + progress + '%</span>' +
+              '</div>' +
+              '<button class="btn btn--primary btn--block mt-16" onclick="SH.views.roadmap.generate()">' +
+                icon('sparkles', 18) + 'Собрать план с ИИ' +
+              '</button>' +
+            '</div>' +
+
+            '<div class="section-head"><span class="h2 grow">Шаги</span>' +
+              '<button class="section-link" onclick="SH.views.roadmap.addTask()">+ Добавить</button></div>' +
+
+            (tasks.length
+              ? '<div class="list">' + tasks.map(taskRow).join('') + '</div>'
+              : ui.empty('checkCircle', 'Пока нет шагов',
+                  'Нажми «Собрать план с ИИ» — он разобьёт цель на измеримые действия.',
+                  '<button class="btn btn--soft" onclick="SH.views.roadmap.generate()">Собрать план</button>')) 
+          : ui.empty('map', 'Целей пока нет', 'Опиши, чего хочешь достичь — ИИ разложит это на шаги.',
+              '<button class="btn btn--brand" onclick="SH.views.roadmap.addGoal()">Создать цель</button>')) +
+
+        '<div class="section-head"><span class="h2">Добавить из Explore</span></div>' +
+        '<div class="list">' +
+          store.events().slice(0, 3).map((ev) =>
+            '<div class="item">' +
+              '<span class="rank-badge" style="width:34px;height:34px;border-radius:11px;background:var(--primary-soft);color:var(--primary)">' +
+                icon(store.CATEGORIES[ev.category].glyph, 17) + '</span>' +
+              '<div class="grow" style="min-width:0"><div class="ellipsis" style="font-weight:650;font-size:13.5px">' + e(ev.title) + '</div>' +
+              '<div class="small muted">' + e(ui.deadlineInfo(ev.deadlineDate).label) + '</div></div>' +
+              '<button class="btn btn--soft btn--xs" onclick="SH.views.roadmap.addFromEvent(\'' + ev.id + '\')">+ В план</button>' +
+            '</div>'
+          ).join('') +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function goalChip(g) {
+    const active = g.id === selectedGoalId;
+    const p = store.goalProgress(g.id);
+    return (
+      '<button class="card" style="width:168px;text-align:left;padding:12px;border:1px solid ' +
+        (active ? 'var(--primary)' : 'var(--border)') + ';background:' + (active ? 'var(--primary)' : 'var(--surface)') + ';' +
+        'color:' + (active ? '#fff' : 'var(--text)') + '" onclick="SH.views.roadmap.selectGoal(\'' + g.id + '\')">' +
+        '<div style="font-size:13px;font-weight:750;line-height:1.3;height:34px;overflow:hidden">' + e(g.title) + '</div>' +
+        '<div class="progress" style="margin-top:8px;background:' + (active ? 'rgba(255,255,255,.28)' : 'var(--chip)') + '">' +
+          '<i style="width:' + p + '%;background:' + (active ? '#fff' : 'var(--primary)') + '"></i>' +
+        '</div>' +
+      '</button>'
+    );
+  }
+
+  function taskRow(t) {
+    const done = t.status === 'done';
+    const current = t.status === 'current';
+    return (
+      '<div class="item card--tap" onclick="SH.views.roadmap.toggle(\'' + t.id + '\')" style="cursor:pointer;align-items:flex-start">' +
+        '<span style="margin-top:1px;color:' + (done ? 'var(--success)' : current ? 'var(--primary)' : 'var(--muted)') + '">' +
+          icon(done ? 'checkCircle' : 'circle', 21) + '</span>' +
+        '<div class="grow" style="min-width:0">' +
+          '<div style="font-size:14px;font-weight:600;' + (done ? 'text-decoration:line-through;color:var(--muted)' : '') + '">' +
+            e(t.title) + '</div>' +
+          '<div class="small muted" style="margin-top:2px">' + e(t.dateLabel || store.TASK_STATUS[t.status]) + '</div>' +
+        '</div>' +
+        (current ? '<span class="tag tag--lav">сейчас</span>' : '') +
+      '</div>'
+    );
+  }
+
+  const actions = {
+    selectGoal(id) { selectedGoalId = id; SH.app.render(); },
+
+    addGoal() {
+      ui.sheet({
+        title: 'Новая цель',
+        subtitle: 'Чем конкретнее — тем полезнее план',
+        body:
+          ui.field('goal-title', '', { placeholder: 'Например: поступить на IT-направление' }) +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.roadmap.createGoal()">Создать</button>',
+        onMount(el) { setTimeout(() => { const i = el.querySelector('#goal-title'); if (i) i.focus(); }, 120); }
+      });
+    },
+
+    createGoal() {
+      const input = document.getElementById('goal-title');
+      const title = input ? input.value.trim() : '';
+      if (!title) { ui.toast('Опиши цель'); return; }
+      const g = store.addGoal(title);
+      selectedGoalId = g.id;
+      ui.closeSheet();
+      ui.toast('Цель создана');
+      SH.app.render();
+    },
+
+    deleteGoal(id) {
+      ui.confirmSheet('Удалить цель?', 'Вместе с ней удалятся все шаги. Это необратимо.', 'Удалить', () => {
+        store.deleteGoal(id);
+        selectedGoalId = null;
+        ui.toast('Цель удалена');
+        SH.app.render();
+      });
+    },
+
+    toggle(id) { store.toggleTask(id); SH.app.render(); },
+
+    addTask() {
+      if (!selectedGoalId) { actions.addGoal(); return; }
+      ui.sheet({
+        title: 'Новый шаг',
+        body:
+          ui.field('task-title', 'Что нужно сделать', { placeholder: 'Например: разобрать 10 задач' }) +
+          ui.field('task-date', 'Когда', { placeholder: 'до 20 ноября', style: 'margin-top:12px' }) +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.roadmap.createTask()">Добавить</button>'
+      });
+    },
+
+    createTask() {
+      const v = (id) => (document.getElementById(id) || {}).value || '';
+      if (!v('task-title').trim()) { ui.toast('Опиши шаг'); return; }
+      store.addTask(selectedGoalId, v('task-title').trim(), v('task-date').trim());
+      ui.closeSheet();
+      ui.toast('Шаг добавлен');
+      SH.app.render();
+    },
+
+    generate() {
+      const goal = store.goals().find((g) => g.id === selectedGoalId);
+      if (!goal) return;
+      ui.sheet({
+        title: 'Собираю план…',
+        subtitle: 'ИИ разбивает цель «' + goal.title + '» на шаги',
+        body: '<div style="padding:8px 0 4px">' + ui.skeletonList(3) + '</div>',
+        dismissible: false
+      });
+      setTimeout(() => {
+        const plan = ai.generateRoadmap(goal.title);
+        store.replaceTasks(goal.id, plan);
+        ui.closeSheet();
+        ui.toast('План из ' + plan.length + ' шагов готов');
+        SH.app.render();
+      }, 1100);
+    },
+
+    addFromEvent(id) {
+      const ev = store.event(id);
+      let goal = store.goals().find((g) => g.id === selectedGoalId) || store.goals()[0];
+      if (!goal) goal = store.addGoal('Мои цели');
+      store.addTask(goal.id, 'Заявка: ' + ev.title, 'до ' + ui.shortDate(ev.deadlineDate));
+      selectedGoalId = goal.id;
+      ui.toast('Добавлено в план');
+      SH.app.render();
+    }
+  };
+
+  SH.views = SH.views || {};
+  SH.views.roadmap = Object.assign({ html }, actions);
+})(window.SH = window.SH || {});
+
+/* Чаты: список и переписка */
+(function (SH) {
+  'use strict';
+  const { ui, store, icon } = SH;
+  const e = ui.esc;
+
+  function html() {
+    if (!store.isAuthed) {
+      return '<div class="screen">' +
+        '<div class="screen-head"><h1 class="screen-title">Чаты</h1></div>' +
+        ui.empty('chat', 'Здесь появятся переписки', 'Войди, чтобы видеть командные чаты и сообщения.',
+          '<button class="btn btn--brand" onclick="SH.app.go(\'#/auth\')">Войти</button>') +
+        '</div>';
+    }
+
+    const chats = store.chats();
+
+    return (
+      '<div class="screen">' +
+        '<div class="screen-head">' +
+          '<div class="grow"><h1 class="screen-title">Чаты</h1>' +
+          '<p class="screen-sub">' + (chats.length ? store.unreadTotal() + ' непрочитанных' : 'Сообщения и команды') + '</p></div>' +
+          '<button class="icon-btn icon-btn--plain" onclick="SH.views.chats.newChat()" aria-label="Новый чат">' + icon('edit', 20) + '</button>' +
+        '</div>' +
+        '<div class="search" style="margin-bottom:16px">' + icon('search') +
+          '<input placeholder="Поиск по чатам…" id="chat-search"></div>' +
+        (chats.length
+          ? '<div class="list">' + chats.map(chatRow).join('') + '</div>'
+          : ui.empty('chat', 'Пока пусто', 'Присоединись к команде в разделе «Сообщество» — чат появится сам.')) +
+      '</div>'
+    );
+  }
+
+  function chatRow(c) {
+    const last = c.messages[c.messages.length - 1] || {};
+    const author = store.userById(last.authorId);
+    return (
+      '<div class="item card--tap" onclick="SH.app.go(\'#/chat/' + c.id + '\')" style="cursor:pointer">' +
+        '<span class="avatar avatar--40 avatar--brand">' + e(ui.initials(c.title)) + '</span>' +
+        '<div class="grow" style="min-width:0">' +
+          '<div class="row"><span class="ellipsis" style="font-weight:650;font-size:14px">' + e(c.title) + '</span>' +
+            '<span class="spacer"></span><span class="small muted">' + e(ui.relTime(c.lastAt)) + '</span></div>' +
+          '<div class="small muted ellipsis" style="margin-top:2px">' +
+            (last.authorId === (store.currentUser || {}).id ? 'Ты: ' : (author.name ? author.name.split(' ')[0] + ': ' : '')) +
+            e(last.text || '') + '</div>' +
+        '</div>' +
+        (c.unread ? '<span style="background:var(--primary);color:#fff;font-size:11px;font-weight:800;min-width:20px;height:20px;' +
+          'border-radius:999px;display:grid;place-items:center;padding:0 6px">' + c.unread + '</span>' : '') +
+      '</div>'
+    );
+  }
+
+  function thread(id) {
+    const c = store.chat(id);
+    if (!c) return '<div class="screen">' + ui.empty('chat', 'Чат не найден', 'Возможно, он был удалён.') + '</div>';
+    const me = store.currentUser;
+
+    return (
+      '<div class="screen" style="display:flex;flex-direction:column;min-height:100dvh;padding-bottom:0">' +
+        '<div class="screen-head" style="gap:8px">' +
+          '<button class="icon-btn icon-btn--plain" onclick="SH.app.go(\'#/chats\')" aria-label="Назад">' + icon('arrowLeft', 21) + '</button>' +
+          '<div class="grow" style="min-width:0">' +
+            '<div class="ellipsis" style="font-weight:750;font-size:16px">' + e(c.title) + '</div>' +
+            '<div class="small muted">' + c.memberIds.length + ' участника · онлайн</div>' +
+          '</div>' +
+          '<button class="icon-btn icon-btn--plain" onclick="SH.views.chats.info(\'' + c.id + '\')">' + icon('info', 20) + '</button>' +
+        '</div>' +
+
+        '<div class="chat-scroll grow">' +
+          c.messages.map((m) => {
+            const own = m.authorId === me.id;
+            const author = store.userById(m.authorId);
+            return (
+              '<div style="display:flex;flex-direction:column;align-items:' + (own ? 'flex-end' : 'flex-start') + '">' +
+                (!own ? '<div class="small muted" style="margin:0 0 3px 4px">' + e(author.name.split(' ')[0]) + '</div>' : '') +
+                '<div class="chat-bubble chat-bubble--' + (own ? 'own' : 'other') + '">' + e(m.text) +
+                  '<div class="chat-time">' + e(ui.relTime(m.at)) + '</div>' +
+                '</div>' +
+              '</div>'
+            );
+          }).join('') +
+        '</div>' +
+
+        '<div class="composer">' +
+          '<div class="field"><input id="msg-input" placeholder="Сообщение…" autocomplete="off"></div>' +
+          '<button class="icon-btn icon-btn--brand" style="width:46px;height:46px" onclick="SH.views.chats.send(\'' + c.id + '\')">' +
+            icon('send', 19) + '</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function mountThread(root, id) {
+    const input = root.querySelector('#msg-input');
+    if (!input) return;
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' && !ev.shiftKey) {
+        ev.preventDefault();
+        SH.views.chats.send(id);
+      }
+    });
+    input.focus({ preventScroll: true });
+    window.scrollTo(0, document.body.scrollHeight);
+  }
+
+  const actions = {
+    send(id) {
+      const input = document.getElementById('msg-input');
+      if (!input || !input.value.trim()) return;
+      store.sendMessage(id, input.value);
+      SH.app.render();
+      const again = document.getElementById('msg-input');
+      if (again) again.focus({ preventScroll: true });
+    },
+
+    newChat() {
+      ui.sheet({
+        title: 'Новый чат',
+        subtitle: 'Выбери, с кем поговорить',
+        body: '<div class="list">' +
+          store.state.users.filter((u) => u.id !== (store.currentUser || {}).id).slice(0, 6).map((u) =>
+            '<button class="item" style="width:100%;text-align:left" onclick="SH.views.chats.startWith(\'' + u.id + '\')">' +
+              ui.avatar(u, 36) +
+              '<div class="grow"><div style="font-weight:650;font-size:14px">' + e(u.name) + '</div>' +
+              '<div class="small muted">' + e(u.grade || u.position || '') + '</div></div>' +
+              icon('chevronRight', 18) +
+            '</button>'
+          ).join('') + '</div>'
+      });
+    },
+
+    startWith(userId) {
+      const me = store.currentUser;
+      const existing = store.chats().find((c) => c.memberIds.length === 2 && c.memberIds.includes(userId));
+      if (existing) { ui.closeSheet(); SH.app.go('#/chat/' + existing.id); return; }
+      const other = store.userById(userId);
+      const chat = { id: store.uid('c'), title: other.name, memberIds: [me.id, userId], lastAt: new Date().toISOString(), unread: 0, messages: [] };
+      store.state.chats.push(chat);
+      store.commit(() => {}, 'chats');
+      ui.closeSheet();
+      SH.app.go('#/chat/' + chat.id);
+    },
+
+    info(id) {
+      const c = store.chat(id);
+      const members = c.memberIds.map((uid) => store.userById(uid));
+      ui.sheet({
+        title: c.title,
+        body:
+          '<div class="list">' + members.map((u) =>
+            '<div class="item">' + ui.avatar(u, 36) +
+            '<div class="grow"><div style="font-weight:650;font-size:14px">' + e(u.name) + '</div>' +
+            '<div class="small muted">' + e(u.grade || u.position || '') + '</div></div></div>'
+          ).join('') + '</div>' +
+          '<button class="btn btn--soft btn--block mt-16" onclick="SH.app.go(\'#/roadmap\')">Открыть план команды</button>'
+      });
+    }
+  };
+
+  SH.views = SH.views || {};
+  SH.views.chats = Object.assign({ html, thread, mountThread }, actions);
+})(window.SH = window.SH || {});
+
+/* Профиль, настройки, вход/регистрация */
+(function (SH) {
+  'use strict';
+  const { ui, store, icon } = SH;
+  const e = ui.esc;
+
+  /* ─────────────────────────── профиль ─────────────────────────── */
+
+  function html() {
+    if (!store.isAuthed) {
+      return (
+        '<div class="screen">' +
+          '<div class="screen-head"><h1 class="screen-title">Профиль</h1></div>' +
+          ui.empty('person', 'Собери свой профиль', 'Навыки, интересы и портфолио — всё в одном месте, и подбор работает точнее.',
+            '<button class="btn btn--brand" onclick="SH.app.go(\'#/auth\')">Войти или зарегистрироваться</button>') +
+        '</div>'
+      );
+    }
+
+    const u = store.currentUser;
+    const apps = store.myApplications();
+    const readiness = Math.min(96, 40 + (u.skills || []).length * 8 + (u.interests || []).length * 6 + apps.length * 5);
+
+    return (
+      '<div class="screen">' +
+        '<div class="screen-head">' +
+          '<h1 class="screen-title grow">Профиль</h1>' +
+          '<button class="icon-btn icon-btn--plain" onclick="SH.views.profile.settings()" aria-label="Настройки">' +
+            icon('settings', 21) + '</button>' +
+        '</div>' +
+
+        '<div class="row" style="gap:14px;margin-bottom:18px">' +
+          ui.avatar(u, 56) +
+          '<div class="grow" style="min-width:0">' +
+            '<div class="h2" style="font-size:19px">' + e(u.name) + '</div>' +
+            '<div class="small muted">' + e([u.grade, u.school, u.city].filter(Boolean).join(' · ')) + '</div>' +
+          '</div>' +
+          '<button class="btn btn--soft btn--xs" onclick="SH.views.profile.editProfile()">' + icon('edit', 14) + 'Изменить</button>' +
+        '</div>' +
+
+        '<div class="readiness">' +
+          '<div class="row"><span class="readiness__label">Готовность к поступлению</span>' +
+            '<span class="spacer"></span><span class="readiness__value">' + readiness + '%</span></div>' +
+          '<div class="h3" style="margin:6px 0 10px;font-size:15px;color:#fff">Путь ученика</div>' +
+          '<div class="progress"><i style="width:' + readiness + '%;background:var(--sky)"></i></div>' +
+          '<div class="small" style="margin-top:10px;opacity:.66;color:#fff">' +
+            (u.skills || []).length + ' ' + ui.plural((u.skills || []).length, 'навык', 'навыка', 'навыков') + ' · ' +
+            apps.length + ' ' + ui.plural(apps.length, 'заявка', 'заявки', 'заявок') + ' · ' +
+            store.tasks().filter((t) => t.status === 'done').length + ' ' +
+            ui.plural(store.tasks().filter((t) => t.status === 'done').length, 'шаг', 'шага', 'шагов') + ' выполнено</div>' +
+        '</div>' +
+
+        '<div class="section-head"><span class="h2">Навыки</span></div>' +
+        chips(u.skills || [], 'skills') +
+
+        '<div class="section-head"><span class="h2">Интересы</span></div>' +
+        chips(u.interests || [], 'interests') +
+
+        '<div class="section-head"><span class="h2">Мои заявки</span></div>' +
+        (apps.length
+          ? '<div class="list">' + apps.map(appRow).join('') + '</div>'
+          : ui.empty('file', 'Заявок пока нет', 'Открой любое событие в Explore и подай заявку — она появится здесь.')) +
+
+        '<div class="section-head"><span class="h2">Быстрые действия</span></div>' +
+        '<div class="list">' +
+          row('install', 'Установить приложение', 'На главный экран, в три шага', "SH.app.go('#/install')") +
+          (store.isAdmin ? row('shield', 'Админ-панель', 'Управление событиями и учениками', "SH.app.go('#/admin')", 'tag--lav') : '') +
+          row('globe', 'Синхронизация', cloudLabel(), 'SH.views.profile.cloudSheet()') +
+          row('moon', 'Тема оформления', themeLabel(), 'SH.views.profile.themeSheet()') +
+          row('refresh', 'Сбросить демо-данные', 'Вернуть всё как было', 'SH.views.profile.reset()') +
+          row('logout', 'Выйти', 'Завершить сессию', 'SH.views.profile.logout()') +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function cloudLabel() {
+    const api = SH.api || {};
+    if (!api.enabled || !api.enabled()) return 'Локальный режим (офлайн)';
+    if (api.mode === 'cloud') return 'Облако подключено · ' + (api.lastSync ? ui.relTime(new Date(api.lastSync).toISOString()) : 'синхронизировано');
+    return api.lastError ? 'Нет связи: ' + String(api.lastError).slice(0, 40) : 'Проверяю связь…';
+  }
+
+  function themeLabel() {
+    const m = store.state.settings.theme;
+    return m === 'system' ? 'Как в системе' : m === 'dark' ? 'Тёмная' : 'Светлая';
+  }
+
+  function chips(list, field) {
+    return '<div class="wrap">' + list.map((v) =>
+      '<span class="tag">' + e(v) +
+        '<button class="chip-remove" onclick="SH.views.profile.removeChip(\'' + field + '\',\'' + e(v) + '\')" aria-label="Убрать">×</button>' +
+      '</span>'
+    ).join('') +
+    '<button class="chip-add" onclick="SH.views.profile.addChip(\'' + field + '\')">' + icon('plus', 13) + 'Добавить</button></div>';
+  }
+
+  function appRow(a) {
+    const ev = store.event(a.eventId);
+    if (!ev) return '';
+    const tone = { pending: 'sun', accepted: 'mint', rejected: 'blush' }[a.status] || 'sky';
+    const label = { pending: 'На проверке', accepted: 'Принята', rejected: 'Отклонена' }[a.status] || a.status;
+    return (
+      '<div class="item card--tap" onclick="SH.app.go(\'#/event/' + ev.id + '\')" style="cursor:pointer">' +
+        '<span class="empty__icon" style="width:40px;height:40px;border-radius:13px;background:var(--primary-soft);color:var(--primary)">' +
+          icon(store.CATEGORIES[ev.category].glyph, 19) + '</span>' +
+        '<div class="grow" style="min-width:0">' +
+          '<div class="ellipsis" style="font-weight:650;font-size:13.5px">' + e(ev.title) + '</div>' +
+          '<div class="small muted">' + e(ui.relTime(a.createdAt)) + '</div>' +
+        '</div>' +
+        '<span class="tag tag--' + tone + '">' + e(label) + '</span>' +
+      '</div>'
+    );
+  }
+
+  function syncRow(ico, title, sub) {
+    return '<div class="item">' +
+      '<span class="empty__icon" style="width:36px;height:36px;border-radius:11px;background:var(--chip);color:var(--text);margin:0">' +
+        icon(ico, 17) + '</span>' +
+      '<div class="grow" style="min-width:0">' +
+        '<div style="font-weight:650;font-size:13.5px">' + e(title) + '</div>' +
+        '<div class="small muted">' + e(sub) + '</div>' +
+      '</div></div>';
+  }
+
+  function row(ico, title, sub, action, tone) {
+    return (
+      '<button class="item" style="width:100%;text-align:left" onclick="' + action + '">' +
+        '<span class="empty__icon" style="width:38px;height:38px;border-radius:12px;background:var(--chip);color:var(--text);margin:0">' +
+          icon(ico, 18) + '</span>' +
+        '<div class="grow" style="min-width:0">' +
+          '<div style="font-weight:650;font-size:14px">' + e(title) + '</div>' +
+          '<div class="small muted">' + e(sub) + '</div>' +
+        '</div>' +
+        (tone ? '<span class="tag ' + tone + '">admin</span>' : '') +
+        '<span class="muted">' + icon('chevronRight', 17) + '</span>' +
+      '</button>'
+    );
+  }
+
+  /* ─────────────────────────── настройки ─────────────────────────── */
+
+  const actions = {
+    addChip(field) {
+      ui.sheet({
+        title: 'Добавить в ' + (field === 'skills' ? 'навыки' : 'интересы'),
+        body: ui.field('chip-input', '', { placeholder: field === 'skills' ? 'Например: Python' : 'Например: ИИ' }) +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.profile.saveChip(\'' + field + '\')">Добавить</button>',
+        onMount(el) { setTimeout(() => { const i = el.querySelector('#chip-input'); if (i) i.focus(); }, 120); }
+      });
+    },
+    saveChip(field) {
+      const input = document.getElementById('chip-input');
+      const v = input ? input.value.trim() : '';
+      if (!v) return;
+      const u = store.currentUser;
+      const list = (u[field] || []).slice();
+      if (!list.includes(v)) list.push(v);
+      store.updateUser({ [field]: list });
+      ui.closeSheet();
+      ui.toast('Сохранено');
+      SH.app.render();
+    },
+    removeChip(field, value) {
+      const u = store.currentUser;
+      store.updateUser({ [field]: (u[field] || []).filter((x) => x !== value) });
+      SH.app.render();
+    },
+
+    editProfile() {
+      const u = store.currentUser;
+      ui.sheet({
+        title: 'Профиль',
+        body:
+          ui.field('p-name', 'Имя и фамилия', { value: u.name }) +
+          ui.field('p-grade', 'Класс', { value: u.grade || '', style: 'margin-top:12px' }) +
+          ui.field('p-school', 'Школа', { value: u.school || '', style: 'margin-top:12px' }) +
+          ui.field('p-city', 'Город', { value: u.city || '', style: 'margin-top:12px' }) +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.profile.saveProfile()">Сохранить</button>'
+      });
+    },
+    saveProfile() {
+      const v = (id) => (document.getElementById(id) || {}).value || '';
+      store.updateUser({ name: v('p-name').trim() || 'Ученик', grade: v('p-grade'), school: v('p-school'), city: v('p-city') });
+      ui.closeSheet();
+      ui.toast('Профиль обновлён');
+      SH.app.render();
+    },
+
+    themeSheet() {
+      const cur = store.state.settings.theme;
+      ui.sheet({
+        title: 'Тема',
+        body:
+          '<div class="list">' +
+          [['system', 'Как в системе', 'Светлая днём, тёмная ночью'],
+           ['light', 'Светлая', 'Всегда светлое оформление'],
+           ['dark', 'Тёмная', 'Всегда тёмное оформление']].map(([val, title, sub]) =>
+            '<button class="item" style="width:100%;text-align:left" onclick="SH.views.profile.setTheme(\'' + val + '\')">' +
+              '<div class="grow"><div style="font-weight:650;font-size:14px">' + title + '</div>' +
+              '<div class="small muted">' + sub + '</div></div>' +
+              (cur === val ? '<span style="color:var(--primary)">' + icon('checkCircle', 20) + '</span>' : '') +
+            '</button>').join('') +
+          '</div>'
+      });
+    },
+    setTheme(t) { store.setTheme(t); ui.closeSheet(); SH.app.render(); },
+
+    cloudSheet() {
+      const api = SH.api || {};
+      const pending = api.outbox ? api.outbox().length : 0;
+      const mode = api.mode === 'cloud' ? 'Облако (D1)' : 'Локально (localStorage)';
+      const status = api.status === 'online' ? 'на связи'
+        : api.status === 'offline' ? 'нет связи — работаем офлайн'
+        : api.status === 'disabled' ? 'режим без бэкенда' : 'проверка…';
+
+      ui.sheet({
+        title: 'Синхронизация',
+        subtitle: 'Данные и связь с бэкендом',
+        body:
+          '<div class="list">' +
+            syncRow('globe', 'Режим', mode) +
+            syncRow('wifi', 'Сеть', status) +
+            syncRow('clock', 'Последняя синхронизация', api.lastSync ? ui.relTime(new Date(api.lastSync).toISOString()) : 'ещё не было') +
+            syncRow('file', 'В очереди на отправку', pending ? pending + ' ' + ui.plural(pending, 'изменение', 'изменения', 'изменений') : 'пусто') +
+          '</div>' +
+          (api.enabled && api.enabled()
+            ? '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.profile.cloudSync()">Синхронизировать сейчас</button>'
+            : '<div class="ai-note mt-16">' + icon('info') +
+              '<div>Сборка без бэкенда: всё хранится в этом браузере. Чтобы включить облако, собери файл с ключом <b>--api</b>.</div></div>') +
+          (pending ? '<button class="btn btn--soft btn--block mt-12" onclick="SH.views.profile.cloudFlush()">Отправить очередь</button>' : '')
+      });
+    },
+
+    cloudSync() {
+      const api = SH.api;
+      api.bootstrap().then((snap) => {
+        if (snap) {
+          store.hydrate(snap);
+          ui.closeSheet();
+          ui.toast('Синхронизировано');
+          SH.app.render();
+        } else {
+          ui.closeSheet();
+          ui.toast('Нет связи: ' + (api.lastError || 'неизвестная ошибка'));
+        }
+      });
+    },
+
+    cloudFlush() {
+      SH.api.flush().then((n) => {
+        ui.toast(n ? 'Отправлено: ' + n : 'Очередь пуста или нет связи');
+        SH.app.render();
+      });
+    },
+
+    settings() { actions.themeSheet(); },
+
+    reset() {
+      ui.confirmSheet('Сбросить демо-данные?', 'Все изменения в этой сессии будут потеряны.', 'Сбросить', () => {
+        store.reset();
+        ui.toast('Данные сброшены');
+        SH.app.go('#/explore');
+      });
+    },
+
+    logout() {
+      ui.confirmSheet('Выйти?', 'Ты сможешь войти снова под той же почтой.', 'Выйти', () => {
+        store.logout();
+        SH.app.go('#/explore');
+      });
+    }
+  };
+
+  /* ─────────────────────────── вход / регистрация ─────────────────────────── */
+
+  function auth(mode) {
+    const isLogin = mode !== 'register';
+    return (
+      '<div class="screen" style="padding-top:calc(var(--safe-t) + 34px)">' +
+        '<div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:26px">' +
+          SH.logoMark(64) +
+          '<h1 style="font-size:26px;letter-spacing:-0.8px;margin:16px 0 6px">Student Hub</h1>' +
+          '<p class="muted" style="margin:0;font-size:14px;max-width:300px;line-height:1.5">' +
+            'Возможности, команды и личный план — в одном приложении для школы.</p>' +
+        '</div>' +
+
+        '<div class="pill-row" style="justify-content:center;margin-bottom:20px">' +
+          '<button class="pill" aria-pressed="' + isLogin + '" onclick="SH.app.go(\'#/auth\')">Вход</button>' +
+          '<button class="pill" aria-pressed="' + !isLogin + '" onclick="SH.app.go(\'#/auth/register\')">Регистрация</button>' +
+        '</div>' +
+
+        (isLogin
+          ? ui.field('auth-email', 'Почта', { type: 'email', value: 'aziz@school.ru', autocomplete: 'email' }) +
+            ui.field('auth-pass', 'Пароль', { type: 'password', value: 'demo', autocomplete: 'current-password', style: 'margin-top:12px' })
+          : ui.field('auth-name', 'Имя и фамилия', { placeholder: 'Азиз Рахимов' }) +
+            ui.field('auth-email', 'Почта', { type: 'email', placeholder: 'you@school.ru', style: 'margin-top:12px' }) +
+            ui.field('auth-pass', 'Пароль', { type: 'password', placeholder: 'Минимум 4 символа', style: 'margin-top:12px' }) +
+            ui.field('auth-grade', 'Класс', { placeholder: '10 класс', style: 'margin-top:12px' })) +
+
+        '<div id="auth-error"></div>' +
+
+        '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.profile.submitAuth(\'' + (isLogin ? 'login' : 'register') + '\')">' +
+          (isLogin ? 'Войти' : 'Создать аккаунт') + icon('arrowRight', 18) + '</button>' +
+
+        '<div class="divider"></div>' +
+        '<p class="center small muted" style="margin:0 0 12px">Демо-доступ для хакатона</p>' +
+        '<div class="row" style="gap:10px">' +
+          '<button class="btn btn--soft grow" onclick="SH.views.profile.demo(\'student\')">' + icon('person', 17) + 'Ученик</button>' +
+          '<button class="btn btn--soft grow" onclick="SH.views.profile.demo(\'admin\')">' + icon('shield', 17) + 'Админ</button>' +
+        '</div>' +
+        '<p class="center small muted mt-16" style="line-height:1.5">Демо-профиль: <b>aziz@school.ru</b> / <b>demo</b><br>' +
+          'Админ: <b>admin@school.ru</b> / <b>admin</b></p>' +
+      '</div>'
+    );
+  }
+
+  function submitAuth(kind) {
+    const v = (id) => (document.getElementById(id) || {}).value || '';
+    const errBox = document.getElementById('auth-error');
+    let res;
+    if (kind === 'login') {
+      res = store.login(v('auth-email'), v('auth-pass'));
+    } else {
+      if (!v('auth-name').trim()) return showErr('Введи имя');
+      if (!/^\S+@\S+\.\S+$/.test(v('auth-email'))) return showErr('Проверь почту');
+      if (v('auth-pass').length < 4) return showErr('Пароль слишком короткий');
+      res = store.register({ name: v('auth-name'), email: v('auth-email'), password: v('auth-pass'), grade: v('auth-grade') });
+    }
+    if (!res.ok) return showErr(res.error);
+    ui.toast('Добро пожаловать, ' + res.user.name.split(' ')[0]);
+    SH.app.go('#/explore');
+
+    function showErr(msg) {
+      if (errBox) errBox.innerHTML = '<p class="field-error">' + e(msg) + '</p>';
+    }
+  }
+
+  SH.views = SH.views || {};
+  SH.views.profile = Object.assign({ html, auth, submitAuth }, actions);
+  SH.views.profile.demo = function (role) {
+    const res = store.loginAsDemos(role);
+    if (res.ok) {
+      ui.toast(role === 'admin' ? 'Вход как администратор' : 'Вход как ученик');
+      SH.app.go(role === 'admin' ? '#/admin' : '#/explore');
+    }
+  };
+})(window.SH = window.SH || {});
+
+/* Админ-панель */
+(function (SH) {
+  'use strict';
+  const { ui, store, ai, icon } = SH;
+  const e = ui.esc;
+
+  let section = 'overview';
+  let search = '';
+
+  const NAV = [
+    ['overview', 'grid', 'Обзор'],
+    ['events', 'calendar', 'События'],
+    ['students', 'users', 'Ученики'],
+    ['moderation', 'flag', 'Модерация'],
+    ['ai', 'sparkles', 'ИИ-аналитика']
+  ];
+
+  function html() {
+    if (!store.isAdmin) {
+      return '<div class="app app--wide"><div class="screen">' +
+        ui.empty('lock', 'Доступ только для администратора', 'Войди как админ: admin@school.ru / admin',
+          '<button class="btn btn--brand" onclick="SH.views.profile.demo(\'admin\')">Войти как админ</button>') +
+        '</div></div>';
+    }
+
+    return (
+      '<div class="admin">' +
+        '<aside class="admin__side">' +
+          '<div class="admin__brand">' + SH.logoMark(32) +
+            '<div><b>Student Hub</b><div class="small muted" style="font-size:11px">Админ-панель</div></div>' +
+          '</div>' +
+          NAV.map(([id, ico, label]) =>
+            '<button class="admin__nav" aria-current="' + (section === id) + '" onclick="SH.views.admin.go(\'' + id + '\')">' +
+              icon(ico) + label + '</button>'
+          ).join('') +
+          '<div style="flex:1"></div>' +
+          '<button class="admin__nav" onclick="SH.app.go(\'#/explore\')">' + icon('arrowLeft') + 'В приложение</button>' +
+          '<button class="admin__nav" onclick="SH.views.profile.logout()">' + icon('logout') + 'Выйти</button>' +
+        '</aside>' +
+        '<main class="admin__main">' + content() + '</main>' +
+      '</div>'
+    );
+  }
+
+  function content() {
+    if (section === 'events') return eventsSection();
+    if (section === 'students') return studentsSection();
+    if (section === 'moderation') return moderationSection();
+    if (section === 'ai') return aiSection();
+    return overviewSection();
+  }
+
+  function pageHead(title, sub, actionHtml) {
+    return '<div class="row" style="margin-bottom:22px">' +
+      '<div class="grow"><h1 style="margin:0;font-size:24px;letter-spacing:-0.7px">' + e(title) + '</h1>' +
+      '<p class="small muted" style="margin:4px 0 0">' + e(sub) + '</p></div>' +
+      (actionHtml || '') + '</div>';
+  }
+
+  /* ── обзор ── */
+  function overviewSection() {
+    const s = store.stats();
+    const apps = store.state.applications.slice(0, 6);
+
+    return pageHead('Обзор', 'Что происходит в школе на этой неделе',
+      '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.eventForm()">' + icon('plus', 16) + 'Событие</button>') +
+      '<div class="stat-grid">' +
+        stat(s.students, 'учеников') +
+        stat(s.events, 'активных событий') +
+        stat(s.applications, 'заявок всего') +
+        stat(s.pending, 'ждут проверки') +
+      '</div>' +
+
+      '<div style="display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-top:16px" class="admin-grid">' +
+        '<div class="card" style="padding:0;overflow:hidden">' +
+          '<div class="row" style="padding:16px"><b class="grow" style="font-size:14.5px">Последние заявки</b>' +
+            '<span class="section-link" onclick="SH.views.admin.go(\'events\')">Все события</span></div>' +
+          '<table class="table"><thead><tr><th>Ученик</th><th>Событие</th><th>Статус</th></tr></thead><tbody>' +
+          apps.map((a) => {
+            const u = store.userById(a.userId);
+            const ev = store.event(a.eventId);
+            return '<tr><td><div class="row">' + ui.avatar(u, 28) + '<span>' + e(u.name) + '</span></div></td>' +
+              '<td class="ellipsis" style="max-width:220px">' + e(ev ? ev.title : '—') + '</td>' +
+              '<td>' + statusTag(a.status) + '</td></tr>';
+          }).join('') +
+          '</tbody></table></div>' +
+
+        '<div class="card" style="background:var(--primary-soft);border-color:transparent">' +
+          '<div class="row" style="margin-bottom:8px">' +
+            '<span style="color:var(--primary)">' + icon('sparkles', 18) + '</span>' +
+            '<b style="font-size:13.5px">Сводка ИИ</b></div>' +
+          '<p class="small" style="margin:0 0 10px;line-height:1.55;color:var(--text)">' + e(ai.digest()[0]) + '</p>' +
+          '<p class="small" style="margin:0;line-height:1.55;color:var(--muted)">' + e(ai.digest()[2]) + '</p>' +
+          '<button class="btn btn--soft btn--sm mt-16" onclick="SH.views.admin.go(\'ai\')">Подробнее</button>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="mt-24">' + pageHead('Быстрые действия', '', '') + '</div>' +
+      '<div class="row wrap" style="gap:10px">' +
+        quick('plus', 'Новое событие', 'SH.views.admin.eventForm()') +
+        quick('users', 'Пригласить учеников', 'SH.views.admin.invite()') +
+        quick('flag', 'Модерация (' + s.flagged + ')', 'SH.views.admin.go(\'moderation\')') +
+        quick('download', 'Экспорт CSV', 'SH.views.admin.exportCsv()') +
+      '</div>';
+  }
+
+  function stat(v, label) { return '<div class="stat"><b>' + v + '</b><span>' + e(label) + '</span></div>'; }
+  function quick(ico, label, action) {
+    return '<button class="btn btn--outline btn--sm" onclick="' + action + '">' + icon(ico, 16) + e(label) + '</button>';
+  }
+  function statusTag(st) {
+    const map = { pending: ['tag--sun', 'на проверке'], accepted: ['tag--mint', 'принята'], rejected: ['tag--blush', 'отклонена'] };
+    const [cls, label] = map[st] || ['tag--sky', st];
+    return '<span class="tag ' + cls + '">' + label + '</span>';
+  }
+
+  /* ── события ── */
+  function eventsSection() {
+    const list = store.events({ includeDrafts: true })
+      .filter((ev) => !search || (ev.title + ev.organizer).toLowerCase().includes(search.toLowerCase()));
+
+    return pageHead('События', 'Публикация, черновики и заявки',
+      '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.eventForm()">' + icon('plus', 16) + 'Создать</button>') +
+      '<div class="search" style="margin-bottom:16px;max-width:340px">' + icon('search') +
+        '<input placeholder="Поиск по событиям…" id="admin-search" value="' + e(search) + '"></div>' +
+      '<div class="card" style="padding:0;overflow:hidden">' +
+        '<table class="table"><thead><tr>' +
+          '<th>Название</th><th>Категория</th><th>Дедлайн</th><th>Заявки</th><th>Статус</th><th></th>' +
+        '</tr></thead><tbody>' +
+        list.map((ev) =>
+          '<tr>' +
+            '<td><div style="font-weight:650;max-width:280px" class="ellipsis">' + e(ev.title) + '</div>' +
+              '<div class="small muted">' + e(ev.organizer) + '</div></td>' +
+            '<td>' + e((store.CATEGORIES[ev.category] || {}).label || '') + '</td>' +
+            '<td>' + e(ui.shortDate(ev.deadlineDate)) + '</td>' +
+            '<td>' + ev.applicants + '</td>' +
+            '<td>' + (ev.status === 'published'
+              ? '<span class="tag tag--mint">опубликовано</span>'
+              : '<span class="tag tag--sun">черновик</span>') + '</td>' +
+            '<td style="white-space:nowrap">' +
+              '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px" onclick="SH.views.admin.eventForm(\'' + ev.id + '\')">' + icon('edit', 16) + '</button>' +
+              '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px;color:var(--danger)" onclick="SH.views.admin.removeEvent(\'' + ev.id + '\')">' + icon('trash', 16) + '</button>' +
+            '</td>' +
+          '</tr>'
+        ).join('') +
+        '</tbody></table>' +
+        (list.length ? '' : '<div class="empty" style="padding:40px"><p>Ничего не найдено</p></div>') +
+      '</div>';
+  }
+
+  /* ── ученики ── */
+  function studentsSection() {
+    const students = store.state.users.filter((u) => u.role === 'student')
+      .filter((u) => !search || u.name.toLowerCase().includes(search.toLowerCase()));
+
+    return pageHead('Ученики', 'Профили, интересы и активность',
+      '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.invite()">' + icon('mail', 16) + 'Пригласить</button>') +
+      '<div class="search" style="margin-bottom:16px;max-width:340px">' + icon('search') +
+        '<input placeholder="Поиск по имени…" id="admin-search" value="' + e(search) + '"></div>' +
+      '<div class="card" style="padding:0;overflow:hidden"><table class="table"><thead><tr>' +
+        '<th>Ученик</th><th>Класс</th><th>Интересы</th><th>Заявок</th><th>Профиль</th>' +
+      '</tr></thead><tbody>' +
+      students.map((u) => {
+        const apps = store.state.applications.filter((a) => a.userId === u.id).length;
+        const filled = (u.interests || []).length > 0;
+        return '<tr>' +
+          '<td><div class="row">' + ui.avatar(u, 30) + '<div><div style="font-weight:650">' + e(u.name) + '</div>' +
+            '<div class="small muted">' + e(u.email) + '</div></div></div></td>' +
+          '<td>' + e(u.grade || '—') + '</td>' +
+          '<td><div class="wrap" style="gap:4px">' + ((u.interests || []).slice(0, 2).map((i) => ui.tag(i)).join('') || '<span class="muted small">не заполнено</span>') + '</div></td>' +
+          '<td>' + apps + '</td>' +
+          '<td>' + (filled ? '<span class="tag tag--mint">заполнен</span>' : '<span class="tag tag--blush">пусто</span>') + '</td>' +
+        '</tr>';
+      }).join('') +
+      '</tbody></table></div>';
+  }
+
+  /* ── модерация ── */
+  function moderationSection() {
+    const flagged = store.posts({ includeHidden: true }).filter((p) => p.status !== 'published');
+    const published = store.posts({ includeHidden: true }).filter((p) => p.status === 'published');
+
+    return pageHead('Модерация', 'Жалобы и скрытые публикации', '') +
+      '<h3 class="h3" style="margin:0 0 12px">Требуют решения · ' + flagged.length + '</h3>' +
+      (flagged.length
+        ? '<div class="list">' + flagged.map((p) => {
+            const a = store.userById(p.authorId);
+            return '<div class="card">' +
+              '<div class="row" style="margin-bottom:10px">' + ui.avatar(a, 32) +
+                '<div class="grow"><div style="font-weight:650;font-size:13.5px">' + e(a.name) + '</div>' +
+                '<div class="small muted">' + e(ui.relTime(p.createdAt)) + '</div></div>' +
+                '<span class="tag tag--blush">жалоба</span></div>' +
+              '<p style="margin:0 0 12px;font-size:14px">' + e(p.text) + '</p>' +
+              '<div class="row" style="gap:8px">' +
+                '<button class="btn btn--soft btn--sm" onclick="SH.views.admin.moderate(\'' + p.id + '\',\'published\')">' + icon('check', 15) + 'Оставить</button>' +
+                '<button class="btn btn--danger btn--sm" onclick="SH.views.admin.moderate(\'' + p.id + '\',\'hidden\')">' + icon('close', 15) + 'Скрыть</button>' +
+                '<button class="btn btn--ghost btn--sm" style="margin-left:auto" onclick="SH.views.admin.moderate(\'' + p.id + '\',\'delete\')">Удалить</button>' +
+              '</div></div>';
+          }).join('') + '</div>'
+        : '<div class="card">' + ui.empty('checkCircle', 'Жалоб нет', 'Все публикации в порядке.') + '</div>') +
+      '<h3 class="h3" style="margin:26px 0 12px">Опубликовано · ' + published.length + '</h3>' +
+      '<div class="list">' + published.map((p) => {
+        const a = store.userById(p.authorId);
+        return '<div class="item">' + ui.avatar(a, 32) +
+          '<div class="grow" style="min-width:0"><div class="ellipsis" style="font-size:13.5px">' + e(p.text) + '</div>' +
+          '<div class="small muted">' + e(a.name) + ' · ' + e(ui.relTime(p.createdAt)) + '</div></div>' +
+          '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px" onclick="SH.views.admin.moderate(\'' + p.id + '\',\'hidden\')">' + icon('eye', 16) + '</button>' +
+        '</div>';
+      }).join('') + '</div>';
+  }
+
+  /* ── ИИ ── */
+  function aiSection() {
+    const digest = ai.digest();
+    const s = store.stats();
+    const emptyProfiles = store.state.users.filter((u) => u.role === 'student' && !(u.interests || []).length).length;
+
+    return pageHead('ИИ-аналитика', 'Что происходит и что делать дальше', '') +
+      '<div class="card" style="background:linear-gradient(120deg,#4c3fd0,#6c5ce7 55%,#8f7ef7);color:#fff;border:0">' +
+        '<div class="row" style="margin-bottom:6px"><span>' + icon('sparkles', 18) + '</span><b>Недельный дайджест</b></div>' +
+        '<p style="margin:0;font-size:13.5px;line-height:1.6;color:rgba(255,255,255,.86)">' + e(digest[0]) + '</p>' +
+      '</div>' +
+      '<div class="list mt-16">' + digest.slice(1).map((d) =>
+        '<div class="item" style="align-items:flex-start"><span style="color:var(--primary);margin-top:2px">' + icon('info', 17) + '</span>' +
+        '<div class="grow" style="font-size:13.5px;line-height:1.55">' + e(d) + '</div></div>').join('') + '</div>' +
+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px" class="admin-grid">' +
+        '<div class="card"><b style="font-size:14px">Покрытие профилей</b>' +
+          '<div class="row mt-12"><div class="progress grow"><i style="width:' +
+            Math.round(((s.students - emptyProfiles) / Math.max(1, s.students)) * 100) + '%"></i></div>' +
+            '<span class="small muted">' + (s.students - emptyProfiles) + '/' + s.students + '</span></div>' +
+          '<p class="small muted mt-8" style="margin-bottom:0">У ' + emptyProfiles + ' учеников не заполнены интересы — подбор для них работает вслепую.</p>' +
+        '</div>' +
+        '<div class="card"><b style="font-size:14px">Подключение модели</b>' +
+          '<p class="small muted mt-8" style="line-height:1.5">Сейчас работает локальный режим (офлайн, без лимитов). Для Gemini укажи URL воркера-прокси.</p>' +
+          '<div class="field mt-12"><input id="ai-endpoint" placeholder="https://…workers.dev/ai" value="' + e(ai.endpoint) + '"></div>' +
+          '<button class="btn btn--soft btn--sm mt-12" onclick="SH.views.admin.saveEndpoint()">Сохранить</button>' +
+        '</div>' +
+      '</div>' +
+
+      '<h3 class="h3" style="margin:26px 0 12px">Что рекомендует ИИ</h3>' +
+      '<div class="list">' +
+        '<div class="item"><span class="rank-badge" style="background:var(--mint)">1</span>' +
+          '<div class="grow small">Напомнить ученикам заполнить интересы — это поднимет качество подбора</div></div>' +
+        '<div class="item"><span class="rank-badge" style="background:var(--sky)">2</span>' +
+          '<div class="grow small">Опубликовать черновики: ' + s.drafts + ' событие ждёт публикации</div></div>' +
+        '<div class="item"><span class="rank-badge" style="background:var(--sun)">3</span>' +
+          '<div class="grow small">Разобрать ' + s.pending + ' заявок — ученики ждут ответа дольше двух дней</div></div>' +
+      '</div>';
+  }
+
+  /* ── действия ── */
+  const actions = {
+    go(sec) { section = sec; search = ''; SH.app.render(); },
+
+    eventForm(id) {
+      const ev = id ? store.event(id) : null;
+      const cats = Object.keys(store.CATEGORIES).map((k) => ({ value: k, label: store.CATEGORIES[k].label }));
+      ui.sheet({
+        title: ev ? 'Редактировать событие' : 'Новое событие',
+        body:
+          ui.field('ev-title', 'Название', { value: ev ? ev.title : '', placeholder: 'Например: олимпиада по физике' }) +
+          ui.field('ev-org', 'Организатор', { value: ev ? ev.organizer : 'Школа №1520', style: 'margin-top:12px' }) +
+          ui.field('ev-desc', 'Описание', { value: ev ? ev.description : '', textarea: true, style: 'margin-top:12px' }) +
+          '<div class="row" style="gap:12px;margin-top:12px">' +
+            '<div class="grow">' + ui.select('ev-cat', 'Категория', cats, ev ? ev.category : 'event') + '</div>' +
+            '<div class="grow">' + ui.select('ev-format', 'Формат', [
+              { value: 'Онлайн', label: 'Онлайн' }, { value: 'Офлайн', label: 'Офлайн' }, { value: 'Гибрид', label: 'Гибрид' }
+            ], ev ? ev.format : 'Онлайн') + '</div>' +
+          '</div>' +
+          '<div class="row" style="gap:12px;margin-top:12px">' +
+            '<div class="grow">' + ui.field('ev-date', 'Дедлайн', { type: 'date', value: ev ? ev.deadlineDate.slice(0, 10) : '' }) + '</div>' +
+            '<div class="grow">' + ui.select('ev-status', 'Статус', [
+              { value: 'published', label: 'Опубликовано' }, { value: 'draft', label: 'Черновик' }
+            ], ev ? ev.status : 'published') + '</div>' +
+          '</div>' +
+          ui.field('ev-tags', 'Теги через запятую', { value: ev ? (ev.tags || []).join(', ') : '', style: 'margin-top:12px' }) +
+          '<div class="row mt-16" style="gap:10px">' +
+            '<button class="btn btn--soft grow" data-close>Отмена</button>' +
+            '<button class="btn btn--brand grow" onclick="SH.views.admin.saveEvent(' + (ev ? "'" + ev.id + "'" : 'null') + ')">Сохранить</button>' +
+          '</div>'
+      });
+    },
+
+    saveEvent(id) {
+      const v = (f) => (document.getElementById(f) || {}).value || '';
+      if (!v('ev-title').trim()) { ui.toast('Добавь название'); return; }
+      store.saveEvent({
+        id: id || undefined,
+        title: v('ev-title').trim(),
+        organizer: v('ev-org').trim() || 'Школа',
+        description: v('ev-desc').trim(),
+        category: v('ev-cat'),
+        format: v('ev-format'),
+        deadlineDate: new Date(v('ev-date') || Date.now() + 14 * 864e5).toISOString(),
+        status: v('ev-status'),
+        tags: v('ev-tags').split(',').map((s) => s.trim()).filter(Boolean),
+        eligibility: 'Все классы',
+        isFree: true
+      });
+      ui.closeSheet();
+      ui.toast(id ? 'Событие обновлено' : 'Событие создано');
+      SH.app.render();
+    },
+
+    removeEvent(id) {
+      ui.confirmSheet('Удалить событие?', 'Оно исчезнет из приложения у всех учеников.', 'Удалить', () => {
+        store.deleteEvent(id);
+        ui.toast('Удалено');
+        SH.app.render();
+      });
+    },
+
+    moderate(id, action) {
+      if (action === 'delete') store.deletePost(id);
+      else store.setPostStatus(id, action);
+      ui.toast(action === 'hidden' ? 'Скрыто' : action === 'delete' ? 'Удалено' : 'Оставлено');
+      SH.app.render();
+    },
+
+    invite() {
+      const link = location.origin + location.pathname;
+      ui.sheet({
+        title: 'Пригласить учеников',
+        subtitle: 'Отправь ссылку в классный чат',
+        body:
+          '<div class="card" style="background:var(--chip);border:0"><div class="small muted" style="margin-bottom:6px">Ссылка на приложение</div>' +
+          '<div style="font-size:13px;word-break:break-all">' + e(link) + '</div></div>' +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.admin.copyInvite(\'' + e(link) + '\')">Скопировать</button>' +
+          '<p class="small muted center mt-12" style="line-height:1.5">Ученик открывает ссылку, нажимает «Добавить на главный экран» — и приложение у него как обычное.</p>'
+      });
+    },
+
+    copyInvite(link) {
+      if (navigator.clipboard) navigator.clipboard.writeText(link).then(() => ui.toast('Ссылка скопирована'));
+      else ui.toast('Скопируй вручную');
+    },
+
+    exportCsv() {
+      const rows = [['Ученик', 'Класс', 'Интересы', 'Заявок']];
+      store.state.users.filter((u) => u.role === 'student').forEach((u) => {
+        rows.push([u.name, u.grade || '', (u.interests || []).join('; '),
+          store.state.applications.filter((a) => a.userId === u.id).length]);
+      });
+      const csv = rows.map((r) => r.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'student-hub-ученики.csv';
+      a.click();
+      ui.toast('CSV скачан');
+    },
+
+    saveEndpoint() {
+      const el = document.getElementById('ai-endpoint');
+      ai.endpoint = el ? el.value.trim() : '';
+      ui.toast(ai.endpoint ? 'Прокси подключён' : 'Локальный режим');
+    }
+  };
+
+  SH.views = SH.views || {};
+  SH.views.admin = Object.assign({ html }, actions);
+})(window.SH = window.SH || {});
+
+/* Установка PWA — та самая «инструкция в 3 шага» */
+(function (SH) {
+  'use strict';
+  const { ui, store, icon } = SH;
+  const e = ui.esc;
+
+  function platform() {
+    const ua = navigator.userAgent;
+    if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
+    if (/Android/.test(ua)) return 'android';
+    return 'desktop';
+  }
+
+  function stepsHtml() {
+    const p = platform();
+    if (p === 'ios') {
+      return [
+        ['Открой сайт в <b>Safari</b>', 'Chrome на iPhone установку не поддерживает — нужен именно Safari.'],
+        ['Нажми кнопку <b>«Поделиться»</b>', 'Квадрат со стрелкой вверх внизу экрана.'],
+        ['Выбери <b>«На экран Домой»</b>', 'Иконка появится рядом с остальными приложениями.']
+      ];
+    }
+    if (p === 'android') {
+      return [
+        ['Открой сайт в <b>Chrome</b>', 'Подойдёт любой современный браузер на Android.'],
+        ['Нажми <b>«Установить приложение»</b>', 'Кнопка в шапке сайта или пункт в меню «⋮».'],
+        ['Готово — иконка на главном экране', 'Открывается без адресной строки, как обычное приложение.']
+      ];
+    }
+    return [
+      ['Открой сайт в <b>Chrome или Edge</b>', 'Подойдёт любой браузер на Chromium.'],
+      ['Нажми <b>иконку установки</b> в адресной строке', 'Или меню «⋮» → «Установить Student Hub».'],
+      ['Готово — приложение в системе', 'Запускается в отдельном окне, без вкладок.']
+    ];
+  }
+
+  function html() {
+    const installed = SH.install.isStandalone();
+    const canPrompt = !!SH.install.promptEvent;
+
+    return (
+      '<div class="screen" style="padding-top:calc(var(--safe-t) + 26px)">' +
+        '<div class="screen-head" style="margin-bottom:22px">' +
+          '<button class="icon-btn icon-btn--plain" onclick="SH.app.back()" aria-label="Назад">' + icon('arrowLeft', 21) + '</button>' +
+        '</div>' +
+
+        '<div style="text-align:center;margin-bottom:24px">' +
+          '<div style="display:inline-block;padding:10px;border-radius:26px;background:var(--surface);box-shadow:var(--shadow-md)">' +
+            SH.logoMark(76) +
+          '</div>' +
+          '<h1 style="font-size:25px;letter-spacing:-0.8px;margin:16px 0 8px">' +
+            (installed ? 'Уже установлено' : 'Добавь на главный экран') + '</h1>' +
+          '<p class="muted" style="margin:0 auto;max-width:310px;font-size:14px;line-height:1.55">' +
+            (installed
+              ? 'Student Hub открывается как обычное приложение — без браузера и вкладок.'
+              : 'Одно нажатие — и Student Hub будет рядом с остальными приложениями. Без магазина и скачивания.') +
+          '</p>' +
+        '</div>' +
+
+        (installed
+          ? '<div class="card" style="text-align:center;padding:22px">' +
+              '<div style="color:var(--success);display:flex;justify-content:center;margin-bottom:10px">' + icon('checkCircle', 34) + '</div>' +
+              '<b>Приложение установлено</b>' +
+              '<p class="small muted" style="margin:6px 0 0">Уведомления и офлайн-режим работают.</p>' +
+            '</div>'
+          : canPrompt
+            ? '<button class="btn btn--brand btn--block" style="height:56px;font-size:16px" onclick="SH.install.prompt()">' +
+                icon('install', 20) + 'Установить приложение</button>' +
+              '<p class="center small muted mt-12">Одна кнопка — без инструкций</p>'
+            : '') +
+
+        (!installed ? '<div class="card mt-20">' +
+          '<div class="row" style="margin-bottom:14px">' +
+            '<b style="font-size:14px">Как это сделать</b>' +
+            '<span class="spacer"></span>' +
+            '<span class="tag">' + (platform() === 'ios' ? 'iPhone / iPad' : platform() === 'android' ? 'Android' : 'Компьютер') + '</span>' +
+          '</div>' +
+          '<div class="steps">' +
+            stepsHtml().map((s, i) =>
+              '<div class="step"><span class="step__num">' + (i + 1) + '</span>' +
+              '<div class="step__body"><b>' + s[0] + '</b><div class="muted" style="margin-top:2px">' + s[1] + '</div></div></div>'
+            ).join('') +
+          '</div>' +
+        '</div>' : '') +
+
+        '<div class="section-head"><span class="h2">Что даёт установка</span></div>' +
+        '<div class="list">' +
+          benefit('bolt', 'Открывается мгновенно', 'Иконка на главном экране, без ввода адреса') +
+          benefit('wifiOff', 'Работает без интернета', 'Кэш хранит приложение и данные') +
+          benefit('bell', 'Уведомления о дедлайнах', 'Не пропустишь последний день') +
+          benefit('install', 'Не занимает память', 'Пара мегабайт вместо сотни') +
+        '</div>' +
+
+        (!installed ? '<button class="btn btn--ghost btn--block mt-20" onclick="SH.views.install.dismiss()">Не сейчас</button>' : '') +
+        '<div style="height:10px"></div>' +
+      '</div>'
+    );
+  }
+
+  function benefit(ico, title, sub) {
+    return '<div class="item">' +
+      '<span class="empty__icon" style="width:38px;height:38px;border-radius:12px;background:var(--primary-soft);color:var(--primary);margin:0">' +
+        icon(ico, 18) + '</span>' +
+      '<div class="grow"><div style="font-weight:650;font-size:13.5px">' + e(title) + '</div>' +
+      '<div class="small muted">' + e(sub) + '</div></div></div>';
+  }
+
+  SH.views = SH.views || {};
+  SH.views.install = {
+    html,
+    dismiss() { store.dismissInstall(); ui.toast('Можно вернуться позже'); SH.app.back(); }
+  };
+})(window.SH = window.SH || {});
+
+/* Роутер и оболочка приложения */
+(function (SH) {
+  'use strict';
+  const { ui, store, icon } = SH;
+
+  /* ─────────────────────────── установка PWA ─────────────────────────── */
+
+  const install = {
+    promptEvent: null,
+    isStandalone() {
+      return window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true;
+    },
+    async prompt() {
+      if (!this.promptEvent) {
+        ui.toast('Открой меню браузера → «Установить приложение»');
+        return;
+      }
+      this.promptEvent.prompt();
+      const choice = await this.promptEvent.userChoice;
+      this.promptEvent = null;
+      if (choice.outcome === 'accepted') {
+        ui.toast('Готово! Иконка на главном экране');
+        SH.app.render();
+      }
+    },
+    init() {
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        this.promptEvent = e;
+        if (location.hash === '#/install') SH.app.render();
+      });
+      window.addEventListener('appinstalled', () => {
+        this.promptEvent = null;
+        ui.toast('Student Hub установлен ✓');
+        SH.app.render();
+      });
+    }
+  };
+
+  /* ─────────────────────────── роутер ─────────────────────────── */
+
+  const TABS = [
+    ['explore', 'explore', 'Explore'],
+    ['community', 'groups', 'Сообщество'],
+    ['roadmap', 'map', 'Роадмап'],
+    ['chats', 'chat', 'Чаты'],
+    ['profile', 'person', 'Профиль']
+  ];
+
+  function parse() {
+    const raw = location.hash.replace(/^#\/?/, '');
+    const parts = raw.split('/').filter(Boolean);
+    if (!parts.length) return { name: 'explore', params: [] };
+    return { name: parts[0], params: parts.slice(1) };
+  }
+
+  function isTab(name) { return TABS.some(([id]) => id === name); }
+
+  function screenFor(route) {
+    const [p1, p2] = route.params;
+    switch (route.name) {
+      case 'explore': return { html: SH.views.explore.html(), mount: SH.views.explore.mount };
+      case 'event': return { html: SH.views.explore.detail(p1) };
+      case 'all': return { html: SH.views.explore.all(p1) };
+      case 'community': return { html: SH.views.community.html() };
+      case 'roadmap': return { html: SH.views.roadmap.html() };
+      case 'chats': return { html: SH.views.chats.html() };
+      case 'chat': return { html: SH.views.chats.thread(p1), mount: (root) => SH.views.chats.mountThread(root, p1) };
+      case 'profile': return { html: SH.views.profile.html() };
+      case 'auth': return { html: SH.views.profile.auth(p2 === 'register' ? 'register' : 'login') };
+      case 'install': return { html: SH.views.install.html() };
+      case 'admin': return { html: SH.views.admin.html(), wide: true };
+      default: return { html: SH.views.explore.html(), mount: SH.views.explore.mount };
+    }
+  }
+
+  let lastRouteKey = null;
+
+  function render() {
+    const route = parse();
+    const key = location.hash || '#/explore';
+    const root = document.getElementById('root');
+    const view = screenFor(route);
+
+    const tabbar = isTab(route.name) ? buildTabbar(route.name) : '';
+
+    root.innerHTML =
+      (view.wide ? '' : '<div class="app">') +
+      view.html +
+      tabbar +
+      (view.wide ? '' : '</div>');
+
+    if (view.mount) {
+      try { view.mount(root); } catch (err) { console.warn('mount error', err); }
+    }
+
+    if (key !== lastRouteKey) {
+      window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+      lastRouteKey = key;
+    }
+    document.title = pageTitle(route);
+  }
+
+  function pageTitle(route) {
+    const names = {
+      explore: 'Explore', event: 'Событие', community: 'Сообщество',
+      roadmap: 'Роадмап', chats: 'Чаты', chat: 'Чат', profile: 'Профиль',
+      auth: 'Вход', install: 'Установка', admin: 'Админ-панель', all: 'События'
+    };
+    return 'Student Hub — ' + (names[route.name] || 'Главная');
+  }
+
+  function buildTabbar(active) {
+    const unread = store.unreadTotal();
+    return '<nav class="tabbar" role="tablist">' +
+      TABS.map(([id, ico, label]) =>
+        '<button class="tab" role="tab" aria-selected="' + (id === active) + '" onclick="SH.app.go(\'#/' + id + '\')">' +
+          icon(ico) +
+          (id === 'chats' && unread ? '<span class="dot-badge"></span>' : '') +
+          '<span>' + label + '</span>' +
+        '</button>'
+      ).join('') +
+    '</nav>';
+  }
+
+  const app = {
+    go(hash) {
+      if (location.hash === hash) { render(); return; }
+      location.hash = hash;
+    },
+    back() {
+      if (history.length > 1) history.back();
+      else app.go('#/explore');
+    },
+    render
+  };
+
+  /* ─────────────────────────── старт ─────────────────────────── */
+
+  function boot() {
+    store.init();
+    install.init();
+
+    store.on(() => render());
+
+    window.addEventListener('hashchange', render);
+
+    // тема «как в системе» должна реагировать на смену настроек ОС
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        if (store.state.settings.theme === 'system') SH.applyTheme('system');
+      });
+    }
+
+    // индикатор офлайна
+    window.addEventListener('offline', () => ui.toast('Нет интернета — работаем из кэша'));
+    window.addEventListener('online', () => ui.toast('Снова онлайн'));
+
+    if (!location.hash) location.hash = '#/explore';
+    render();
+
+    // облако: локальный режим уже отрисован, теперь в фоне тянем данные из D1
+    if (SH.api && SH.api.enabled()) {
+      SH.api.bootstrap().then((snapshot) => {
+        if (snapshot && store.hydrate(snapshot)) {
+          const pending = SH.api.outbox().length;
+          if (pending) ui.toast('Связь вернулась — ' + pending + ' изменений дослано');
+        }
+      });
+    }
+
+    // service worker (в однофайловой сборке лежит рядом в ./pwa/)
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./pwa/sw.js').catch((err) => console.warn('SW не зарегистрирован:', err.message));
+      });
+    }
+  }
+
+  SH.app = app;
+  SH.install = install;
+  document.addEventListener('DOMContentLoaded', boot);
+})(window.SH = window.SH || {});
+
+/* ── адрес бэкенда (меняется при сборке) ── */
+SH.api.configure('https://kk-test-project-s4ewq.warfacewtat.workers.dev');
+if (SH.ai) SH.ai.endpoint = 'https://kk-test-project-s4ewq.warfacewtat.workers.dev/ai';
+
+</script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5446c508b689daf',t:'MTc5MzYzNTk3MA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5446c508b689daf',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
