@@ -951,6 +951,240 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   right: auto;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   Десктоп: боковая навигация вместо нижней, контент по центру.
+   Ничего не «уходит вниз»: страница скроллится целиком, навигация
+   остаётся на месте.
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (min-width: 900px) {
+  body { background: var(--bg); }
+  body::before { display: none; }
+
+  .app {
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+    min-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    background: var(--bg);
+  }
+
+  .app > .screen {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 40px 64px;
+  }
+
+  .app > .screen.screen--flush { max-width: 880px; }
+
+  .app > .tabbar {
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 22px 14px;
+    border-top: 0;
+    border-left: 1px solid var(--border);
+    border-radius: 0;
+    background: var(--surface);
+  }
+
+  .app > .tabbar::before {
+    content: 'Student Hub';
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    padding: 0 12px 18px;
+    color: var(--text);
+  }
+
+  .tab {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    height: 46px;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 650;
+  }
+  .tab svg { width: 20px; height: 20px; }
+  .tab[aria-selected='true'] { background: var(--primary-soft); color: var(--primary); }
+  .tab[aria-selected='true']::after { display: none; }
+  .tab .dot-badge { position: static; margin: 0 0 0 auto; }
+
+  .screen-head { padding-top: 26px; }
+
+  /* карточки событий в две колонки */
+  .list--grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* шторки превращаются в модальные окна по центру */
+  .sheet { max-width: 620px; }
+
+  .event-hero { border-radius: 20px; }
+}
+
+@media (min-width: 1280px) {
+  .app { grid-template-columns: minmax(0, 1fr) 280px; }
+}
+
+/* ═════════════════ админка ═════════════════ */
+
+.admin-shell { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100dvh; }
+.admin-nav { border-right: 1px solid var(--border); background: var(--surface); padding: 22px 14px; position: sticky; top: 0; height: 100dvh; overflow-y: auto; }
+.admin-body { padding: 26px 30px 80px; min-width: 0; }
+
+@media (max-width: 980px) {
+  .admin-shell { grid-template-columns: 1fr; }
+  .admin-nav {
+    position: sticky; top: 0; z-index: 30; height: auto;
+    display: flex; gap: 6px; overflow-x: auto; padding: 10px;
+    border-right: 0; border-bottom: 1px solid var(--border);
+  }
+  .admin-nav::-webkit-scrollbar { display: none; }
+  .admin-nav .admin__brand { padding: 0 10px 0 4px; flex: 0 0 auto; }
+  .admin-nav .admin__nav { white-space: nowrap; flex: 0 0 auto; }
+  .admin-body { padding: 18px 16px 90px; }
+}
+
+.kpi { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 780px) { .kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+.panel__head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.panel__body { padding: 16px; }
+.panel--flush .panel__body { padding: 0; }
+
+.rowline { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.rowline:last-child { border-bottom: 0; }
+.rowline:hover { background: color-mix(in srgb, var(--chip) 40%, transparent); }
+
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+
+/* таблицы на мобильных — горизонтальный скролл */
+.table-wrap { width: 100%; overflow-x: auto; }
+.table { min-width: 620px; }
+
+/* форма в две колонки на десктопе */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+
+.img-preview {
+  width: 100%; height: 150px; border-radius: 12px; object-fit: cover;
+  border: 1px solid var(--border); background: var(--chip);
+}
+
+/* комментарии под постом */
+.comments { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.comment { display: flex; gap: 10px; padding: 8px 0; }
+.comment__body { flex: 1; min-width: 0; }
+.comment__meta { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.comment-form { display: flex; gap: 8px; margin-top: 8px; }
+.comment-form .field { flex: 1; }
+.comment-form input { min-height: 40px; font-size: 14px; }
+
+.edited { font-size: 10.5px; color: var(--muted); margin-left: 6px; font-style: italic; }
+
+/* ═════════════ общие элементы новых экранов ═════════════ */
+
+.cover--photo { overflow: hidden; background: var(--chip); }
+.cover--photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.avatar-btn { border: 0; background: none; padding: 0; display: inline-flex; cursor: pointer; }
+.avatar-stack { display: inline-flex; }
+.avatar-stack .avatar { margin-left: -8px; border: 2px solid var(--surface); }
+.avatar-stack .avatar:first-child { margin-left: 0; }
+
+.link-name { border: 0; background: none; padding: 0; font: inherit; font-weight: 650; font-size: 14px;
+  color: var(--text); cursor: pointer; text-align: left; }
+.link-name:hover { color: var(--primary); }
+.link-btn { border: 0; background: none; padding: 0; font: inherit; color: var(--primary); cursor: pointer; }
+
+.react { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none;
+  font: inherit; color: var(--muted); cursor: pointer; padding: 4px 2px; }
+.react:hover { color: var(--text); }
+.react--on { color: #e2506b; }
+
+.badge-count { background: var(--primary); color: #fff; font-size: 11px; font-weight: 800;
+  min-width: 20px; height: 20px; border-radius: 999px; display: grid; place-items: center; padding: 0 6px; }
+
+/* чат */
+.screen--chat { display: flex; flex-direction: column; min-height: 100dvh; padding-bottom: 0; }
+.chat-person { display: flex; align-items: center; gap: 8px; width: 100%; border: 0;
+  background: var(--chip); border-radius: 12px; padding: 6px 10px; margin-bottom: 8px;
+  font: inherit; font-size: 12.5px; font-weight: 600; color: var(--text); cursor: pointer; }
+.chat-person .small { margin-left: auto; }
+.chat-members { display: flex; align-items: center; gap: 2px; margin-bottom: 8px; flex-wrap: wrap; }
+
+.msg-line { display: flex; align-items: flex-end; gap: 6px; margin-bottom: 10px; }
+.msg-line--own { justify-content: flex-end; }
+.msg-col { max-width: 78%; min-width: 0; }
+.msg-edit { opacity: 0; transition: opacity .15s ease; }
+.msg-line:hover .msg-edit { opacity: 1; }
+@media (hover: none) { .msg-edit { opacity: .55; } }
+
+/* готовность */
+.readiness__rows { margin-top: 14px; display: grid; gap: 6px; }
+.readiness__row { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: baseline;
+  font-size: 13px; color: rgba(255,255,255,.92); }
+.readiness__row b { color: #fff; font-size: 13px; }
+.readiness__hint { opacity: .82; font-size: 12px; }
+.readiness__max { opacity: .7; font-weight: 500; }
+.readiness__how { margin-top: 12px; border: 0; background: transparent; color: var(--sky);
+  font: inherit; font-size: 12.5px; font-weight: 650; cursor: pointer; padding: 0; }
+
+/* вход: центрированная карточка на десктопе */
+.auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding-top: calc(var(--safe-t) + 28px); }
+.auth-hero { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 24px; }
+@media (min-width: 900px) {
+  .auth-screen { min-height: 100dvh; }
+  .auth-hero { flex-direction: row; gap: 18px; text-align: left; margin-bottom: 32px; }
+  .auth-hero h1 { margin: 0 0 4px !important; }
+}
+
+/* админка: две колонки на десктопе схлопываются на узких экранах */
+@media (max-width: 900px) {
+  .admin-split { grid-template-columns: 1fr !important; }
+}
+
+/* кнопки-иконки внутри таблиц стоят в ряд, а не столбиком */
+.table td .icon-btn { display: inline-grid; vertical-align: middle; }
+.table td:last-child { white-space: nowrap; }
+.table td .btn { vertical-align: middle; }
+
+/* правая колонка навигации на десктопе — во всю высоту окна */
+@media (min-width: 900px) {
+  .app::before {
+    content: '';
+    position: fixed;
+    top: 0; right: 0;
+    width: 260px; height: 100dvh;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    z-index: 0;
+    pointer-events: none;
+  }
+  .app > .tabbar { position: relative; z-index: 1; background: transparent; border-left: 0; border-radius: 0; }
+}
+@media (min-width: 1280px) {
+  .app::before { width: 280px; }
+}
+
 </style>
 </head>
 <body>
@@ -1213,6 +1447,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     wifiOff: '<path d="M2 3l19 19"/><path d="M8.5 15.7a5 5 0 0 1 7 0"/><path d="M5 12.2a10 10 0 0 1 4-2.4M12 12h.01M2 8.8a15 15 0 0 1 5.5-3M16 5.9A15 15 0 0 1 22 8.8M12 19.5h.01"/>',
     more: '<circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/>',
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z"/>',
+    key: '<circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8-8M17 4l3 3M15 6l2 2"/>',
     lock: '<rect x="4.5" y="10.5" width="15" height="10.5" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
     mail: '<rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="m3.5 6.5 8.5 6 8.5-6"/>',
     eye: '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/>',
@@ -1359,6 +1594,49 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       try { await this.request('POST', '/api/auth/logout'); } catch (e) { /* не критично */ }
       this.setToken('');
     },
+
+    /* ── пользователь ── */
+    changePassword(current, next) {
+      return this.request('POST', '/api/auth/password', { current, next });
+    },
+    saveProfile(patch) {
+      return this.request('PATCH', '/api/auth/profile', patch);
+    },
+
+    /* ── чаты ── */
+    directChat(userId) {
+      return this.request('POST', '/api/chats/direct', { userId });
+    },
+    editMessage(id, text) {
+      return this.request('PATCH', '/api/messages/' + id, { text });
+    },
+
+    /* ── комментарии ── */
+    addComment(postId, text) {
+      return this.request('POST', '/api/comments', { postId, text });
+    },
+
+    /* ── админка ── */
+    adminUsers() { return this.request('GET', '/api/admin/users'); },
+    adminCreateUser(payload) { return this.request('POST', '/api/admin/users', payload); },
+    adminUpdateUser(id, patch) { return this.request('PATCH', '/api/admin/users/' + id, patch); },
+    adminDeleteUser(id) { return this.request('DELETE', '/api/admin/users/' + id); },
+    adminResetPassword(id, password) { return this.request('POST', '/api/admin/users/' + id + '/password', { password }); },
+    adminOtp(id) { return this.request('POST', '/api/admin/users/' + id + '/otp', {}); },
+    adminKickSessions(id) { return this.request('DELETE', '/api/admin/users/' + id + '/sessions'); },
+
+    adminApplications() { return this.request('GET', '/api/admin/applications'); },
+    adminSetApplication(id, status, note) { return this.request('PATCH', '/api/admin/applications/' + id, { status, note }); },
+
+    adminAiKeys() { return this.request('GET', '/api/admin/ai-keys'); },
+    adminAddAiKey(payload) { return this.request('POST', '/api/admin/ai-keys', payload); },
+    adminToggleAiKey(id, enabled) { return this.request('PATCH', '/api/admin/ai-keys/' + id, { enabled }); },
+    adminTestAiKey(id) { return this.request('POST', '/api/admin/ai-keys/' + id + '/test', {}); },
+    adminDeleteAiKey(id) { return this.request('DELETE', '/api/admin/ai-keys/' + id); },
+
+    adminModeration() { return this.request('GET', '/api/admin/moderation'); },
+    adminCleanup(days) { return this.request('POST', '/api/admin/moderation/cleanup', { days }); },
+    adminAudit() { return this.request('GET', '/api/admin/audit'); },
 
     /* ── старт: дослать очередь и забрать снапшот ── */
     async bootstrap() {
@@ -1519,7 +1797,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
   function humanizeNet(msg) {
     if (/Failed to fetch|NetworkError|ERR_FAILED|abort/i.test(msg)) {
-      return 'Сервер недоступен — проверь соединение и адрес API';
+      return 'Сервер недоступен — проверь соединение и попробуй ещё раз';
     }
     return msg;
   }
@@ -1552,28 +1830,21 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     get isAuthed() { return !!state.session.userId; },
     get isAdmin() {
       const u = store.currentUser;
-      return !!u && u.role === 'admin';
+      return !!u && (u.role === 'admin' || u.role === 'root');
     },
 
     /* ── вход: облако, а при недоступности — локальная проверка ── */
 
     async login(login, password) {
+      // С бэкендом вход проверяет только сервер: офлайн-подмены нет,
+      // иначе без сети можно было бы войти под любым аккаунтом.
       if (SH.api && SH.api.enabled()) {
         try {
           const user = await SH.api.login(login, password);
           await store.afterLogin(user);
           return { ok: true, user, cloud: true };
         } catch (e) {
-          const msg = String(e.message || e);
-          // сервер ответил «неверный пароль» — локально не подменяем
-          if (/Неверный|занят|Введите/i.test(msg)) return { ok: false, error: msg };
-          // сервер недоступен — пробуем офлайн-режим на демо-аккаунтах
-          const local = store.localLogin(login, password);
-          if (local.ok) {
-            local.warning = 'Сервер недоступен — вход локальный, данные не синхронизируются';
-            return local;
-          }
-          return { ok: false, error: humanizeNet(msg) };
+          return { ok: false, error: humanizeNet(String(e.message || e)) };
         }
       }
       return store.localLogin(login, password);
@@ -1582,10 +1853,11 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     /** Проверка по локальным демо-данным (офлайн-режим). */
     localLogin(login, password) {
       const key = String(login || '').trim().toLowerCase();
+      // только сборка без бэкенда: пароль обязателен и сверяется локально
       const user = state.users.find((u) => {
         const byEmail = String(u.email || '').toLowerCase() === key;
         const byLogin = (u.logins || []).map((l) => String(l).toLowerCase()).includes(key);
-        return (byEmail || byLogin) && (!u.password || u.password === password);
+        return (byEmail || byLogin) && !!u.password && u.password === password;
       });
       if (!user) return { ok: false, error: 'Неверный логин или пароль' };
       state.session.userId = user.id;
@@ -1713,11 +1985,18 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     addPost(text) {
       const u = store.currentUser;
       if (!u) return { ok: false };
-      const post = { id: uid('p'), authorId: u.id, text, createdAt: iso(now()), likes: 0, replies: 0, status: 'published', tag: '' };
+      const post = { id: uid('p'), authorId: u.id, text, createdAt: iso(now()), likes: 0, replies: 0, status: 'published', tag: '', comments: [] };
       state.posts.unshift(post);
       emit('posts');
-      SH.api && SH.api.push('POST', '/api/posts', { id: post.id, text, tag: '' });
-      return { ok: true };
+
+      if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true });
+
+      return SH.api.request('POST', '/api/posts', { id: post.id, text, tag: '' })
+        .then(() => ({ ok: true }))
+        .catch(() => {
+          SH.api.push('POST', '/api/posts', { id: post.id, text, tag: '' });
+          return { ok: true, queued: true };
+        });
     },
     likePost(id) {
       const p = state.posts.find((x) => x.id === id);
@@ -1726,6 +2005,74 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         SH.api && SH.api.push('POST', '/api/posts/' + id + '/like');
       }
     },
+    setApplicationStatus(id, status) {
+      const a = state.applications.find((x) => x.id === id);
+      if (!a) return null;
+      a.status = status;
+      a.updatedAt = iso(Date.now());
+      commit(() => {}, 'applications');
+      return a;
+    },
+
+    addComment(postId, text) {
+      const u = store.currentUser;
+      if (!u) return Promise.resolve({ ok: false, error: 'Нужен вход' });
+      const p = state.posts.find((x) => x.id === postId);
+      if (!p) return Promise.resolve({ ok: false });
+
+      const tmp = { id: 'tmp_' + Math.random().toString(36).slice(2, 8), postId, authorId: u.id,
+        text, createdAt: iso(now()), editedAt: null };
+      p.comments = p.comments || [];
+      p.comments.push(tmp);
+      emit('posts');
+
+      if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true, comment: tmp });
+
+      return SH.api.addComment(postId, text).then((res) => {
+        if (res && res.comment) {
+          const i = p.comments.findIndex((c) => c.id === tmp.id);
+          if (i >= 0) p.comments[i] = res.comment;
+          emit('posts');
+        }
+        return { ok: true, comment: (res && res.comment) || tmp };
+      }).catch((err) => {
+        p.comments = p.comments.filter((c) => c.id !== tmp.id);
+        emit('posts');
+        return { ok: false, error: err.message };
+      });
+    },
+
+    editComment(postId, commentId, text) {
+      const p = state.posts.find((x) => x.id === postId);
+      const c = p && (p.comments || []).find((x) => x.id === commentId);
+      if (!c) return Promise.resolve({ ok: false });
+      c.text = text;
+      c.editedAt = iso(now());
+      emit('posts');
+      if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true });
+      return SH.api.request('PATCH', '/api/comments/' + commentId, { text })
+        .then(() => ({ ok: true }))
+        .catch((err) => ({ ok: false, error: err.message }));
+    },
+
+    editMessage(chatId, messageId, text) {
+      const c = state.chats.find((x) => x.id === chatId);
+      const m = c && c.messages.find((x) => x.id === messageId);
+      if (!m) return Promise.resolve({ ok: false });
+      m.text = text;
+      m.editedAt = iso(now());
+      emit('chats');
+      if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true });
+      return SH.api.editMessage(messageId, text)
+        .then(() => ({ ok: true }))
+        .catch((err) => ({ ok: false, error: err.message }));
+    },
+
+    addChat(chat) {
+      if (!state.chats.some((c) => c.id === chat.id)) state.chats.unshift(chat);
+      emit('chats');
+    },
+
     setPostStatus(id, status) {
       const p = state.posts.find((x) => x.id === id);
       if (p) {
@@ -1774,13 +2121,23 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     sendMessage(chatId, text) {
       const u = store.currentUser;
       const chat = store.chat(chatId);
-      if (!u || !chat || !text.trim()) return;
+      if (!u || !chat || !text.trim()) return Promise.resolve({ ok: false });
+
       const msg = { id: uid('m'), authorId: u.id, text: text.trim(), at: iso(now()), own: true };
       chat.messages.push(msg);
       chat.lastAt = msg.at;
       chat.unread = 0;
       emit('chats');
-      SH.api && SH.api.push('POST', '/api/chats/' + chatId + '/messages', { id: msg.id, text: msg.text });
+
+      if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true, message: msg });
+
+      // сервер принимает наш id — правки и ответы не разъедутся
+      return SH.api.request('POST', '/api/chats/' + chatId + '/messages', { id: msg.id, text: msg.text })
+        .then((res) => ({ ok: true, message: msg, at: res && res.at }))
+        .catch(() => {
+          SH.api.push('POST', '/api/chats/' + chatId + '/messages', { id: msg.id, text: msg.text });
+          return { ok: true, message: msg, queued: true };
+        });
     },
     readChat(id) {
       const c = store.chat(id);
@@ -1980,10 +2337,19 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
   function cover(event, height, radius) {
     const cat = SH.store.CATEGORIES[event.category] || SH.store.CATEGORIES.event;
-    return '<div class="cover cover--' + event.category + '" style="height:' + (height || 150) + 'px;' +
-      (radius != null ? 'border-radius:' + radius + 'px;' : '') + '">' +
+    const h = height || 150;
+    const radiusCss = radius != null ? 'border-radius:' + radius + 'px;' : '';
+
+    if (event.image) {
+      return '<div class="cover cover--photo" style="height:' + h + 'px;' + radiusCss + '">' +
+        '<img src="' + esc(event.image) + '" alt="" loading="lazy" ' +
+          'onerror="this.style.display=&quot;none&quot;">' +
+        '</div>';
+    }
+
+    return '<div class="cover cover--' + event.category + '" style="height:' + h + 'px;' + radiusCss + '">' +
       '<span class="cover__glyph" style="opacity:.9;color:rgba(20,21,26,.42)">' +
-        SH.icon(cat.glyph, Math.round((height || 150) * 0.34)) +
+        SH.icon(cat.glyph, Math.round(h * 0.34)) +
       '</span></div>';
   }
 
@@ -2293,6 +2659,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
   let filter = 'forYou';
   let query = '';
+  let freeOnly = false;
 
   function filteredEvents() {
     const user = store.currentUser;
@@ -2302,6 +2669,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     if (filter === 'trending') list.sort((a, b) => (b.ev.views + b.ev.applicants * 3) - (a.ev.views + a.ev.applicants * 3));
     else if (filter === 'competitions') list = list.filter((x) => ['competition', 'olympiad', 'hackathon'].includes(x.ev.category));
     else list.sort((a, b) => b.match - a.match);
+
+    if (freeOnly) list = list.filter(({ ev }) => ev.isFree !== false);
 
     if (query.trim()) {
       const q = query.trim().toLowerCase();
@@ -2390,7 +2759,9 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           '</div>' +
           '<button class="icon-btn icon-btn--plain" onclick="SH.views.explore.showNotifications()" aria-label="Уведомления" style="position:relative">' +
             icon('bell', 22) +
-            '<span style="position:absolute;top:9px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--danger)"></span>' +
+            (notifications().length
+              ? '<span style="position:absolute;top:9px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--danger)"></span>'
+              : '') +
           '</button>' +
           '<button onclick="SH.app.go(\'#/profile\')" aria-label="Профиль">' + ui.avatar(user, 32) + '</button>' +
         '</div>' +
@@ -2540,28 +2911,34 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           '<div class="field-label">Только бесплатные</div>' +
           '<div class="row" style="justify-content:space-between;padding:12px 0">' +
             '<span class="small muted">Скрыть платные события</span>' +
-            '<button class="switch" role="switch" aria-checked="false" id="free-switch"></button>' +
-          '</div>',
+            '<button class="switch" role="switch" aria-checked="' + freeOnly + '" id="free-switch"></button>' +
+          '</div>' +
+          '<button class="btn btn--brand btn--block mt-16" data-close>Показать</button>',
         onMount(el) {
           el.querySelector('#free-switch').addEventListener('click', (ev) => {
-            const on = ev.currentTarget.getAttribute('aria-checked') === 'true';
-            ev.currentTarget.setAttribute('aria-checked', String(!on));
-            ui.toast(on ? 'Платные события снова видны' : 'Показаны только бесплатные');
+            freeOnly = !freeOnly;
+            ev.currentTarget.setAttribute('aria-checked', String(freeOnly));
           });
+          el.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => SH.app.render()));
         }
       });
     },
     pickCategory(k) { filter = 'cat:' + k; ui.closeSheet(); SH.app.render(); ui.toast('Фильтр: ' + store.CATEGORIES[k].label); },
     showNotifications() {
+      const items = notifications();
       ui.sheet({
         title: 'Уведомления',
-        body:
-          '<div class="list">' +
-          notification('calendar', 'Дедлайн через 3 дня', 'Школьный научный фестиваль закрывает приём заявок', 'var(--sun)') +
-          notification('sparkles', 'Новый подбор', 'ИИ нашёл 4 события под твои интересы', 'var(--lavender)') +
-          notification('message', 'Сообщение в команде', 'Тимур: «Закинул структуру прототипа»', 'var(--sky)') +
-          '</div>'
+        subtitle: items.length ? 'Собрано из твоих заявок и чатов' : '',
+        body: items.length
+          ? '<div class="list">' + items.map((n) =>
+              '<button class="item" style="width:100%;text-align:left" onclick="SH.views.explore.openNotification(\'' +
+                n.href + '\')">' + notificationHtml(n) + '</button>').join('') + '</div>'
+          : ui.empty('bell', 'Пока тихо', 'Здесь появятся дедлайны, ответы по заявкам и новые сообщения.')
       });
+    },
+    openNotification(href) {
+      ui.closeSheet();
+      SH.app.go(href);
     },
     apply(id) {
       if (!store.isAuthed) { SH.app.go('#/auth'); return; }
@@ -2587,12 +2964,48 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     }
   };
 
-  function notification(ico, title, sub, bg) {
-    return '<div class="item">' +
-      '<span class="empty__icon" style="width:40px;height:40px;border-radius:12px;background:' + bg + ';color:#14151a">' +
-      icon(ico, 19) + '</span>' +
-      '<div class="grow"><div style="font-weight:650;font-size:13.5px">' + e(title) + '</div>' +
-      '<div class="small muted">' + e(sub) + '</div></div></div>';
+  /** Что реально произошло: дедлайны, ответы по заявкам, непрочитанные чаты. */
+  function notifications() {
+    const user = store.currentUser;
+    if (!user) return [];
+    const out = [];
+
+    store.myApplications().forEach((a) => {
+      const ev = store.event(a.eventId);
+      if (!ev) return;
+      if (a.status === 'accepted') {
+        out.push({ icon: 'checkCircle', tone: 'var(--mint)', title: 'Заявка принята',
+          sub: ev.title, href: '#/event/' + ev.id });
+      } else if (a.status === 'rejected') {
+        out.push({ icon: 'info', tone: 'var(--blush)', title: 'Заявка отклонена',
+          sub: ev.title, href: '#/event/' + ev.id });
+      }
+    });
+
+    store.chats().filter((c) => c.unread > 0).forEach((c) => {
+      out.push({ icon: 'message', tone: 'var(--sky)', title: 'Новое в чате «' + c.title + '»',
+        sub: c.unread + ' ' + ui.plural(c.unread, 'сообщение', 'сообщения', 'сообщений'),
+        href: '#/chat/' + c.id });
+    });
+
+    store.events().forEach((ev) => {
+      const days = Math.ceil((new Date(ev.deadlineDate) - Date.now()) / 864e5);
+      if (days >= 0 && days <= 5 && !store.isApplied(ev.id)) {
+        out.push({ icon: 'calendar', tone: 'var(--sun)',
+          title: days === 0 ? 'Дедлайн сегодня' : 'Дедлайн через ' + days + ' ' + ui.plural(days, 'день', 'дня', 'дней'),
+          sub: ev.title + ' — заявка не отправлена', href: '#/event/' + ev.id });
+      }
+    });
+
+    return out.slice(0, 8);
+  }
+
+  function notificationHtml(n) {
+    return '<span class="empty__icon" style="width:40px;height:40px;border-radius:12px;background:' + n.tone + ';color:#14151a">' +
+      icon(n.icon, 19) + '</span>' +
+      '<div class="grow" style="min-width:0"><div style="font-weight:650;font-size:13.5px">' + e(n.title) + '</div>' +
+      '<div class="small muted ellipsis">' + e(n.sub) + '</div></div>' +
+      '<span class="muted">' + icon('chevronRight', 16) + '</span>';
   }
 
   /* ── общий список событий ── */
@@ -2615,62 +3028,142 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   SH.views.explore = Object.assign({ html, mount, detail, all }, actions);
 })(window.SH = window.SH || {});
 
-/* Сообщество: поиск команды + обсуждения */
+/* Сообщество: команды и обсуждения с комментариями под постом */
 (function (SH) {
   'use strict';
   const { ui, store, icon } = SH;
   const e = ui.esc;
 
   let tab = 'team';
+  const openThreads = {};   // postId -> раскрыт ли ввод комментария
+
+  /* ───────────────────────── команды ───────────────────────── */
 
   function teamCard(t) {
     const lead = store.userById(t.leadId);
-    const joined = store.currentUser && t.members.includes(store.currentUser.id);
+    const me = store.currentUser || {};
+    const joined = (t.members || []).includes(me.id);
+    const members = (t.members || []).map((id) => store.userById(id));
+
     return (
       '<article class="card">' +
         '<div class="row" style="margin-bottom:10px">' +
           '<span class="tag tag--lav">' + e(t.type) + '</span>' +
           '<span class="spacer"></span>' +
-          '<span class="tag tag--blush">' + t.spotsOpen + ' мест свободно</span>' +
+          (t.spotsOpen > 0
+            ? '<span class="tag tag--blush">осталось ' + t.spotsOpen + '</span>'
+            : '<span class="tag">набор закрыт</span>') +
         '</div>' +
         '<h3 class="h3" style="margin:0 0 6px">' + e(t.title) + '</h3>' +
         '<p class="small muted" style="margin:0 0 10px;line-height:1.5">' + e(t.description) + '</p>' +
         '<div class="wrap" style="margin-bottom:12px">' + (t.tags || []).map((x) => ui.tag(x)).join('') + '</div>' +
         '<div class="row">' +
-          ui.avatar(lead, 28) +
-          '<span class="small muted grow">Ведёт ' + e(lead.name) + ' · ' + t.members.length + ' в команде</span>' +
+          '<div class="avatar-stack">' +
+            members.slice(0, 4).map((m) => ui.avatar(m, 26)).join('') +
+          '</div>' +
+          '<span class="small muted grow" style="margin-left:8px">' +
+            e(lead.name) + ' · ' + members.length + ' ' + ui.plural(members.length, 'участник', 'участника', 'участников') +
+          '</span>' +
           (joined
-            ? '<button class="btn btn--soft btn--sm" disabled>' + icon('check', 15) + 'Ты в команде</button>'
-            : '<button class="btn btn--primary btn--sm" onclick="SH.views.community.join(\'' + t.id + '\')">Присоединиться</button>') +
+            ? '<button class="btn btn--soft btn--sm" onclick="SH.views.community.openTeamChat(\'' + t.id + '\')">' +
+                icon('check', 15) + 'Чат команды</button>'
+            : '<button class="btn btn--brand btn--sm" onclick="SH.views.community.join(\'' + t.id + '\')">Присоединиться</button>') +
         '</div>' +
       '</article>'
     );
   }
 
+  /* ───────────────────────── посты ───────────────────────── */
+
   function postCard(p) {
     const author = store.userById(p.authorId);
+    const me = store.currentUser || {};
+    const comments = p.comments || [];
+    const liked = !!p.liked;
+
     return (
-      '<article class="card" style="padding:14px">' +
+      '<article class="card" style="padding:14px" data-post="' + p.id + '">' +
         '<div class="row" style="margin-bottom:10px">' +
-          ui.avatar(author, 32) +
+          '<button class="avatar-btn" onclick="SH.app.go(\'#/user/' + p.authorId + '\')" aria-label="Профиль">' +
+            ui.avatar(author, 34) + '</button>' +
           '<div class="grow" style="min-width:0">' +
-            '<div style="font-weight:650;font-size:13.5px">' + e(author.name) + '</div>' +
-            '<div class="small muted">' + e(author.grade || author.position || '') + (author.grade ? ' · ' : '') + e(ui.relTime(p.createdAt)) + '</div>' +
+            '<button class="link-name" onclick="SH.app.go(\'#/user/' + p.authorId + '\')">' + e(author.name) + '</button>' +
+            '<div class="small muted">' + e([author.grade, ui.relTime(p.createdAt)].filter(Boolean).join(' · ')) + '</div>' +
           '</div>' +
           (p.tag ? '<span class="tag">' + e(p.tag) + '</span>' : '') +
+          (p.authorId !== me.id
+            ? '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px" title="Написать" ' +
+                'onclick="SH.views.chats.openWith(\'' + p.authorId + '\')">' + icon('message', 17) + '</button>'
+            : '') +
         '</div>' +
-        '<p style="margin:0 0 12px;font-size:14.5px;line-height:1.55">' + e(p.text) + '</p>' +
-        '<div class="row muted small">' +
-          '<button class="row" style="gap:5px" onclick="SH.views.community.like(\'' + p.id + '\')">' +
-            icon('heart', 16) + p.likes +
-          '</button>' +
-          '<span class="row" style="gap:5px">' + icon('message', 16) + p.replies + '</span>' +
-          '<span class="spacer"></span>' +
-          '<button class="small muted" onclick="SH.views.community.reply(\'' + p.id + '\')">Ответить</button>' +
+
+        '<p style="margin:0 0 10px;font-size:14.5px;line-height:1.55;white-space:pre-wrap">' + e(p.text) + '</p>' +
+
+        '<div class="row muted small" style="gap:16px">' +
+          '<button class="react' + (liked ? ' react--on' : '') + '" onclick="SH.views.community.like(\'' + p.id + '\')">' +
+            icon('heart', 16) + '<span>' + (p.likes || 0) + '</span></button>' +
+          '<button class="react" onclick="SH.views.community.toggleComment(\'' + p.id + '\')">' +
+            icon('message', 16) + '<span>' + comments.length + '</span></button>' +
+        '</div>' +
+
+        '<div class="comments">' +
+          (comments.length
+            ? comments.map((c) => commentRow(p.id, c)).join('')
+            : '<p class="small muted" style="margin:4px 0 0">Комментариев пока нет</p>') +
+          (openThreads[p.id] !== false
+            ? '<div class="comment-form">' +
+                '<div class="field"><input id="cm-' + p.id + '" placeholder="Написать комментарий…" autocomplete="off" ' +
+                  'onkeydown="if(event.key===\'Enter\'){event.preventDefault();SH.views.community.sendComment(\'' + p.id + '\')}"></div>' +
+                '<button class="icon-btn icon-btn--brand" style="width:40px;height:40px" ' +
+                  'onclick="SH.views.community.sendComment(\'' + p.id + '\')" aria-label="Отправить">' + icon('send', 17) + '</button>' +
+              '</div>'
+            : '') +
         '</div>' +
       '</article>'
     );
   }
+
+  function commentRow(postId, c) {
+    const a = store.userById(c.authorId);
+    const me = store.currentUser || {};
+    const own = c.authorId === me.id;
+
+    return (
+      '<div class="comment">' +
+        ui.avatar(a, 26) +
+        '<div class="comment__body">' +
+          '<div style="font-size:12.5px;line-height:1.45;word-break:break-word">' +
+            '<button class="link-name" style="font-size:12.5px" onclick="SH.app.go(\'#/user/' + c.authorId + '\')">' +
+              e(a.name.split(' ')[0]) + '</button> ' + e(c.text) +
+            (c.editedAt ? '<span class="edited">изменено</span>' : '') +
+          '</div>' +
+          '<div class="comment__meta">' + e(ui.relTime(c.editedAt || c.createdAt)) +
+            (own ? ' · <button class="link-btn" onclick="SH.views.community.editComment(\'' + postId + '\',\'' + c.id + '\')">изменить</button>' : '') +
+          '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function composer() {
+    const me = store.currentUser || {};
+    return (
+      '<div class="card" style="padding:12px">' +
+        '<div class="row-top">' +
+          ui.avatar(me, 32) +
+          '<div class="field grow">' +
+            '<textarea id="post-text" placeholder="Чем поделиться со школой?" ' +
+              'style="min-height:64px;border:0;background:transparent;padding:6px 0;resize:none"></textarea>' +
+          '</div>' +
+        '</div>' +
+        '<div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px">' +
+          '<button class="btn btn--brand btn--sm" onclick="SH.views.community.publish()">' + icon('send', 15) + 'Опубликовать</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  /* ───────────────────────── экран ───────────────────────── */
 
   function html() {
     const teams = store.teams();
@@ -2683,7 +3176,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
             '<h1 class="screen-title">Сообщество</h1>' +
             '<p class="screen-sub">Команды и разговоры школы</p>' +
           '</div>' +
-          '<button class="icon-btn icon-btn--plain" onclick="SH.views.community.info()" aria-label="О сообществе">' +
+          '<button class="icon-btn icon-btn--plain" onclick="SH.views.community.info()" aria-label="Как это работает">' +
             icon('info', 21) +
           '</button>' +
         '</div>' +
@@ -2710,23 +3203,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     );
   }
 
-  function composer() {
-    return (
-      '<div class="card" style="padding:12px">' +
-        '<div class="row-top">' +
-          ui.avatar(store.currentUser, 32) +
-          '<div class="field grow">' +
-            '<textarea id="post-text" placeholder="Чем поделиться со школой?" ' +
-              'style="min-height:64px;border:0;background:transparent;padding:6px 0;resize:none"></textarea>' +
-          '</div>' +
-        '</div>' +
-        '<div class="row" style="justify-content:flex-end;gap:8px;margin-top:4px">' +
-          '<button class="btn btn--soft btn--sm" onclick="SH.views.community.postTag()">' + icon('flag', 15) + 'Тема</button>' +
-          '<button class="btn btn--brand btn--sm" onclick="SH.views.community.publish()">' + icon('send', 15) + 'Опубликовать</button>' +
-        '</div>' +
-      '</div>'
-    );
-  }
+  /* ───────────────────────── действия ───────────────────────── */
 
   const actions = {
     setTab(t) { tab = t; SH.app.render(); },
@@ -2741,38 +3218,110 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       SH.app.render();
     },
 
-    postTag() { ui.toast('Тема выбирается автоматически по тексту'); },
+    like(id) {
+      store.likePost(id);
+      SH.app.render();
+    },
 
-    like(id) { store.likePost(id); SH.app.render(); },
+    toggleComment(id) {
+      openThreads[id] = openThreads[id] === false;
+      const card = document.querySelector('[data-post="' + id + '"]');
+      if (card) {
+        const input = card.querySelector('#cm-' + id);
+        if (input) input.focus();
+      }
+      SH.app.render();
+      const again = document.getElementById('cm-' + id);
+      if (again) again.focus({ preventScroll: true });
+    },
 
-    reply(id) {
-      const p = store.posts().find((x) => x.id === id);
-      const author = store.userById(p.authorId);
-      ui.sheet({
-        title: 'Ответ',
-        subtitle: author.name + ': «' + p.text.slice(0, 70) + '…»',
-        body:
-          ui.field('reply-text', '', { textarea: true, placeholder: 'Твой ответ…' }) +
-          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.community.sendReply(\'' + id + '\')">Отправить</button>'
+    sendComment(postId) {
+      if (!store.isAuthed) { SH.app.go('#/auth'); return; }
+      const el = document.getElementById('cm-' + postId);
+      const text = el ? el.value.trim() : '';
+      if (!text) return;
+
+      store.addComment(postId, text).then((res) => {
+        if (!res.ok) { ui.toast(res.error || 'Не отправлено'); return; }
+        const again = document.getElementById('cm-' + postId);
+        if (again) again.focus({ preventScroll: true });
       });
     },
 
-    sendReply(id) {
-      const el = document.getElementById('reply-text');
-      if (!el || !el.value.trim()) { ui.toast('Пустой ответ'); return; }
-      const p = store.posts().find((x) => x.id === id);
-      p.replies += 1;
-      store.commit(() => {}, 'posts');
-      ui.closeSheet();
-      ui.toast('Ответ отправлен');
+    editComment(postId, commentId) {
+      const p = store.posts().find((x) => x.id === postId);
+      const c = p && (p.comments || []).find((x) => x.id === commentId);
+      if (!c) return;
+
+      ui.sheet({
+        title: 'Изменить комментарий',
+        body: ui.field('cm-edit', '', { textarea: true, value: c.text }) +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.community.saveComment(\'' + postId + '\',\'' + commentId + '\')">Сохранить</button>'
+      });
+    },
+
+    saveComment(postId, commentId) {
+      const el = document.getElementById('cm-edit');
+      const text = el ? el.value.trim() : '';
+      if (!text) { ui.toast('Пустой комментарий'); return; }
+      store.editComment(postId, commentId, text).then(() => {
+        ui.closeSheet();
+        ui.toast('Обновлено');
+      });
+    },
+
+    /* вступление в команду: сервер добавляет в чат и возвращает участников */
+    async join(id) {
+      if (!store.isAuthed) { SH.app.go('#/auth'); return; }
+
+      const team = store.state.teams.find((t) => t.id === id);
+      const me = store.currentUser;
+      let chatId = null;
+      let members = null;
+
+      if (SH.api && SH.api.enabled()) {
+        try {
+          const res = await SH.api.request('POST', '/api/teams/' + id + '/join', {});
+          chatId = res.chatId;
+          members = res.members || [];
+        } catch (err) {
+          ui.toast('Не удалось вступить: ' + err.message);
+          return;
+        }
+      }
+
+      // локальное состояние
+      if (team && !team.members.includes(me.id)) {
+        team.members.push(me.id);
+        team.spotsOpen = Math.max(0, team.spotsOpen - 1);
+      }
+
+      if (!chatId) chatId = 'chat_' + id;
+      if (!members) members = (team ? team.members : [me.id]).slice();
+
+      store.addChat({
+        id: chatId,
+        title: team ? team.title : 'Чат команды',
+        kind: 'team',
+        memberIds: members,
+        messages: [],
+        lastAt: new Date().toISOString(),
+        unread: 0
+      });
+
+      ui.confirmSheet(
+        'Ты в команде «' + (team ? team.title : '') + '»',
+        'Добавлен в чат команды. Участники: ' + members.map((uid) => store.userById(uid).name).join(', '),
+        'Открыть чат',
+        () => SH.app.go('#/chat/' + chatId)
+      );
       SH.app.render();
     },
 
-    join(id) {
-      if (!store.isAuthed) { SH.app.go('#/auth'); return; }
-      store.joinTeam(id);
-      ui.toast('Ты в команде — чат создан');
-      SH.app.render();
+    openTeamChat(teamId) {
+      const c = store.chats().find((x) => x.id === 'chat_' + teamId);
+      if (c) SH.app.go('#/chat/' + c.id);
+      else ui.toast('Чат появится после первого сообщения команды');
     },
 
     newTeam() {
@@ -2783,14 +3332,14 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         body:
           ui.field('team-title', 'Название', { placeholder: 'Например: команда на хакатон' }) +
           ui.field('team-desc', 'Описание', { textarea: true, placeholder: 'Кого ищете и чем будете заниматься', style: 'margin-top:12px' }) +
-          '<div class="row" style="gap:12px;margin-top:12px">' +
-            '<div class="grow">' + ui.select('team-type', 'Тип', [
+          '<div class="form-grid" style="margin-top:12px">' +
+            ui.select('team-type', 'Тип', [
               { value: 'Хакатон', label: 'Хакатон' },
               { value: 'Конкурс', label: 'Конкурс' },
               { value: 'Фестиваль', label: 'Фестиваль' },
               { value: 'Проект', label: 'Проект' }
-            ]) + '</div>' +
-            '<div style="width:120px">' + ui.field('team-spots', 'Мест', { type: 'number', value: '2' }) + '</div>' +
+            ]) +
+            ui.field('team-spots', 'Свободных мест', { type: 'number', value: '2' }) +
           '</div>' +
           ui.field('team-tags', 'Теги через запятую', { placeholder: 'ИИ, дизайн, Python', style: 'margin-top:12px' }) +
           '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.community.createTeam()">Опубликовать</button>',
@@ -2823,8 +3372,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         body:
           '<div class="steps">' +
           '<div class="step"><span class="step__num">1</span><div class="step__body"><b>Найди команду</b> — или создай заявку, если не хватает людей.</div></div>' +
-          '<div class="step"><span class="step__num">2</span><div class="step__body"><b>Присоединись</b> — тебе автоматически откроется чат команды.</div></div>' +
-          '<div class="step"><span class="step__num">3</span><div class="step__body"><b>Обсуждайте в разделе «Чаты»</b> — история сохраняется, ничего не теряется.</div></div>' +
+          '<div class="step"><span class="step__num">2</span><div class="step__body"><b>Присоединись</b> — тебя добавят в чат команды, там видно всех участников.</div></div>' +
+          '<div class="step"><span class="step__num">3</span><div class="step__body"><b>Обсуждайте</b> — в разделе «Чаты» история сохраняется.</div></div>' +
           '</div>'
       });
     }
@@ -3049,7 +3598,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   SH.views.roadmap = Object.assign({ html }, actions);
 })(window.SH = window.SH || {});
 
-/* Чаты: список и переписка */
+/* Чаты: переписки, команды, редактирование сообщений */
 (function (SH) {
   'use strict';
   const { ui, store, icon } = SH;
@@ -3070,14 +3619,17 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       '<div class="screen">' +
         '<div class="screen-head">' +
           '<div class="grow"><h1 class="screen-title">Чаты</h1>' +
-          '<p class="screen-sub">' + (chats.length ? store.unreadTotal() + ' непрочитанных' : 'Сообщения и команды') + '</p></div>' +
-          '<button class="icon-btn icon-btn--plain" onclick="SH.views.chats.newChat()" aria-label="Новый чат">' + icon('edit', 20) + '</button>' +
+          '<p class="screen-sub">' + (chats.length
+            ? (store.unreadTotal() ? store.unreadTotal() + ' непрочитанных' : 'Все прочитано')
+            : 'Сообщения и команды') + '</p></div>' +
         '</div>' +
-        '<div class="search" style="margin-bottom:16px">' + icon('search') +
-          '<input placeholder="Поиск по чатам…" id="chat-search"></div>' +
         (chats.length
           ? '<div class="list">' + chats.map(chatRow).join('') + '</div>'
-          : ui.empty('chat', 'Пока пусто', 'Присоединись к команде в разделе «Сообщество» — чат появится сам.')) +
+          : ui.empty('chat', 'Пока пусто',
+              'Присоединись к команде в разделе «Сообщество» или открой профиль ученика и нажми «Написать».',
+              '<button class="btn btn--brand" onclick="SH.app.go(\'#/community\')">Перейти в сообщество</button>')) +
+        '<div class="ai-note mt-16">' + icon('info') +
+          '<div>Новая переписка начинается из профиля ученика или из его поста — так не нужно листать список всех.</div></div>' +
       '</div>'
     );
   }
@@ -3085,58 +3637,96 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   function chatRow(c) {
     const last = c.messages[c.messages.length - 1] || {};
     const author = store.userById(last.authorId);
+    const me = store.currentUser || {};
+    const other = c.kind === 'direct'
+      ? (c.memberIds || []).map((id) => store.userById(id)).find((u) => u.id !== me.id)
+      : null;
+
     return (
       '<div class="item card--tap" onclick="SH.app.go(\'#/chat/' + c.id + '\')" style="cursor:pointer">' +
-        '<span class="avatar avatar--40 avatar--brand">' + e(ui.initials(c.title)) + '</span>' +
+        (other
+          ? ui.avatar(other, 44)
+          : '<span class="avatar avatar--44 avatar--brand">' + e(ui.initials(c.title)) + '</span>') +
         '<div class="grow" style="min-width:0">' +
           '<div class="row"><span class="ellipsis" style="font-weight:650;font-size:14px">' + e(c.title) + '</span>' +
+            (c.kind === 'direct' ? '<span class="tag" style="margin-left:6px">личный</span>' : '') +
             '<span class="spacer"></span><span class="small muted">' + e(ui.relTime(c.lastAt)) + '</span></div>' +
           '<div class="small muted ellipsis" style="margin-top:2px">' +
-            (last.authorId === (store.currentUser || {}).id ? 'Ты: ' : (author.name ? author.name.split(' ')[0] + ': ' : '')) +
-            e(last.text || '') + '</div>' +
+            (last.authorId === me.id ? 'Ты: ' : (author.name ? author.name.split(' ')[0] + ': ' : '')) +
+            e(last.text || 'Сообщений пока нет') + '</div>' +
         '</div>' +
-        (c.unread ? '<span style="background:var(--primary);color:#fff;font-size:11px;font-weight:800;min-width:20px;height:20px;' +
-          'border-radius:999px;display:grid;place-items:center;padding:0 6px">' + c.unread + '</span>' : '') +
+        (c.unread ? '<span class="badge-count">' + c.unread + '</span>' : '') +
       '</div>'
     );
   }
 
   function thread(id) {
     const c = store.chat(id);
-    if (!c) return '<div class="screen">' + ui.empty('chat', 'Чат не найден', 'Возможно, он был удалён.') + '</div>';
-    const me = store.currentUser;
+    if (!c) {
+      return '<div class="screen">' + ui.empty('chat', 'Чат не найден', 'Возможно, он был удалён.',
+        '<button class="btn btn--brand" onclick="SH.app.go(\'#/chats\')">К списку чатов</button>') + '</div>';
+    }
+    const me = store.currentUser || {};
+    const members = (c.memberIds || []).map((uid) => store.userById(uid));
+    const other = c.kind === 'direct' ? members.find((u) => u.id !== me.id) : null;
 
     return (
-      '<div class="screen" style="display:flex;flex-direction:column;min-height:100dvh;padding-bottom:0">' +
+      '<div class="screen screen--chat">' +
         '<div class="screen-head" style="gap:8px">' +
           '<button class="icon-btn icon-btn--plain" onclick="SH.app.go(\'#/chats\')" aria-label="Назад">' + icon('arrowLeft', 21) + '</button>' +
           '<div class="grow" style="min-width:0">' +
             '<div class="ellipsis" style="font-weight:750;font-size:16px">' + e(c.title) + '</div>' +
-            '<div class="small muted">' + c.memberIds.length + ' участника · онлайн</div>' +
+            '<button class="link-btn small" onclick="SH.views.chats.info(\'' + c.id + '\')">' +
+              members.length + ' ' + ui.plural(members.length, 'участник', 'участника', 'участников') + ' · состав</button>' +
           '</div>' +
-          '<button class="icon-btn icon-btn--plain" onclick="SH.views.chats.info(\'' + c.id + '\')">' + icon('info', 20) + '</button>' +
+          '<button class="icon-btn icon-btn--plain" onclick="SH.views.chats.info(\'' + c.id + '\')" aria-label="Участники">' +
+            icon('users', 20) + '</button>' +
         '</div>' +
 
+        (other
+          ? '<button class="chat-person" onclick="SH.app.go(\'#/user/' + other.id + '\')">' +
+              ui.avatar(other, 30) + '<span>' + e(other.name) + '</span>' +
+              '<span class="small muted">' + e(other.grade || '') + '</span>' + icon('chevronRight', 16) + '</button>'
+          : '<div class="chat-members">' +
+              members.slice(0, 6).map((m) =>
+                '<button class="avatar-btn" title="' + e(m.name) + '" onclick="SH.app.go(\'#/user/' + m.id + '\')">' +
+                  ui.avatar(m, 28) + '</button>').join('') +
+              (members.length > 6 ? '<span class="small muted">+' + (members.length - 6) + '</span>' : '') +
+            '</div>') +
+
         '<div class="chat-scroll grow">' +
-          c.messages.map((m) => {
-            const own = m.authorId === me.id;
-            const author = store.userById(m.authorId);
-            return (
-              '<div style="display:flex;flex-direction:column;align-items:' + (own ? 'flex-end' : 'flex-start') + '">' +
-                (!own ? '<div class="small muted" style="margin:0 0 3px 4px">' + e(author.name.split(' ')[0]) + '</div>' : '') +
-                '<div class="chat-bubble chat-bubble--' + (own ? 'own' : 'other') + '">' + e(m.text) +
-                  '<div class="chat-time">' + e(ui.relTime(m.at)) + '</div>' +
-                '</div>' +
-              '</div>'
-            );
-          }).join('') +
+          (c.messages.length
+            ? c.messages.map((m) => messageRow(c, m, me)).join('')
+            : '<div class="empty" style="padding:30px 10px"><p>Сообщений пока нет — напиши первым</p></div>') +
         '</div>' +
 
         '<div class="composer">' +
           '<div class="field"><input id="msg-input" placeholder="Сообщение…" autocomplete="off"></div>' +
-          '<button class="icon-btn icon-btn--brand" style="width:46px;height:46px" onclick="SH.views.chats.send(\'' + c.id + '\')">' +
+          '<button class="icon-btn icon-btn--brand" style="width:46px;height:46px" onclick="SH.views.chats.send(\'' + c.id + '\')" aria-label="Отправить">' +
             icon('send', 19) + '</button>' +
         '</div>' +
+      '</div>'
+    );
+  }
+
+  function messageRow(c, m, me) {
+    const own = m.authorId === me.id;
+    const author = store.userById(m.authorId);
+
+    return (
+      '<div class="msg-line msg-line--' + (own ? 'own' : 'other') + '">' +
+        (!own ? ui.avatar(author, 24) : '') +
+        '<div class="msg-col">' +
+          (!own ? '<div class="small muted" style="margin:0 0 3px 4px">' + e(author.name.split(' ')[0]) + '</div>' : '') +
+          '<div class="chat-bubble chat-bubble--' + (own ? 'own' : 'other') + '">' + e(m.text) +
+            '<div class="chat-time">' + e(ui.relTime(m.editedAt || m.at)) +
+              (m.editedAt ? ' · изменено' : '') + '</div>' +
+          '</div>' +
+        '</div>' +
+        (own
+          ? '<button class="icon-btn icon-btn--plain msg-edit" style="width:28px;height:28px" title="Изменить" ' +
+              'onclick="SH.views.chats.editMessage(\'' + c.id + '\',\'' + m.id + '\')">' + icon('edit', 14) + '</button>'
+          : '') +
       '</div>'
     );
   }
@@ -3151,60 +3741,108 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       }
     });
     input.focus({ preventScroll: true });
-    window.scrollTo(0, document.body.scrollHeight);
+    const scroller = root.querySelector('.chat-scroll');
+    if (scroller) scroller.scrollTop = scroller.scrollHeight;
   }
 
   const actions = {
     send(id) {
       const input = document.getElementById('msg-input');
       if (!input || !input.value.trim()) return;
-      store.sendMessage(id, input.value);
+      store.sendMessage(id, input.value.trim());
       SH.app.render();
       const again = document.getElementById('msg-input');
       if (again) again.focus({ preventScroll: true });
+      const scroller = document.querySelector('.chat-scroll');
+      if (scroller) scroller.scrollTop = scroller.scrollHeight;
     },
 
-    newChat() {
+    /* открыть личную переписку с пользователем (из профиля, поста, комментария) */
+    async openWith(userId) {
+      if (!store.isAuthed) { SH.app.go('#/auth'); return; }
+      const me = store.currentUser;
+      if (userId === me.id) { ui.toast('Это ты'); return; }
+
+      const existing = store.chats().find((c) => c.kind === 'direct' &&
+        c.memberIds.length === 2 && c.memberIds.includes(userId));
+      if (existing) { SH.app.go('#/chat/' + existing.id); return; }
+
+      if (SH.api && SH.api.enabled()) {
+        try {
+          const res = await SH.api.directChat(userId);
+          const other = store.userById(userId);
+          store.addChat({
+            id: res.chatId, title: other.name, kind: 'direct',
+            memberIds: [me.id, userId], messages: [], unread: 0,
+            lastAt: new Date().toISOString()
+          });
+          SH.app.go('#/chat/' + res.chatId);
+        } catch (err) {
+          ui.toast('Не удалось открыть чат: ' + err.message);
+        }
+        return;
+      }
+
+      const other = store.userById(userId);
+      const chat = {
+        id: store.uid('c'), title: other.name, kind: 'direct',
+        memberIds: [me.id, userId], lastAt: new Date().toISOString(), unread: 0, messages: []
+      };
+      store.addChat(chat);
+      SH.app.go('#/chat/' + chat.id);
+    },
+
+    editMessage(chatId, messageId) {
+      const c = store.chat(chatId);
+      const m = c && c.messages.find((x) => x.id === messageId);
+      if (!m) return;
+
       ui.sheet({
-        title: 'Новый чат',
-        subtitle: 'Выбери, с кем поговорить',
-        body: '<div class="list">' +
-          store.state.users.filter((u) => u.id !== (store.currentUser || {}).id).slice(0, 6).map((u) =>
-            '<button class="item" style="width:100%;text-align:left" onclick="SH.views.chats.startWith(\'' + u.id + '\')">' +
-              ui.avatar(u, 36) +
-              '<div class="grow"><div style="font-weight:650;font-size:14px">' + e(u.name) + '</div>' +
-              '<div class="small muted">' + e(u.grade || u.position || '') + '</div></div>' +
-              icon('chevronRight', 18) +
-            '</button>'
-          ).join('') + '</div>'
+        title: 'Изменить сообщение',
+        body: ui.field('msg-edit', '', { textarea: true, value: m.text }) +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.chats.saveMessage(\'' + chatId + '\',\'' + messageId + '\')">Сохранить</button>'
       });
     },
 
-    startWith(userId) {
-      const me = store.currentUser;
-      const existing = store.chats().find((c) => c.memberIds.length === 2 && c.memberIds.includes(userId));
-      if (existing) { ui.closeSheet(); SH.app.go('#/chat/' + existing.id); return; }
-      const other = store.userById(userId);
-      const chat = { id: store.uid('c'), title: other.name, memberIds: [me.id, userId], lastAt: new Date().toISOString(), unread: 0, messages: [] };
-      store.state.chats.push(chat);
-      store.commit(() => {}, 'chats');
-      ui.closeSheet();
-      SH.app.go('#/chat/' + chat.id);
+    saveMessage(chatId, messageId) {
+      const el = document.getElementById('msg-edit');
+      const text = el ? el.value.trim() : '';
+      if (!text) { ui.toast('Пустое сообщение'); return; }
+      store.editMessage(chatId, messageId, text).then((res) => {
+        if (!res.ok) { ui.toast(res.error || 'Не сохранено'); return; }
+        ui.closeSheet();
+        ui.toast('Изменено');
+      });
     },
 
     info(id) {
       const c = store.chat(id);
-      const members = c.memberIds.map((uid) => store.userById(uid));
+      if (!c) return;
+      const members = (c.memberIds || []).map((uid) => store.userById(uid));
+      const me = store.currentUser || {};
+
       ui.sheet({
         title: c.title,
+        subtitle: members.length + ' ' + ui.plural(members.length, 'участник', 'участника', 'участников') + ' в чате',
         body:
           '<div class="list">' + members.map((u) =>
-            '<div class="item">' + ui.avatar(u, 36) +
-            '<div class="grow"><div style="font-weight:650;font-size:14px">' + e(u.name) + '</div>' +
-            '<div class="small muted">' + e(u.grade || u.position || '') + '</div></div></div>'
+            '<button class="item" style="width:100%;text-align:left" onclick="SH.views.chats.closeAndGo(\'#/user/' + u.id + '\')">' +
+              ui.avatar(u, 36) +
+              '<div class="grow"><div style="font-weight:650;font-size:14px">' + e(u.name) +
+                (u.id === me.id ? ' <span class="tag">вы</span>' : '') + '</div>' +
+              '<div class="small muted">' + e([u.grade, u.position].filter(Boolean).join(' · ') || 'ученик') + '</div></div>' +
+              icon('chevronRight', 16) +
+            '</button>'
           ).join('') + '</div>' +
-          '<button class="btn btn--soft btn--block mt-16" onclick="SH.app.go(\'#/roadmap\')">Открыть план команды</button>'
+          (c.kind === 'team'
+            ? '<p class="small muted mt-16" style="margin-bottom:0">Это чат команды: сообщения видят все участники.</p>'
+            : '<p class="small muted mt-16" style="margin-bottom:0">Личная переписка: сообщения видят только двое.</p>')
       });
+    },
+
+    closeAndGo(hash) {
+      ui.closeSheet();
+      SH.app.go(hash);
     }
   };
 
@@ -3212,13 +3850,56 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   SH.views.chats = Object.assign({ html, thread, mountThread }, actions);
 })(window.SH = window.SH || {});
 
-/* Профиль, настройки, вход/регистрация */
+/* Профиль, чужой профиль, настройки, вход/регистрация */
 (function (SH) {
   'use strict';
   const { ui, store, icon } = SH;
   const e = ui.esc;
 
-  /* ─────────────────────────── профиль ─────────────────────────── */
+  /* ─────────────────── готовность: считается из данных ─────────────────── */
+
+  function readinessOf(u) {
+    const skills = (u.skills || []).length;
+    const interests = (u.interests || []).length;
+
+    const profileParts = [
+      !!u.name && u.name.trim().length > 2,
+      !!u.grade,
+      !!u.school,
+      !!u.city,
+      skills > 0,
+      interests > 0
+    ];
+    const profileFilled = profileParts.filter(Boolean).length;
+    const profileScore = Math.round((profileFilled / profileParts.length) * 35);
+
+    const tasks = store.tasks();
+    const done = tasks.filter((t) => t.status === 'done').length;
+    const planScore = tasks.length ? Math.round((done / tasks.length) * 25) : 0;
+
+    const apps = store.myApplications();
+    const appliedScore = Math.round((Math.min(apps.length, 4) / 4) * 20);
+    const accepted = apps.filter((a) => a.status === 'accepted').length;
+    const resultScore = Math.round((Math.min(accepted, 2) / 2) * 20);
+
+    const total = Math.min(100, profileScore + planScore + appliedScore + resultScore);
+
+    return {
+      total,
+      parts: [
+        { label: 'Заполненность профиля', score: profileScore, max: 35,
+          hint: profileFilled + ' из ' + profileParts.length + ' пунктов' },
+        { label: 'План развития', score: planScore, max: 25,
+          hint: tasks.length ? done + ' из ' + tasks.length + ' шагов' : 'шагов пока нет' },
+        { label: 'Заявки на события', score: appliedScore, max: 20,
+          hint: apps.length + ' ' + ui.plural(apps.length, 'заявка', 'заявки', 'заявок') },
+        { label: 'Принятые заявки', score: resultScore, max: 20,
+          hint: accepted + ' ' + ui.plural(accepted, 'принята', 'приняты', 'принято') }
+      ]
+    };
+  }
+
+  /* ─────────────────────────── свой профиль ─────────────────────────── */
 
   function html() {
     if (!store.isAuthed) {
@@ -3233,7 +3914,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
     const u = store.currentUser;
     const apps = store.myApplications();
-    const readiness = Math.min(96, 40 + (u.skills || []).length * 8 + (u.interests || []).length * 6 + apps.length * 5);
+    const r = readinessOf(u);
 
     return (
       '<div class="screen">' +
@@ -3247,21 +3928,27 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           ui.avatar(u, 56) +
           '<div class="grow" style="min-width:0">' +
             '<div class="h2" style="font-size:19px">' + e(u.name) + '</div>' +
-            '<div class="small muted">' + e([u.grade, u.school, u.city].filter(Boolean).join(' · ')) + '</div>' +
+            '<div class="small muted">' + e([u.grade, u.school, u.city].filter(Boolean).join(' · ') || 'Заполни профиль') + '</div>' +
+            (u.role === 'admin' || u.role === 'root'
+              ? '<span class="tag tag--lav" style="margin-top:6px">' + (u.role === 'root' ? 'владелец' : 'администратор') + '</span>'
+              : '') +
           '</div>' +
           '<button class="btn btn--soft btn--xs" onclick="SH.views.profile.editProfile()">' + icon('edit', 14) + 'Изменить</button>' +
         '</div>' +
 
         '<div class="readiness">' +
           '<div class="row"><span class="readiness__label">Готовность к поступлению</span>' +
-            '<span class="spacer"></span><span class="readiness__value">' + readiness + '%</span></div>' +
-          '<div class="h3" style="margin:6px 0 10px;font-size:15px;color:#fff">Путь ученика</div>' +
-          '<div class="progress"><i style="width:' + readiness + '%;background:var(--sky)"></i></div>' +
-          '<div class="small" style="margin-top:10px;opacity:.66;color:#fff">' +
-            (u.skills || []).length + ' ' + ui.plural((u.skills || []).length, 'навык', 'навыка', 'навыков') + ' · ' +
-            apps.length + ' ' + ui.plural(apps.length, 'заявка', 'заявки', 'заявок') + ' · ' +
-            store.tasks().filter((t) => t.status === 'done').length + ' ' +
-            ui.plural(store.tasks().filter((t) => t.status === 'done').length, 'шаг', 'шага', 'шагов') + ' выполнено</div>' +
+            '<span class="spacer"></span><span class="readiness__value">' + r.total + '%</span></div>' +
+          '<div class="progress" style="margin-top:10px"><i style="width:' + r.total + '%;background:var(--sky)"></i></div>' +
+          '<div class="readiness__rows">' +
+            r.parts.map((p) =>
+              '<div class="readiness__row">' +
+                '<span>' + e(p.label) + '</span>' +
+                '<span class="readiness__hint">' + e(p.hint) + '</span>' +
+                '<b>' + p.score + '<span class="readiness__max">/' + p.max + '</span></b>' +
+              '</div>').join('') +
+          '</div>' +
+          '<button class="readiness__how" onclick="SH.views.profile.readinessInfo()">Как считается</button>' +
         '</div>' +
 
         '<div class="section-head"><span class="h2">Навыки</span></div>' +
@@ -3275,24 +3962,19 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           ? '<div class="list">' + apps.map(appRow).join('') + '</div>'
           : ui.empty('file', 'Заявок пока нет', 'Открой любое событие в Explore и подай заявку — она появится здесь.')) +
 
-        '<div class="section-head"><span class="h2">Быстрые действия</span></div>' +
+        '<div class="section-head"><span class="h2">Ещё</span></div>' +
         '<div class="list">' +
-          row('install', 'Установить приложение', 'На главный экран, в три шага', "SH.app.go('#/install')") +
-          (store.isAdmin ? row('shield', 'Админ-панель', 'Управление событиями и учениками', "SH.app.go('#/admin')", 'tag--lav') : '') +
-          row('globe', 'Синхронизация', cloudLabel(), 'SH.views.profile.cloudSheet()') +
+          row('install', 'Установить приложение', 'Иконка на главном экране', "SH.app.go('#/install')") +
+          ((u.role === 'admin' || u.role === 'root')
+            ? row('shield', 'Админ-панель', 'События, заявки, ученики', "SH.app.go('#/admin')", 'tag--lav')
+            : '') +
           row('moon', 'Тема оформления', themeLabel(), 'SH.views.profile.themeSheet()') +
-          row('refresh', 'Сбросить демо-данные', 'Вернуть всё как было', 'SH.views.profile.reset()') +
+          row('lock', 'Пароль', 'Сменить пароль от аккаунта', 'SH.views.profile.passwordSheet()') +
+          row('refresh', 'Обновить данные', 'Подтянуть свежее с сервера', 'SH.views.profile.refresh()') +
           row('logout', 'Выйти', 'Завершить сессию', 'SH.views.profile.logout()') +
         '</div>' +
       '</div>'
     );
-  }
-
-  function cloudLabel() {
-    const api = SH.api || {};
-    if (!api.enabled || !api.enabled()) return 'Локальный режим (офлайн)';
-    if (api.mode === 'cloud') return 'Облако подключено · ' + (api.lastSync ? ui.relTime(new Date(api.lastSync).toISOString()) : 'синхронизировано');
-    return api.lastError ? 'Нет связи: ' + String(api.lastError).slice(0, 40) : 'Проверяю связь…';
   }
 
   function themeLabel() {
@@ -3317,7 +3999,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     return (
       '<div class="item card--tap" onclick="SH.app.go(\'#/event/' + ev.id + '\')" style="cursor:pointer">' +
         '<span class="empty__icon" style="width:40px;height:40px;border-radius:13px;background:var(--primary-soft);color:var(--primary)">' +
-          icon(store.CATEGORIES[ev.category].glyph, 19) + '</span>' +
+          icon((store.CATEGORIES[ev.category] || store.CATEGORIES.event).glyph, 19) + '</span>' +
         '<div class="grow" style="min-width:0">' +
           '<div class="ellipsis" style="font-weight:650;font-size:13.5px">' + e(ev.title) + '</div>' +
           '<div class="small muted">' + e(ui.relTime(a.createdAt)) + '</div>' +
@@ -3325,16 +4007,6 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         '<span class="tag tag--' + tone + '">' + e(label) + '</span>' +
       '</div>'
     );
-  }
-
-  function syncRow(ico, title, sub) {
-    return '<div class="item">' +
-      '<span class="empty__icon" style="width:36px;height:36px;border-radius:11px;background:var(--chip);color:var(--text);margin:0">' +
-        icon(ico, 17) + '</span>' +
-      '<div class="grow" style="min-width:0">' +
-        '<div style="font-weight:650;font-size:13.5px">' + e(title) + '</div>' +
-        '<div class="small muted">' + e(sub) + '</div>' +
-      '</div></div>';
   }
 
   function row(ico, title, sub, action, tone) {
@@ -3352,6 +4024,67 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     );
   }
 
+  /* ─────────────────────────── чужой профиль ─────────────────────────── */
+
+  function user(id) {
+    const u = store.userById(id);
+    if (!u || !u.id) {
+      return '<div class="screen">' + ui.empty('person', 'Профиль не найден', 'Возможно, аккаунт удалён.',
+        '<button class="btn btn--brand" onclick="SH.app.go(\'#/community\')">В сообщество</button>') + '</div>';
+    }
+
+    const me = store.currentUser || {};
+    const own = u.id === me.id;
+    const posts = store.posts().filter((p) => p.authorId === u.id).slice(0, 3);
+    const teams = store.teams().filter((t) => (t.members || []).includes(u.id));
+
+    return (
+      '<div class="screen">' +
+        '<div class="screen-head" style="gap:8px">' +
+          '<button class="icon-btn icon-btn--plain" onclick="SH.app.back()" aria-label="Назад">' + icon('arrowLeft', 21) + '</button>' +
+          '<h1 class="screen-title grow" style="font-size:20px">Профиль</h1>' +
+        '</div>' +
+
+        '<div class="row" style="gap:14px;margin-bottom:16px">' +
+          ui.avatar(u, 60) +
+          '<div class="grow" style="min-width:0">' +
+            '<div class="h2" style="font-size:20px">' + e(u.name) + '</div>' +
+            '<div class="small muted">' + e([u.grade, u.school, u.city].filter(Boolean).join(' · ') || 'ученик') + '</div>' +
+            (u.role === 'admin' || u.role === 'root'
+              ? '<span class="tag tag--lav" style="margin-top:6px">' + (u.role === 'root' ? 'владелец' : 'администратор') + '</span>'
+              : '') +
+          '</div>' +
+        '</div>' +
+
+        (own
+          ? '<button class="btn btn--soft btn--block" onclick="SH.app.go(\'#/profile\')">Это твой профиль — открыть настройки</button>'
+          : '<button class="btn btn--brand btn--block" onclick="SH.views.chats.openWith(\'' + u.id + '\')">' +
+              icon('message', 17) + 'Написать сообщение</button>') +
+
+        ((u.skills || []).length
+          ? '<div class="section-head"><span class="h2">Навыки</span></div><div class="wrap">' +
+            u.skills.map((s) => ui.tag(s)).join('') + '</div>' : '') +
+
+        ((u.interests || []).length
+          ? '<div class="section-head"><span class="h2">Интересы</span></div><div class="wrap">' +
+            u.interests.map((s) => ui.tag(s)).join('') + '</div>' : '') +
+
+        (teams.length
+          ? '<div class="section-head"><span class="h2">Команды</span></div><div class="list">' +
+            teams.map((t) =>
+              '<div class="item"><span class="empty__icon" style="width:38px;height:38px;border-radius:12px;background:var(--primary-soft);color:var(--primary);margin:0">' +
+                icon('users', 17) + '</span><div class="grow"><div style="font-weight:650;font-size:13.5px">' + e(t.title) + '</div>' +
+                '<div class="small muted">' + e(t.type) + '</div></div></div>').join('') + '</div>' : '') +
+
+        (posts.length
+          ? '<div class="section-head"><span class="h2">Публикации</span></div><div class="list">' +
+            posts.map((p) =>
+              '<div class="card" style="padding:12px"><p class="small" style="margin:0 0 6px;line-height:1.5">' + e(p.text) + '</p>' +
+              '<div class="small muted">' + e(ui.relTime(p.createdAt)) + '</div></div>').join('') + '</div>' : '') +
+      '</div>'
+    );
+  }
+
   /* ─────────────────────────── настройки ─────────────────────────── */
 
   const actions = {
@@ -3363,6 +4096,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         onMount(el) { setTimeout(() => { const i = el.querySelector('#chip-input'); if (i) i.focus(); }, 120); }
       });
     },
+
     saveChip(field) {
       const input = document.getElementById('chip-input');
       const v = input ? input.value.trim() : '';
@@ -3370,15 +4104,33 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       const u = store.currentUser;
       const list = (u[field] || []).slice();
       if (!list.includes(v)) list.push(v);
-      store.updateUser({ [field]: list });
+      actions.persist({ [field]: list });
       ui.closeSheet();
       ui.toast('Сохранено');
       SH.app.render();
     },
+
     removeChip(field, value) {
       const u = store.currentUser;
-      store.updateUser({ [field]: (u[field] || []).filter((x) => x !== value) });
+      actions.persist({ [field]: (u[field] || []).filter((x) => x !== value) });
       SH.app.render();
+    },
+
+    /* сохраняем полный профиль: имя, класс, школа, город, навыки, интересы */
+    persist(patch) {
+      const u = store.currentUser;
+      const full = {
+        name: patch.name !== undefined ? patch.name : u.name,
+        grade: patch.grade !== undefined ? patch.grade : u.grade,
+        school: patch.school !== undefined ? patch.school : u.school,
+        city: patch.city !== undefined ? patch.city : u.city,
+        skills: patch.skills !== undefined ? patch.skills : u.skills,
+        interests: patch.interests !== undefined ? patch.interests : u.interests
+      };
+      store.updateUser(patch);
+      if (SH.api && SH.api.enabled()) {
+        SH.api.saveProfile(full).catch((err) => ui.toast('Не сохранилось: ' + err.message));
+      }
     },
 
     editProfile() {
@@ -3387,18 +4139,38 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         title: 'Профиль',
         body:
           ui.field('p-name', 'Имя и фамилия', { value: u.name }) +
-          ui.field('p-grade', 'Класс', { value: u.grade || '', style: 'margin-top:12px' }) +
+          '<div class="form-grid" style="margin-top:12px">' +
+            ui.field('p-grade', 'Класс', { value: u.grade || '' }) +
+            ui.field('p-city', 'Город', { value: u.city || '' }) +
+          '</div>' +
           ui.field('p-school', 'Школа', { value: u.school || '', style: 'margin-top:12px' }) +
-          ui.field('p-city', 'Город', { value: u.city || '', style: 'margin-top:12px' }) +
           '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.profile.saveProfile()">Сохранить</button>'
       });
     },
+
     saveProfile() {
       const v = (id) => (document.getElementById(id) || {}).value || '';
-      store.updateUser({ name: v('p-name').trim() || 'Ученик', grade: v('p-grade'), school: v('p-school'), city: v('p-city') });
+      actions.persist({ name: v('p-name').trim() || 'Ученик', grade: v('p-grade'), school: v('p-school'), city: v('p-city') });
       ui.closeSheet();
       ui.toast('Профиль обновлён');
       SH.app.render();
+    },
+
+    readinessInfo() {
+      const r = readinessOf(store.currentUser);
+      ui.sheet({
+        title: 'Готовность к поступлению',
+        subtitle: 'Считается из твоих данных, а не задана вручную',
+        body:
+          '<div class="list">' +
+            r.parts.map((p) =>
+              '<div class="item"><div class="grow"><div style="font-weight:650;font-size:14px">' + e(p.label) + '</div>' +
+                '<div class="small muted">' + e(p.hint) + '</div></div>' +
+                '<b style="font-size:14px">' + p.score + '<span class="muted small">/' + p.max + '</span></b></div>').join('') +
+          '</div>' +
+          '<p class="small muted mt-16" style="margin-bottom:0">Чтобы процент рос: заполни класс, школу и город, добавь навыки и интересы, ' +
+            'выполняй шаги в плане и отправляй заявки на события. Принятая заявка даёт больше, чем отправленная.</p>'
+      });
     },
 
     themeSheet() {
@@ -3418,64 +4190,55 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           '</div>'
       });
     },
+
     setTheme(t) { store.setTheme(t); ui.closeSheet(); SH.app.render(); },
 
-    cloudSheet() {
-      const api = SH.api || {};
-      const pending = api.outbox ? api.outbox().length : 0;
-      const mode = api.mode === 'cloud' ? 'Облако (D1)' : 'Локально (localStorage)';
-      const status = api.status === 'online' ? 'на связи'
-        : api.status === 'offline' ? 'нет связи — работаем офлайн'
-        : api.status === 'disabled' ? 'режим без бэкенда' : 'проверка…';
-
+    passwordSheet() {
       ui.sheet({
-        title: 'Синхронизация',
-        subtitle: 'Данные и связь с бэкендом',
+        title: 'Сменить пароль',
+        subtitle: 'После смены останешься в этой сессии',
         body:
-          '<div class="list">' +
-            syncRow('globe', 'Режим', mode) +
-            syncRow('wifi', 'Сеть', status) +
-            syncRow('clock', 'Последняя синхронизация', api.lastSync ? ui.relTime(new Date(api.lastSync).toISOString()) : 'ещё не было') +
-            syncRow('file', 'В очереди на отправку', pending ? pending + ' ' + ui.plural(pending, 'изменение', 'изменения', 'изменений') : 'пусто') +
-          '</div>' +
-          (api.enabled && api.enabled()
-            ? '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.profile.cloudSync()">Синхронизировать сейчас</button>'
-            : '<div class="ai-note mt-16">' + icon('info') +
-              '<div>Сборка без бэкенда: всё хранится в этом браузере. Чтобы включить облако, собери файл с ключом <b>--api</b>.</div></div>') +
-          (pending ? '<button class="btn btn--soft btn--block mt-12" onclick="SH.views.profile.cloudFlush()">Отправить очередь</button>' : '')
+          ui.field('pw-current', 'Текущий пароль', { type: 'password', autocomplete: 'current-password' }) +
+          ui.field('pw-next', 'Новый пароль', { type: 'password', autocomplete: 'new-password', style: 'margin-top:12px' }) +
+          ui.field('pw-next2', 'Повтори новый', { type: 'password', autocomplete: 'new-password', style: 'margin-top:12px' }) +
+          '<div id="pw-error"></div>' +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.profile.savePassword()">Сохранить</button>'
       });
     },
 
-    cloudSync() {
-      const api = SH.api;
-      api.bootstrap().then((snap) => {
-        if (snap) {
-          store.hydrate(snap);
-          ui.closeSheet();
-          ui.toast('Синхронизировано');
-          SH.app.render();
-        } else {
-          ui.closeSheet();
-          ui.toast('Нет связи: ' + (api.lastError || 'неизвестная ошибка'));
-        }
-      });
-    },
+    async savePassword() {
+      const v = (id) => (document.getElementById(id) || {}).value || '';
+      const box = document.getElementById('pw-error');
+      const fail = (msg) => { if (box) box.innerHTML = '<p class="field-error">' + e(msg) + '</p>'; };
 
-    cloudFlush() {
-      SH.api.flush().then((n) => {
-        ui.toast(n ? 'Отправлено: ' + n : 'Очередь пуста или нет связи');
-        SH.app.render();
-      });
+      if (!v('pw-current')) return fail('Введите текущий пароль');
+      if (v('pw-next').length < 6) return fail('Новый пароль минимум 6 символов');
+      if (v('pw-next') !== v('pw-next2')) return fail('Пароли не совпадают');
+
+      try {
+        await SH.api.changePassword(v('pw-current'), v('pw-next'));
+        ui.closeSheet();
+        ui.toast('Пароль обновлён');
+      } catch (err) {
+        fail(err.message);
+      }
     },
 
     settings() { actions.themeSheet(); },
 
-    reset() {
-      ui.confirmSheet('Сбросить демо-данные?', 'Все изменения в этой сессии будут потеряны.', 'Сбросить', () => {
-        store.reset();
-        ui.toast('Данные сброшены');
-        SH.app.go('#/explore');
-      });
+    async refresh() {
+      try {
+        const snap = await SH.api.bootstrap();
+        if (snap) {
+          store.hydrate(snap);
+          ui.toast('Данные обновлены');
+          SH.app.render();
+        } else {
+          ui.toast('Нет связи с сервером');
+        }
+      } catch (err) {
+        ui.toast('Нет связи: ' + err.message);
+      }
     },
 
     logout() {
@@ -3491,52 +4254,40 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
   function auth(mode) {
     const isLogin = mode !== 'register';
-    const cloud = !!(SH.api && SH.api.enabled());
 
     return (
-      '<div class="screen" style="padding-top:calc(var(--safe-t) + 30px)">' +
-        '<div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:24px">' +
+      '<div class="screen auth-screen">' +
+        '<div class="auth-hero">' +
           SH.logoMark(66) +
           '<h1 style="font-size:26px;letter-spacing:-0.8px;margin:16px 0 6px">Student Hub</h1>' +
           '<p class="muted" style="margin:0;font-size:14px;max-width:310px;line-height:1.5">' +
             'Возможности, команды и личный план — в одном приложении для школы.</p>' +
         '</div>' +
 
-        '<div class="pill-row" style="justify-content:center;margin-bottom:20px">' +
-          '<button class="pill" aria-pressed="' + isLogin + '" onclick="SH.app.go(\'#/auth\')">Вход</button>' +
-          '<button class="pill" aria-pressed="' + !isLogin + '" onclick="SH.app.go(\'#/auth/register\')">Регистрация</button>' +
+        '<div style="width:100%;max-width:380px;margin:0 auto">' +
+          '<div class="pill-row" style="justify-content:center;margin-bottom:20px">' +
+            '<button class="pill" aria-pressed="' + isLogin + '" onclick="SH.app.go(\'#/auth\')">Вход</button>' +
+            '<button class="pill" aria-pressed="' + !isLogin + '" onclick="SH.app.go(\'#/auth/register\')">Регистрация</button>' +
+          '</div>' +
+
+          (isLogin
+            ? ui.field('auth-login', 'Логин или почта', { value: '', placeholder: 'Логин или почта', autocomplete: 'username' }) +
+              ui.field('auth-pass', 'Пароль', { type: 'password', value: '', autocomplete: 'current-password', style: 'margin-top:12px' })
+            : ui.field('auth-name', 'Имя и фамилия', { placeholder: 'Как тебя зовут' }) +
+              ui.field('auth-login', 'Логин', { placeholder: 'Латиница, цифры, точка', style: 'margin-top:12px' }) +
+              ui.field('auth-pass', 'Пароль', { type: 'password', placeholder: 'Минимум 6 символов', style: 'margin-top:12px' }) +
+              ui.field('auth-grade', 'Класс', { placeholder: '10 класс', style: 'margin-top:12px' })) +
+
+          '<div id="auth-error"></div>' +
+
+          '<button class="btn btn--brand btn--block mt-16" id="auth-submit" ' +
+            'onclick="SH.views.profile.submitAuth(\'' + (isLogin ? 'login' : 'register') + '\')">' +
+            (isLogin ? 'Войти' : 'Создать аккаунт') + icon('arrowRight', 18) + '</button>' +
+
+          (isLogin
+            ? '<p class="center small muted mt-16" style="line-height:1.5">Забыл пароль? Попроси администратора школы выдать новый.</p>'
+            : '<p class="center small muted mt-16" style="line-height:1.5">Аккаунт появится сразу — подтверждение почты не нужно.</p>') +
         '</div>' +
-
-        (isLogin
-          ? ui.field('auth-login', 'Логин или почта', { value: '', placeholder: 'aziz@school.ru', autocomplete: 'username' }) +
-            ui.field('auth-pass', 'Пароль', { type: 'password', value: '', autocomplete: 'current-password', style: 'margin-top:12px' })
-          : ui.field('auth-name', 'Имя и фамилия', { placeholder: 'Азиз Рахимов' }) +
-            ui.field('auth-login', 'Логин', { placeholder: 'aziz или aziz@school.ru', style: 'margin-top:12px' }) +
-            ui.field('auth-pass', 'Пароль', { type: 'password', placeholder: 'Минимум 6 символов', style: 'margin-top:12px' }) +
-            ui.field('auth-grade', 'Класс', { placeholder: '10 класс', style: 'margin-top:12px' })) +
-
-        '<div id="auth-error"></div>' +
-
-        '<button class="btn btn--brand btn--block mt-16" id="auth-submit" ' +
-          'onclick="SH.views.profile.submitAuth(\'' + (isLogin ? 'login' : 'register') + '\')">' +
-          (isLogin ? 'Войти' : 'Создать аккаунт') + icon('arrowRight', 18) + '</button>' +
-
-        '<div class="ai-note mt-16">' + icon('shield') +
-          '<div>' + (cloud
-            ? 'Вход проверяется на сервере. Пароли хранятся в виде PBKDF2-хеша, в браузере — только токен сессии.'
-            : 'Сервер недоступен: вход проверяется локально на демо-данных.') + '</div>' +
-        '</div>' +
-
-        '<div class="divider"></div>' +
-        '<div class="card" style="background:var(--chip);border:0">' +
-          '<div class="small muted" style="margin-bottom:8px">Тестовые аккаунты</div>' +
-          '<div class="row" style="justify-content:space-between;margin-bottom:6px">' +
-            '<span class="small">Ученик</span><code class="small">aziz@school.ru / demo</code></div>' +
-          '<div class="row" style="justify-content:space-between">' +
-            '<span class="small">Администратор</span><code class="small">root · пароль отдельно</code></div>' +
-        '</div>' +
-        '<p class="center small muted mt-16" style="line-height:1.5">' +
-          'Пароль root выдан владельцу проекта и хранится в <b>dist/ROOT_CREDENTIALS.txt</b>.</p>' +
       '</div>'
     );
   }
@@ -3582,388 +4333,987 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     setBusy(false);
     if (!res || !res.ok) return authError((res && res.error) || 'Не удалось войти');
 
-    ui.toast(res.warning || ('Добро пожаловать, ' + res.user.name.split(' ')[0]));
-    SH.app.go(res.user.role === 'admin' ? '#/admin' : '#/explore');
+    ui.toast('С возвращением, ' + res.user.name.split(' ')[0]);
+    const boss = res.user.role === 'admin' || res.user.role === 'root';
+    SH.app.go(boss ? '#/admin' : '#/explore');
   }
 
   SH.views = SH.views || {};
-  SH.views.profile = Object.assign({ html, auth, submitAuth }, actions);
-  /* демо-вход оставлен только для локального режима без сервера */
-  SH.views.profile.demo = function (role) {
-    store.localLogin(role === 'admin' ? 'admin' : 'aziz@school.ru', 'demo').then((res) => {
-      if (res.ok) {
-        ui.toast('Локальный вход');
-        SH.app.go(role === 'admin' ? '#/admin' : '#/explore');
-      } else {
-        ui.toast('Нужен вход через форму');
-      }
-    });
-  };
+  SH.views.profile = Object.assign({ html, user, auth, submitAuth, readinessOf }, actions);
 })(window.SH = window.SH || {});
 
-/* Админ-панель */
+/* Админ-панель: два уровня доступа — root (владелец) и admin */
 (function (SH) {
   'use strict';
-  const { ui, store, ai, icon } = SH;
+  const { ui, store, icon } = SH;
   const e = ui.esc;
 
+  /* локальный кэш админских данных */
+  const cache = { users: [], applications: [], aiKeys: [], audit: [], moderation: [], loaded: {} };
+  const adminMount = { pending: false };
+
   let section = 'overview';
-  let search = '';
+  let query = '';
 
-  const NAV = [
-    ['overview', 'grid', 'Обзор'],
-    ['events', 'calendar', 'События'],
-    ['students', 'users', 'Ученики'],
-    ['moderation', 'flag', 'Модерация'],
-    ['ai', 'sparkles', 'ИИ-аналитика']
-  ];
+  const SECTION_TITLES = {
+    overview: 'Обзор',
+    events: 'События',
+    applications: 'Заявки',
+    users: 'Пользователи',
+    admins: 'Администраторы',
+    moderation: 'Модерация',
+    ai: 'ИИ-ключи',
+    audit: 'Журнал',
+    settings: 'Настройки'
+  };
 
-  function html() {
-    if (!store.isAdmin) {
-      return '<div class="app app--wide"><div class="screen">' +
-        ui.empty('lock', 'Доступ только для администратора',
-          'Войди под аккаунтом root (логины root или admin) — пароль выдан владельцу проекта.',
-          '<button class="btn btn--brand" onclick="SH.app.go(\'#/auth\')">Перейти ко входу</button>') +
-        '</div></div>';
-    }
+  function isRoot() { return store.currentUser && store.currentUser.role === 'root'; }
+  function isAdminLike() { const u = store.currentUser; return u && (u.role === 'admin' || u.role === 'root'); }
+
+  /* ───────────────────────── каркас ───────────────────────── */
+
+  function nav() {
+    const items = [
+      ['overview', 'grid', 'Обзор'],
+      ['events', 'calendar', 'События'],
+      ['applications', 'file', 'Заявки'],
+      ['users', 'users', 'Пользователи'],
+      ['moderation', 'flag', 'Модерация'],
+      ['ai', 'sparkles', 'ИИ-ключи']
+    ];
+    if (isRoot()) items.splice(4, 0, ['admins', 'shield', 'Администраторы']);
+    items.push(['audit', 'chart', 'Журнал']);
 
     return (
-      '<div class="admin">' +
-        '<aside class="admin__side">' +
-          '<div class="admin__brand">' + SH.logoMark(32) +
-            '<div><b>Student Hub</b><div class="small muted" style="font-size:11px">Админ-панель</div></div>' +
-          '</div>' +
-          NAV.map(([id, ico, label]) =>
-            '<button class="admin__nav" aria-current="' + (section === id) + '" onclick="SH.views.admin.go(\'' + id + '\')">' +
-              icon(ico) + label + '</button>'
-          ).join('') +
-          '<div style="flex:1"></div>' +
-          '<button class="admin__nav" onclick="SH.app.go(\'#/explore\')">' + icon('arrowLeft') + 'В приложение</button>' +
-          '<button class="admin__nav" onclick="SH.views.profile.logout()">' + icon('logout') + 'Выйти</button>' +
-        '</aside>' +
-        '<main class="admin__main">' + content() + '</main>' +
-      '</div>'
+      '<aside class="admin-nav">' +
+        '<div class="admin__brand">' + SH.logoMark(30) +
+          '<div><b style="font-size:14px">Student Hub</b>' +
+          '<div class="small muted" style="font-size:11px">' +
+            (isRoot() ? 'Владелец' : 'Администратор') + '</div></div>' +
+        '</div>' +
+        items.map(([id, ico, label]) =>
+          '<button class="admin__nav" aria-current="' + (section === id) + '" ' +
+            'onclick="SH.views.admin.go(\'' + id + '\')">' + icon(ico) + e(label) + '</button>'
+        ).join('') +
+        '<div style="flex:1;min-height:12px"></div>' +
+        '<button class="admin__nav" onclick="SH.app.go(\'#/explore\')">' + icon('arrowLeft') + 'В приложение</button>' +
+        '<button class="admin__nav" onclick="SH.views.profile.logout()">' + icon('logout') + 'Выйти</button>' +
+      '</aside>'
     );
+  }
+
+  function html() {
+    if (!isAdminLike()) {
+      return '<div class="screen" style="padding-top:60px">' +
+        ui.empty('lock', 'Доступ только для администратора',
+          'Войди под аккаунтом администратора. Если доступ должен быть — попроси владельца выдать его.',
+          '<button class="btn btn--brand" onclick="SH.app.go(\'#/auth\')">Перейти ко входу</button>') +
+        '</div>';
+    }
+
+    return '<div class="admin-shell">' + nav() + '<main class="admin-body">' + content() + '</main></div>';
   }
 
   function content() {
     if (section === 'events') return eventsSection();
-    if (section === 'students') return studentsSection();
+    if (section === 'applications') return applicationsSection();
+    if (section === 'users') return usersSection();
+    if (section === 'admins') return adminsSection();
     if (section === 'moderation') return moderationSection();
     if (section === 'ai') return aiSection();
+    if (section === 'audit') return auditSection();
     return overviewSection();
   }
 
-  function pageHead(title, sub, actionHtml) {
-    return '<div class="row" style="margin-bottom:22px">' +
-      '<div class="grow"><h1 style="margin:0;font-size:24px;letter-spacing:-0.7px">' + e(title) + '</h1>' +
-      '<p class="small muted" style="margin:4px 0 0">' + e(sub) + '</p></div>' +
-      (actionHtml || '') + '</div>';
+  function pageHead(title, sub, actions) {
+    return '<div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:22px;flex-wrap:wrap">' +
+      '<div style="flex:1;min-width:200px">' +
+        '<h1 style="margin:0;font-size:25px;letter-spacing:-0.8px">' + e(title) + '</h1>' +
+        (sub ? '<p class="small muted" style="margin:5px 0 0">' + e(sub) + '</p>' : '') +
+      '</div>' + (actions || '') + '</div>';
   }
 
-  /* ── обзор ── */
+  function searchBox(placeholder) {
+    return '<div class="search" style="max-width:340px;margin-bottom:16px">' + icon('search') +
+      '<input id="admin-search" placeholder="' + e(placeholder) + '" value="' + e(query) + '"></div>';
+  }
+
+  function mountSearch() {
+    const el = document.querySelector('#admin-search');
+    if (!el) return;
+    el.addEventListener('input', ui.debounce((ev) => {
+      query = ev.target.value;
+      const pos = ev.target.selectionStart;
+      SH.app.render();
+      const again = document.querySelector('#admin-search');
+      if (again) { again.focus(); again.setSelectionRange(pos, pos); }
+    }, 240));
+  }
+
+  /* ───────────────────────── обзор ───────────────────────── */
+
   function overviewSection() {
     const s = store.stats();
-    const apps = store.state.applications.slice(0, 6);
+    const pending = (cache.applications.length ? cache.applications : store.state.applications)
+      .filter((a) => a.status === 'pending').slice(0, 6);
 
-    return pageHead('Обзор', 'Что происходит в школе на этой неделе',
+    return pageHead('Обзор', isRoot() ? 'Полный доступ: пользователи, админы, содержимое' : 'Управление содержимым и учениками',
       '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.eventForm()">' + icon('plus', 16) + 'Событие</button>') +
-      '<div class="stat-grid">' +
-        stat(s.students, 'учеников') +
-        stat(s.events, 'активных событий') +
-        stat(s.applications, 'заявок всего') +
-        stat(s.pending, 'ждут проверки') +
+
+      '<div class="kpi">' +
+        kpi(store.state.users.filter((u) => u.role === 'student').length, 'учеников') +
+        kpi(store.state.users.filter((u) => u.role === 'admin').length, 'админов') +
+        kpi(s.events, 'событий') +
+        kpi(pending.length ? pending.length : s.pending, 'заявок в работе') +
       '</div>' +
 
-      '<div style="display:grid;grid-template-columns:1.6fr 1fr;gap:14px;margin-top:16px" class="admin-grid">' +
-        '<div class="card" style="padding:0;overflow:hidden">' +
-          '<div class="row" style="padding:16px"><b class="grow" style="font-size:14.5px">Последние заявки</b>' +
-            '<span class="section-link" onclick="SH.views.admin.go(\'events\')">Все события</span></div>' +
-          '<table class="table"><thead><tr><th>Ученик</th><th>Событие</th><th>Статус</th></tr></thead><tbody>' +
-          apps.map((a) => {
-            const u = store.userById(a.userId);
-            const ev = store.event(a.eventId);
-            return '<tr><td><div class="row">' + ui.avatar(u, 28) + '<span>' + e(u.name) + '</span></div></td>' +
-              '<td class="ellipsis" style="max-width:220px">' + e(ev ? ev.title : '—') + '</td>' +
-              '<td>' + statusTag(a.status) + '</td></tr>';
-          }).join('') +
-          '</tbody></table></div>' +
+      '<div style="display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-top:16px" class="admin-split">' +
+        '<div class="panel panel--flush">' +
+          '<div class="panel__head"><b style="font-size:14px">Заявки, требующие решения</b>' +
+            '<span class="spacer"></span>' +
+            '<span class="section-link" onclick="SH.views.admin.go(\'applications\')">Все</span></div>' +
+          (pending.length
+            ? pending.map((a) => {
+                const u = store.userById(a.userId);
+                const ev = store.event(a.eventId);
+                return '<div class="rowline">' + ui.avatar(u, 30) +
+                  '<div class="grow" style="min-width:0">' +
+                    '<div class="ellipsis" style="font-size:13.5px;font-weight:600">' + e(u.name) + '</div>' +
+                    '<div class="small muted ellipsis">' + e(ev ? ev.title : 'событие удалено') + '</div></div>' +
+                  '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.setApplication(\'' + a.id + '\',\'accepted\')">Принять</button>' +
+                  '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.setApplication(\'' + a.id + '\',\'rejected\')">Отклонить</button>' +
+                '</div>';
+              }).join('')
+            : '<div class="panel__body"><p class="small muted" style="margin:0">Новых заявок нет</p></div>') +
+        '</div>' +
 
-        '<div class="card" style="background:var(--primary-soft);border-color:transparent">' +
-          '<div class="row" style="margin-bottom:8px">' +
-            '<span style="color:var(--primary)">' + icon('sparkles', 18) + '</span>' +
-            '<b style="font-size:13.5px">Сводка ИИ</b></div>' +
-          '<p class="small" style="margin:0 0 10px;line-height:1.55;color:var(--text)">' + e(ai.digest()[0]) + '</p>' +
-          '<p class="small" style="margin:0;line-height:1.55;color:var(--muted)">' + e(ai.digest()[2]) + '</p>' +
-          '<button class="btn btn--soft btn--sm mt-16" onclick="SH.views.admin.go(\'ai\')">Подробнее</button>' +
+        '<div class="panel">' +
+          '<div class="panel__head"><b style="font-size:14px">' + icon('sparkles', 15) + ' Сводка</b></div>' +
+          '<div class="panel__body">' +
+            '<p class="small" style="margin:0 0 10px;line-height:1.55">' +
+              'За последнюю неделю: <b>' + store.state.applications.length + '</b> заявок, ' +
+              '<b>' + store.state.posts.length + '</b> публикаций, ' +
+              '<b>' + s.flagged + '</b> жалоб.</p>' +
+            '<p class="small muted" style="margin:0 0 12px;line-height:1.5">' +
+              (s.drafts ? s.drafts + ' событие в черновиках.' : 'Черновиков нет.') + '</p>' +
+            '<button class="btn btn--soft btn--sm btn--block" onclick="SH.views.admin.go(\'moderation\')">Открыть модерацию</button>' +
+          '</div>' +
         '</div>' +
       '</div>' +
 
-      '<div class="mt-24">' + pageHead('Быстрые действия', '', '') + '</div>' +
-      '<div class="row wrap" style="gap:10px">' +
-        quick('plus', 'Новое событие', 'SH.views.admin.eventForm()') +
-        quick('users', 'Пригласить учеников', 'SH.views.admin.invite()') +
-        quick('flag', 'Модерация (' + s.flagged + ')', 'SH.views.admin.go(\'moderation\')') +
-        quick('download', 'Экспорт CSV', 'SH.views.admin.exportCsv()') +
+      '<div class="panel" style="margin-top:16px">' +
+        '<div class="panel__head"><b style="font-size:14px">Быстрые действия</b></div>' +
+        '<div class="panel__body" style="display:flex;gap:10px;flex-wrap:wrap">' +
+          '<button class="btn btn--outline btn--sm" onclick="SH.views.admin.eventForm()">' + icon('plus', 15) + 'Новое событие</button>' +
+          '<button class="btn btn--outline btn--sm" onclick="SH.views.admin.userForm()">' + icon('users', 15) + 'Добавить пользователя</button>' +
+          '<button class="btn btn--outline btn--sm" onclick="SH.views.admin.go(\'applications\')">' + icon('file', 15) + 'Заявки</button>' +
+          '<button class="btn btn--outline btn--sm" onclick="SH.views.admin.go(\'ai\')">' + icon('sparkles', 15) + 'ИИ-ключи</button>' +
+          '<button class="btn btn--outline btn--sm" onclick="SH.views.admin.exportCsv()">' + icon('download', 15) + 'Экспорт CSV</button>' +
+        '</div>' +
       '</div>';
   }
 
-  function stat(v, label) { return '<div class="stat"><b>' + v + '</b><span>' + e(label) + '</span></div>'; }
-  function quick(ico, label, action) {
-    return '<button class="btn btn--outline btn--sm" onclick="' + action + '">' + icon(ico, 16) + e(label) + '</button>';
-  }
-  function statusTag(st) {
-    const map = { pending: ['tag--sun', 'на проверке'], accepted: ['tag--mint', 'принята'], rejected: ['tag--blush', 'отклонена'] };
-    const [cls, label] = map[st] || ['tag--sky', st];
-    return '<span class="tag ' + cls + '">' + label + '</span>';
+  function kpi(v, label) {
+    return '<div class="stat"><b>' + v + '</b><span>' + e(label) + '</span></div>';
   }
 
-  /* ── события ── */
+  /* ───────────────────────── события ───────────────────────── */
+
   function eventsSection() {
-    const list = store.events({ includeDrafts: true })
-      .filter((ev) => !search || (ev.title + ev.organizer).toLowerCase().includes(search.toLowerCase()));
+    const list = store.state.events
+      .filter((ev) => !query || (ev.title + ' ' + (ev.organizer || '')).toLowerCase().includes(query.toLowerCase()))
+      .slice()
+      .sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
-    return pageHead('События', 'Публикация, черновики и заявки',
+    return pageHead('События', 'Публикация, приоритет и оформление',
       '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.eventForm()">' + icon('plus', 16) + 'Создать</button>') +
-      '<div class="search" style="margin-bottom:16px;max-width:340px">' + icon('search') +
-        '<input placeholder="Поиск по событиям…" id="admin-search" value="' + e(search) + '"></div>' +
-      '<div class="card" style="padding:0;overflow:hidden">' +
-        '<table class="table"><thead><tr>' +
-          '<th>Название</th><th>Категория</th><th>Дедлайн</th><th>Заявки</th><th>Статус</th><th></th>' +
-        '</tr></thead><tbody>' +
-        list.map((ev) =>
-          '<tr>' +
-            '<td><div style="font-weight:650;max-width:280px" class="ellipsis">' + e(ev.title) + '</div>' +
-              '<div class="small muted">' + e(ev.organizer) + '</div></td>' +
-            '<td>' + e((store.CATEGORIES[ev.category] || {}).label || '') + '</td>' +
-            '<td>' + e(ui.shortDate(ev.deadlineDate)) + '</td>' +
-            '<td>' + ev.applicants + '</td>' +
-            '<td>' + (ev.status === 'published'
-              ? '<span class="tag tag--mint">опубликовано</span>'
-              : '<span class="tag tag--sun">черновик</span>') + '</td>' +
-            '<td style="white-space:nowrap">' +
-              '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px" onclick="SH.views.admin.eventForm(\'' + ev.id + '\')">' + icon('edit', 16) + '</button>' +
-              '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px;color:var(--danger)" onclick="SH.views.admin.removeEvent(\'' + ev.id + '\')">' + icon('trash', 16) + '</button>' +
-            '</td>' +
-          '</tr>'
-        ).join('') +
-        '</tbody></table>' +
-        (list.length ? '' : '<div class="empty" style="padding:40px"><p>Ничего не найдено</p></div>') +
-      '</div>';
-  }
-
-  /* ── ученики ── */
-  function studentsSection() {
-    const students = store.state.users.filter((u) => u.role === 'student')
-      .filter((u) => !search || u.name.toLowerCase().includes(search.toLowerCase()));
-
-    return pageHead('Ученики', 'Профили, интересы и активность',
-      '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.invite()">' + icon('mail', 16) + 'Пригласить</button>') +
-      '<div class="search" style="margin-bottom:16px;max-width:340px">' + icon('search') +
-        '<input placeholder="Поиск по имени…" id="admin-search" value="' + e(search) + '"></div>' +
-      '<div class="card" style="padding:0;overflow:hidden"><table class="table"><thead><tr>' +
-        '<th>Ученик</th><th>Класс</th><th>Интересы</th><th>Заявок</th><th>Профиль</th>' +
+      searchBox('Поиск по названию или организатору') +
+      '<div class="panel panel--flush"><div class="table-wrap"><table class="table"><thead><tr>' +
+        '<th>Приоритет</th><th>Событие</th><th>Дедлайн</th><th>Заявки</th><th>Статус</th><th></th>' +
       '</tr></thead><tbody>' +
-      students.map((u) => {
-        const apps = store.state.applications.filter((a) => a.userId === u.id).length;
-        const filled = (u.interests || []).length > 0;
-        return '<tr>' +
-          '<td><div class="row">' + ui.avatar(u, 30) + '<div><div style="font-weight:650">' + e(u.name) + '</div>' +
-            '<div class="small muted">' + e(u.email) + '</div></div></div></td>' +
-          '<td>' + e(u.grade || '—') + '</td>' +
-          '<td><div class="wrap" style="gap:4px">' + ((u.interests || []).slice(0, 2).map((i) => ui.tag(i)).join('') || '<span class="muted small">не заполнено</span>') + '</div></td>' +
-          '<td>' + apps + '</td>' +
-          '<td>' + (filled ? '<span class="tag tag--mint">заполнен</span>' : '<span class="tag tag--blush">пусто</span>') + '</td>' +
-        '</tr>';
-      }).join('') +
-      '</tbody></table></div>';
-  }
-
-  /* ── модерация ── */
-  function moderationSection() {
-    const flagged = store.posts({ includeHidden: true }).filter((p) => p.status !== 'published');
-    const published = store.posts({ includeHidden: true }).filter((p) => p.status === 'published');
-
-    return pageHead('Модерация', 'Жалобы и скрытые публикации', '') +
-      '<h3 class="h3" style="margin:0 0 12px">Требуют решения · ' + flagged.length + '</h3>' +
-      (flagged.length
-        ? '<div class="list">' + flagged.map((p) => {
-            const a = store.userById(p.authorId);
-            return '<div class="card">' +
-              '<div class="row" style="margin-bottom:10px">' + ui.avatar(a, 32) +
-                '<div class="grow"><div style="font-weight:650;font-size:13.5px">' + e(a.name) + '</div>' +
-                '<div class="small muted">' + e(ui.relTime(p.createdAt)) + '</div></div>' +
-                '<span class="tag tag--blush">жалоба</span></div>' +
-              '<p style="margin:0 0 12px;font-size:14px">' + e(p.text) + '</p>' +
-              '<div class="row" style="gap:8px">' +
-                '<button class="btn btn--soft btn--sm" onclick="SH.views.admin.moderate(\'' + p.id + '\',\'published\')">' + icon('check', 15) + 'Оставить</button>' +
-                '<button class="btn btn--danger btn--sm" onclick="SH.views.admin.moderate(\'' + p.id + '\',\'hidden\')">' + icon('close', 15) + 'Скрыть</button>' +
-                '<button class="btn btn--ghost btn--sm" style="margin-left:auto" onclick="SH.views.admin.moderate(\'' + p.id + '\',\'delete\')">Удалить</button>' +
-              '</div></div>';
-          }).join('') + '</div>'
-        : '<div class="card">' + ui.empty('checkCircle', 'Жалоб нет', 'Все публикации в порядке.') + '</div>') +
-      '<h3 class="h3" style="margin:26px 0 12px">Опубликовано · ' + published.length + '</h3>' +
-      '<div class="list">' + published.map((p) => {
-        const a = store.userById(p.authorId);
-        return '<div class="item">' + ui.avatar(a, 32) +
-          '<div class="grow" style="min-width:0"><div class="ellipsis" style="font-size:13.5px">' + e(p.text) + '</div>' +
-          '<div class="small muted">' + e(a.name) + ' · ' + e(ui.relTime(p.createdAt)) + '</div></div>' +
-          '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px" onclick="SH.views.admin.moderate(\'' + p.id + '\',\'hidden\')">' + icon('eye', 16) + '</button>' +
-        '</div>';
-      }).join('') + '</div>';
-  }
-
-  /* ── ИИ ── */
-  function aiSection() {
-    const digest = ai.digest();
-    const s = store.stats();
-    const emptyProfiles = store.state.users.filter((u) => u.role === 'student' && !(u.interests || []).length).length;
-
-    return pageHead('ИИ-аналитика', 'Что происходит и что делать дальше', '') +
-      '<div class="card" style="background:linear-gradient(120deg,#4c3fd0,#6c5ce7 55%,#8f7ef7);color:#fff;border:0">' +
-        '<div class="row" style="margin-bottom:6px"><span>' + icon('sparkles', 18) + '</span><b>Недельный дайджест</b></div>' +
-        '<p style="margin:0;font-size:13.5px;line-height:1.6;color:rgba(255,255,255,.86)">' + e(digest[0]) + '</p>' +
-      '</div>' +
-      '<div class="list mt-16">' + digest.slice(1).map((d) =>
-        '<div class="item" style="align-items:flex-start"><span style="color:var(--primary);margin-top:2px">' + icon('info', 17) + '</span>' +
-        '<div class="grow" style="font-size:13.5px;line-height:1.55">' + e(d) + '</div></div>').join('') + '</div>' +
-
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px" class="admin-grid">' +
-        '<div class="card"><b style="font-size:14px">Покрытие профилей</b>' +
-          '<div class="row mt-12"><div class="progress grow"><i style="width:' +
-            Math.round(((s.students - emptyProfiles) / Math.max(1, s.students)) * 100) + '%"></i></div>' +
-            '<span class="small muted">' + (s.students - emptyProfiles) + '/' + s.students + '</span></div>' +
-          '<p class="small muted mt-8" style="margin-bottom:0">У ' + emptyProfiles + ' учеников не заполнены интересы — подбор для них работает вслепую.</p>' +
-        '</div>' +
-        '<div class="card"><b style="font-size:14px">Подключение модели</b>' +
-          '<p class="small muted mt-8" style="line-height:1.5">Сейчас работает локальный режим (офлайн, без лимитов). Для Gemini укажи URL воркера-прокси.</p>' +
-          '<div class="field mt-12"><input id="ai-endpoint" placeholder="https://…workers.dev/ai" value="' + e(ai.endpoint) + '"></div>' +
-          '<button class="btn btn--soft btn--sm mt-12" onclick="SH.views.admin.saveEndpoint()">Сохранить</button>' +
-        '</div>' +
-      '</div>' +
-
-      '<h3 class="h3" style="margin:26px 0 12px">Что рекомендует ИИ</h3>' +
-      '<div class="list">' +
-        '<div class="item"><span class="rank-badge" style="background:var(--mint)">1</span>' +
-          '<div class="grow small">Напомнить ученикам заполнить интересы — это поднимет качество подбора</div></div>' +
-        '<div class="item"><span class="rank-badge" style="background:var(--sky)">2</span>' +
-          '<div class="grow small">Опубликовать черновики: ' + s.drafts + ' событие ждёт публикации</div></div>' +
-        '<div class="item"><span class="rank-badge" style="background:var(--sun)">3</span>' +
-          '<div class="grow small">Разобрать ' + s.pending + ' заявок — ученики ждут ответа дольше двух дней</div></div>' +
+      list.map((ev) =>
+        '<tr>' +
+          '<td><div class="row" style="gap:4px">' +
+            '<button class="icon-btn icon-btn--plain" style="width:26px;height:26px" onclick="SH.views.admin.moveEvent(\'' + ev.id + '\',1)">' + icon('arrowLeft', 13) + '</button>' +
+            '<b class="mono">' + (ev.priority || 0) + '</b>' +
+            '<button class="icon-btn icon-btn--plain" style="width:26px;height:26px;transform:rotate(180deg)" onclick="SH.views.admin.moveEvent(\'' + ev.id + '\',-1)">' + icon('arrowLeft', 13) + '</button>' +
+          '</div></td>' +
+          '<td><div style="display:flex;gap:10px;align-items:center">' +
+            (ev.image
+              ? '<img src="' + e(ev.image) + '" alt="" style="width:38px;height:38px;border-radius:10px;object-fit:cover">'
+              : '<span class="rank-badge" style="width:38px;height:38px;border-radius:10px">' + icon(store.CATEGORIES[ev.category] ? store.CATEGORIES[ev.category].glyph : 'calendar', 17) + '</span>') +
+            '<div style="min-width:0"><div style="font-weight:650;max-width:260px" class="ellipsis">' + e(ev.title) + '</div>' +
+            '<div class="small muted ellipsis" style="max-width:260px">' + e(ev.organizer || '') + '</div></div></div></td>' +
+          '<td>' + e(ui.shortDate(ev.deadlineDate)) + '</td>' +
+          '<td>' + ev.applicants + '</td>' +
+          '<td>' + (ev.status === 'published'
+            ? '<span class="tag tag--mint">опубликовано</span>'
+            : '<span class="tag tag--sun">черновик</span>') + '</td>' +
+          '<td style="white-space:nowrap;text-align:right">' +
+            '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px" onclick="SH.views.admin.eventForm(\'' + ev.id + '\')">' + icon('edit', 16) + '</button>' +
+            '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px;color:var(--danger)" onclick="SH.views.admin.removeEvent(\'' + ev.id + '\')">' + icon('trash', 16) + '</button>' +
+          '</td>' +
+        '</tr>'
+      ).join('') +
+      '</tbody></table></div>' +
+      (list.length ? '' : '<div class="empty" style="padding:36px"><p>Ничего не найдено</p></div>') +
       '</div>';
   }
 
-  /* ── действия ── */
-  const actions = {
-    go(sec) { section = sec; search = ''; SH.app.render(); },
+  /* ───────────────────────── заявки ───────────────────────── */
 
+  function applicationsSection() {
+    const list = (cache.applications.length ? cache.applications : store.state.applications)
+      .filter((a) => {
+        if (!query) return true;
+        const u = store.userById(a.userId);
+        const ev = store.event(a.eventId);
+        const hay = (u.name + ' ' + (ev ? ev.title : '')).toLowerCase();
+        return hay.includes(query.toLowerCase());
+      });
+
+    const byStatus = { pending: [], accepted: [], rejected: [] };
+    list.forEach((a) => (byStatus[a.status] || byStatus.pending).push(a));
+
+    const block = (title, items, tone) =>
+      '<div class="panel panel--flush" style="margin-bottom:14px">' +
+        '<div class="panel__head"><b style="font-size:14px">' + e(title) + '</b>' +
+          '<span class="tag tag--' + tone + '" style="margin-left:auto">' + items.length + '</span></div>' +
+        (items.length
+          ? items.map((a) => {
+              const u = store.userById(a.userId);
+              const ev = store.event(a.eventId);
+              return '<div class="rowline">' + ui.avatar(u, 32) +
+                '<div class="grow" style="min-width:0">' +
+                  '<div style="font-size:13.5px;font-weight:650" class="ellipsis">' + e(u.name) + '</div>' +
+                  '<div class="small muted ellipsis">' + e(ev ? ev.title : 'событие удалено') + ' · ' + e(ui.relTime(a.createdAt)) + '</div>' +
+                '</div>' +
+                (a.status !== 'pending' ? '<span class="tag tag--' + (a.status === 'accepted' ? 'mint' : 'blush') + '">' +
+                  (a.status === 'accepted' ? 'принята' : 'отклонена') + '</span>' : '') +
+                (a.status !== 'accepted'
+                  ? '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.setApplication(\'' + a.id + '\',\'accepted\')">Принять</button>'
+                  : '') +
+                (a.status !== 'rejected'
+                  ? '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.setApplication(\'' + a.id + '\',\'rejected\')">Отклонить</button>'
+                  : '') +
+                '<button class="icon-btn icon-btn--plain" style="width:30px;height:30px" onclick="SH.views.admin.applicationNote(\'' + a.id + '\')">' + icon('edit', 15) + '</button>' +
+              '</div>';
+            }).join('')
+          : '<div class="panel__body"><p class="small muted" style="margin:0">Пусто</p></div>') +
+      '</div>';
+
+    return pageHead('Заявки', 'Приём, отклонение и заметки по заявкам учеников', '') +
+      searchBox('Поиск по ученику или событию') +
+      block('На рассмотрении', byStatus.pending, 'sun') +
+      block('Принятые', byStatus.accepted, 'mint') +
+      block('Отклонённые', byStatus.rejected, 'blush');
+  }
+
+  /* ───────────────────────── пользователи ───────────────────────── */
+
+  function usersSection() {
+    const list = cache.users
+      .filter((u) => isRoot() || u.role !== 'root')
+      .filter((u) => !query || (u.name + ' ' + (u.email || '')).toLowerCase().includes(query.toLowerCase()));
+
+    return pageHead('Пользователи',
+      isRoot() ? 'Все аккаунты: ученики и администраторы' : 'Ученики и администраторы (кроме владельца)',
+      '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.userForm()">' + icon('plus', 16) + 'Добавить</button>') +
+      searchBox('Поиск по имени или логину') +
+      '<div class="panel panel--flush"><div class="table-wrap"><table class="table"><thead><tr>' +
+        '<th>Пользователь</th><th>Роль</th><th>Класс</th><th>Состояние</th><th></th>' +
+      '</tr></thead><tbody>' +
+      list.map((u) =>
+        '<tr>' +
+          '<td><div style="display:flex;gap:10px;align-items:center">' + ui.avatar(u, 32) +
+            '<div style="min-width:0"><div style="font-weight:650">' + e(u.name) +
+              (u.id === (store.currentUser || {}).id ? ' <span class="tag" style="font-size:10px">вы</span>' : '') + '</div>' +
+            '<div class="small muted mono">' + e(u.email || '—') + '</div></div></div></td>' +
+          '<td>' + roleTag(u.role) + '</td>' +
+          '<td>' + e(u.grade || '—') + '</td>' +
+          '<td>' + (u.blocked ? '<span class="tag tag--blush">заблокирован</span>' : '<span class="tag tag--mint">активен</span>') + '</td>' +
+          '<td style="text-align:right;white-space:nowrap">' +
+            '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px" title="Изменить" onclick="SH.views.admin.userForm(\'' + u.id + '\')">' + icon('edit', 16) + '</button>' +
+            '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px" title="Доступ" onclick="SH.views.admin.userAccess(\'' + u.id + '\')">' + icon('key', 16) + '</button>' +
+            (u.role !== 'root' && (isRoot() || u.role === 'student')
+              ? '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px;color:var(--danger)" title="Удалить" onclick="SH.views.admin.removeUser(\'' + u.id + '\')">' + icon('trash', 16) + '</button>'
+              : '') +
+          '</td>' +
+        '</tr>'
+      ).join('') +
+      '</tbody></table></div></div>' +
+      '<p class="small muted mt-12">' +
+        (isRoot()
+          ? 'Владелец не отображается в списке для администраторов и не может быть изменён ими.'
+          : 'Аккаунт владельца скрыт и недоступен для изменений.') + '</p>';
+  }
+
+  /* ───────────────────────── администраторы (только root) ───────────────────────── */
+
+  function adminsSection() {
+    if (!isRoot()) return ui.empty('lock', 'Только для владельца', 'Раздел доступен аккаунту root.');
+
+    const admins = cache.users.filter((u) => u.role === 'admin');
+
+    return pageHead('Администраторы', 'Назначайте и снимайте доступ. Админов может быть сколько угодно — владелец один.',
+      '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.userForm(null,\'admin\')">' + icon('plus', 16) + 'Новый админ</button>') +
+      '<div class="panel panel--flush">' +
+        (admins.length
+          ? admins.map((u) =>
+              '<div class="rowline">' + ui.avatar(u, 36) +
+                '<div class="grow" style="min-width:0">' +
+                  '<div style="font-weight:650">' + e(u.name) + '</div>' +
+                  '<div class="small muted mono">' + e(u.email || '—') + '</div>' +
+                '</div>' +
+                (u.blocked ? '<span class="tag tag--blush">заблокирован</span>' : '') +
+                '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.userForm(\'' + u.id + '\')">Изменить</button>' +
+                '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.userAccess(\'' + u.id + '\')">Доступ</button>' +
+                '<button class="btn btn--danger btn--xs" onclick="SH.views.admin.revokeAdmin(\'' + u.id + '\')">Снять админку</button>' +
+              '</div>'
+            ).join('')
+          : '<div class="panel__body"><p class="small muted" style="margin:0">Админов пока нет. Добавьте первого.</p></div>') +
+      '</div>' +
+      '<div class="ai-note mt-16">' + icon('shield') +
+        '<div>Снятие админки переводит аккаунт в ученика и закрывает все его сессии. Содержимое, созданное им, остаётся.</div></div>';
+  }
+
+  /* ───────────────────────── модерация ───────────────────────── */
+
+  function moderationSection() {
+    const posts = (cache.moderation.length ? cache.moderation : store.state.posts)
+      .filter((p) => !query || p.text.toLowerCase().includes(query.toLowerCase()));
+
+    const flagged = posts.filter((p) => p.status !== 'published');
+    const published = posts.filter((p) => p.status === 'published');
+
+    return pageHead('Модерация', 'Жалобы и старые обращения',
+      '<button class="btn btn--soft btn--sm" onclick="SH.views.admin.cleanup()">' + icon('trash', 15) + 'Удалить старые</button>') +
+      searchBox('Поиск по тексту') +
+      '<div class="panel panel--flush" style="margin-bottom:14px">' +
+        '<div class="panel__head"><b style="font-size:14px">Требуют решения</b>' +
+          '<span class="tag tag--blush" style="margin-left:auto">' + flagged.length + '</span></div>' +
+        (flagged.length ? flagged.map((p) => postRow(p, true)).join('')
+          : '<div class="panel__body"><p class="small muted" style="margin:0">Жалоб нет</p></div>') +
+      '</div>' +
+      '<div class="panel panel--flush">' +
+        '<div class="panel__head"><b style="font-size:14px">Опубликовано</b>' +
+          '<span class="tag tag--mint" style="margin-left:auto">' + published.length + '</span></div>' +
+        (published.length ? published.slice(0, 20).map((p) => postRow(p, false)).join('')
+          : '<div class="panel__body"><p class="small muted" style="margin:0">Публикаций нет</p></div>') +
+      '</div>';
+  }
+
+  function postRow(p, flagged) {
+    const a = store.userById(p.authorId);
+    return '<div class="rowline" style="align-items:flex-start">' + ui.avatar(a, 32) +
+      '<div class="grow" style="min-width:0">' +
+        '<div class="small"><b>' + e(a.name) + '</b> · ' + e(ui.relTime(p.createdAt)) + '</div>' +
+        '<div style="font-size:13.5px;line-height:1.45;margin-top:2px">' + e(p.text) + '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">' +
+        (flagged
+          ? '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.moderate(\'' + p.id + '\',\'published\')">' + icon('check', 13) + 'Оставить</button>' +
+            '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.moderate(\'' + p.id + '\',\'hidden\')">' + icon('eye', 13) + 'Скрыть</button>'
+          : '') +
+        '<button class="btn btn--danger btn--xs" onclick="SH.views.admin.moderate(\'' + p.id + '\',\'delete\')">Удалить</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  /* ───────────────────────── ИИ-ключи ───────────────────────── */
+
+  function aiSection() {
+    const keys = cache.aiKeys;
+    const envCount = cache.envKeys || 0;
+
+    return pageHead('ИИ-ключи', 'Ключи хранятся на сервере. В браузере видны только последние 4 символа.',
+      '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.aiForm()">' + icon('plus', 16) + 'Добавить ключ</button>') +
+
+      '<div class="panel panel--flush">' +
+        (keys.length
+          ? keys.map((k) =>
+              '<div class="rowline">' +
+                '<span class="rank-badge" style="width:36px;height:36px;border-radius:10px;background:' +
+                  (k.enabled ? 'var(--mint)' : 'var(--chip)') + '">' + icon('key', 17) + '</span>' +
+                '<div class="grow" style="min-width:0">' +
+                  '<div style="font-weight:650;font-size:13.5px">' + e(k.label) + ' <span class="mono muted">' + e(k.masked) + '</span></div>' +
+                  '<div class="small muted">' +
+                    (k.lastStatus
+                      ? (k.lastStatus === 'ok' ? 'работает' : e(k.lastStatus)) + ' · ' + e(ui.relTime(k.lastChecked))
+                      : 'не проверялся') +
+                  '</div>' +
+                '</div>' +
+                '<button class="switch" role="switch" aria-checked="' + k.enabled + '" ' +
+                  'onclick="SH.views.admin.toggleKey(\'' + k.id + '\',' + (!k.enabled) + ')"></button>' +
+                '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.testKey(\'' + k.id + '\')">Проверить</button>' +
+                '<button class="icon-btn icon-btn--plain" style="width:30px;height:30px;color:var(--danger)" onclick="SH.views.admin.deleteKey(\'' + k.id + '\')">' + icon('trash', 15) + '</button>' +
+              '</div>'
+            ).join('')
+          : '<div class="panel__body"><p class="small muted" style="margin:0">Ключей в базе нет.</p></div>') +
+      '</div>' +
+
+      '<div class="ai-note mt-16">' + icon('info') +
+        '<div>' + (envCount
+          ? 'На сервере дополнительно задано ключей: ' + envCount + '. Они используются, только если в списке нет активных.'
+          : 'Резервных ключей на сервере нет. Держите в списке хотя бы два активных — при лимите запрос уйдёт на следующий.') +
+        '</div></div>' +
+      '<p class="small muted mt-12">При лимите одного ключа (<b>429</b>) запрос автоматически уходит на следующий активный — это и есть резерв.</p>';
+  }
+
+  /* ───────────────────────── журнал ───────────────────────── */
+
+  function auditSection() {
+    const log = cache.audit;
+    return pageHead('Журнал действий', 'Кто и что менял — последние 100 записей', '') +
+      '<div class="panel panel--flush"><div class="table-wrap"><table class="table"><thead><tr>' +
+        '<th>Время</th><th>Кто</th><th>Действие</th><th>Объект</th>' +
+      '</tr></thead><tbody>' +
+      (log.length
+        ? log.map((r) => {
+            const who = store.userById(r.actor_id);
+            return '<tr><td class="small muted">' + e(ui.relTime(r.created_at)) + '</td>' +
+              '<td>' + e(who.name || r.actor_id || '—') + '</td>' +
+              '<td><span class="tag">' + e(r.action) + '</span></td>' +
+              '<td class="small muted ellipsis" style="max-width:240px">' + e(r.detail || r.target || '') + '</td></tr>';
+          }).join('')
+        : '<tr><td colspan="4" class="small muted" style="padding:24px;text-align:center">Записей нет</td></tr>') +
+      '</tbody></table></div></div>';
+  }
+
+  /* ───────────────────────── вспомогательное ───────────────────────── */
+
+  function roleTag(role) {
+    if (role === 'root') return '<span class="tag tag--lav">владелец</span>';
+    if (role === 'admin') return '<span class="tag tag--sky">админ</span>';
+    return '<span class="tag">ученик</span>';
+  }
+
+  async function loadData(force) {
+    if (!isAdminLike()) return;
+    const jobs = [];
+    const load = (name, fn) => {
+      if (!force && cache.loaded[name]) return;
+      jobs.push(fn().then((r) => { cache[name] = r; cache.loaded[name] = true; }).catch(() => {}));
+    };
+
+    load('users', () => SH.api.adminUsers().then((r) => r.users || []));
+    load('applications', () => SH.api.adminApplications().then((r) => r.applications || []));
+    load('moderation', () => SH.api.adminModeration().then((r) => r.posts || []));
+    load('aiKeys', () => SH.api.adminAiKeys().then((r) => { cache.envKeys = r.envKeys || 0; return r.keys || []; }));
+    load('audit', () => SH.api.adminAudit().then((r) => r.log || []));
+
+    await Promise.all(jobs);
+  }
+
+  /* ───────────────────────── действия ───────────────────────── */
+
+  const actions = {
+    go(sec) {
+      if (section === sec) return;
+      section = sec;
+      query = '';
+      SH.app.render();
+    },
+
+    // вызывается роутером после каждой отрисовки: догружаем недостающее один раз
+    mount() {
+      mountSearch();
+      if (adminMount.pending) return;
+      const missing = ['users', 'applications', 'moderation', 'aiKeys', 'audit']
+        .filter((n) => !cache.loaded[n]);
+      if (!missing.length) return;
+      adminMount.pending = true;
+      loadData().then(() => {
+        adminMount.pending = false;
+        if (SH.views.admin.getSection() === section) SH.app.render();
+      });
+    },
+
+    /* события */
     eventForm(id) {
       const ev = id ? store.event(id) : null;
       const cats = Object.keys(store.CATEGORIES).map((k) => ({ value: k, label: store.CATEGORIES[k].label }));
+
       ui.sheet({
         title: ev ? 'Редактировать событие' : 'Новое событие',
         body:
-          ui.field('ev-title', 'Название', { value: ev ? ev.title : '', placeholder: 'Например: олимпиада по физике' }) +
-          ui.field('ev-org', 'Организатор', { value: ev ? ev.organizer : 'Школа №1520', style: 'margin-top:12px' }) +
+          ui.field('ev-title', 'Название', { value: ev ? ev.title : '', placeholder: 'Олимпиада по физике' }) +
+          '<div class="form-grid" style="margin-top:12px">' +
+            ui.field('ev-org', 'Организатор', { value: ev ? ev.organizer : 'Школа №1520' }) +
+            ui.field('ev-date', 'Дедлайн', { type: 'date', value: ev ? String(ev.deadlineDate).slice(0, 10) : '' }) +
+          '</div>' +
           ui.field('ev-desc', 'Описание', { value: ev ? ev.description : '', textarea: true, style: 'margin-top:12px' }) +
-          '<div class="row" style="gap:12px;margin-top:12px">' +
-            '<div class="grow">' + ui.select('ev-cat', 'Категория', cats, ev ? ev.category : 'event') + '</div>' +
-            '<div class="grow">' + ui.select('ev-format', 'Формат', [
-              { value: 'Онлайн', label: 'Онлайн' }, { value: 'Офлайн', label: 'Офлайн' }, { value: 'Гибрид', label: 'Гибрид' }
-            ], ev ? ev.format : 'Онлайн') + '</div>' +
+          '<div class="form-grid" style="margin-top:12px">' +
+            ui.select('ev-cat', 'Категория', cats, ev ? ev.category : 'event') +
+            ui.select('ev-format', 'Формат', [
+              { value: 'Онлайн', label: 'Онлайн' },
+              { value: 'Офлайн', label: 'Офлайн' },
+              { value: 'Гибрид', label: 'Гибрид' }
+            ], ev ? ev.format : 'Онлайн') +
           '</div>' +
-          '<div class="row" style="gap:12px;margin-top:12px">' +
-            '<div class="grow">' + ui.field('ev-date', 'Дедлайн', { type: 'date', value: ev ? ev.deadlineDate.slice(0, 10) : '' }) + '</div>' +
-            '<div class="grow">' + ui.select('ev-status', 'Статус', [
-              { value: 'published', label: 'Опубликовано' }, { value: 'draft', label: 'Черновик' }
-            ], ev ? ev.status : 'published') + '</div>' +
+          '<div class="form-grid" style="margin-top:12px">' +
+            ui.field('ev-priority', 'Приоритет (выше — раньше в списке)', { type: 'number', value: String(ev ? ev.priority || 0 : 0) }) +
+            ui.select('ev-status', 'Статус', [
+              { value: 'published', label: 'Опубликовано' },
+              { value: 'draft', label: 'Черновик' }
+            ], ev ? ev.status : 'published') +
           '</div>' +
+
+          '<div class="field" style="margin-top:12px">' +
+            '<label class="field-label">Картинка события</label>' +
+            '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
+              '<input id="ev-image-url" placeholder="Вставьте ссылку на изображение" value="' + e(ev && /^https?:/.test(ev.image || '') ? ev.image : '') + '" style="flex:1;min-width:180px;min-height:46px;padding:12px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;outline:none">' +
+              '<label class="btn btn--soft btn--sm" style="cursor:pointer">' + icon('download', 15) + 'Файл' +
+                '<input type="file" id="ev-image-file" accept="image/*" style="display:none"></label>' +
+            '</div>' +
+            '<div id="ev-image-preview" style="margin-top:10px"></div>' +
+          '</div>' +
+
           ui.field('ev-tags', 'Теги через запятую', { value: ev ? (ev.tags || []).join(', ') : '', style: 'margin-top:12px' }) +
+          ui.field('ev-elig', 'Кто может участвовать', { value: ev ? ev.eligibility || '' : 'Все классы', style: 'margin-top:12px' }) +
+
           '<div class="row mt-16" style="gap:10px">' +
             '<button class="btn btn--soft grow" data-close>Отмена</button>' +
             '<button class="btn btn--brand grow" onclick="SH.views.admin.saveEvent(' + (ev ? "'" + ev.id + "'" : 'null') + ')">Сохранить</button>' +
-          '</div>'
+          '</div>',
+
+        onMount(el) {
+          const state = { dataUrl: ev && ev.image && ev.image.startsWith('data:') ? ev.image : '' };
+          const prev = el.querySelector('#ev-image-preview');
+          const urlInput = el.querySelector('#ev-image-url');
+          const fileInput = el.querySelector('#ev-image-file');
+
+          const paint = () => {
+            const src = state.dataUrl || urlInput.value.trim() || (ev ? ev.image || '' : '');
+            prev.innerHTML = src
+              ? '<img class="img-preview" src="' + e(src) + '" alt="Превью">'
+              : '<div class="img-preview" style="display:grid;place-items:center;color:var(--muted);font-size:12.5px">Превью появится здесь</div>';
+          };
+
+          urlInput.addEventListener('input', () => { state.dataUrl = ''; paint(); });
+
+          fileInput.addEventListener('change', (ev2) => {
+            const file = ev2.target.files[0];
+            if (!file) return;
+            if (file.size > 600 * 1024) {
+              ui.toast('Файл больше 600 КБ — уменьшите или используйте ссылку');
+              return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+              state.dataUrl = reader.result;
+              urlInput.value = '';
+              paint();
+            };
+            reader.readAsDataURL(file);
+          });
+
+          paint();
+          el._imageState = state;
+        }
       });
     },
 
     saveEvent(id) {
       const v = (f) => (document.getElementById(f) || {}).value || '';
-      if (!v('ev-title').trim()) { ui.toast('Добавь название'); return; }
-      store.saveEvent({
-        id: id || undefined,
+      if (!v('ev-title').trim()) { ui.toast('Добавьте название'); return; }
+
+      const sheetEl = document.querySelector('.sheet');
+      const imgState = sheetEl && sheetEl._imageState ? sheetEl._imageState : { dataUrl: '' };
+      const image = imgState.dataUrl || v('ev-image-url').trim();
+
+      const payload = {
         title: v('ev-title').trim(),
-        organizer: v('ev-org').trim() || 'Школа',
+        organizer: v('ev-org').trim(),
         description: v('ev-desc').trim(),
         category: v('ev-cat'),
         format: v('ev-format'),
         deadlineDate: new Date(v('ev-date') || Date.now() + 14 * 864e5).toISOString(),
         status: v('ev-status'),
+        priority: Number(v('ev-priority')) || 0,
+        eligibility: v('ev-elig').trim(),
         tags: v('ev-tags').split(',').map((s) => s.trim()).filter(Boolean),
-        eligibility: 'Все классы',
+        image,
         isFree: true
-      });
+      };
+
+      if (id) payload.id = id;
+      store.saveEvent(payload);
       ui.closeSheet();
       ui.toast(id ? 'Событие обновлено' : 'Событие создано');
       SH.app.render();
     },
 
+    moveEvent(id, delta) {
+      const ev = store.event(id);
+      if (!ev) return;
+      const next = Math.max(0, (ev.priority || 0) + delta);
+      store.saveEvent(Object.assign({}, ev, { priority: next }));
+      SH.app.render();
+    },
+
     removeEvent(id) {
-      ui.confirmSheet('Удалить событие?', 'Оно исчезнет из приложения у всех учеников.', 'Удалить', () => {
+      ui.confirmSheet('Удалить событие?', 'Оно исчезнет у всех учеников. Действие необратимо.', 'Удалить', () => {
         store.deleteEvent(id);
-        ui.toast('Удалено');
+        ui.toast('Событие удалено');
         SH.app.render();
       });
     },
 
-    moderate(id, action) {
-      if (action === 'delete') store.deletePost(id);
-      else store.setPostStatus(id, action);
-      ui.toast(action === 'hidden' ? 'Скрыто' : action === 'delete' ? 'Удалено' : 'Оставлено');
-      SH.app.render();
+    /* заявки */
+    async setApplication(id, status) {
+      try {
+        await SH.api.adminSetApplication(id, status, '');
+        store.setApplicationStatus(id, status);
+        cache.loaded.applications = false;
+        ui.toast(status === 'accepted' ? 'Заявка принята' : 'Заявка отклонена');
+        SH.app.render();
+      } catch (err) {
+        ui.toast('Не удалось: ' + err.message);
+      }
     },
 
-    invite() {
-      const link = location.origin + location.pathname;
+    applicationNote(id) {
+      const app = (cache.applications.length ? cache.applications : store.state.applications).find((a) => a.id === id);
       ui.sheet({
-        title: 'Пригласить учеников',
-        subtitle: 'Отправь ссылку в классный чат',
-        body:
-          '<div class="card" style="background:var(--chip);border:0"><div class="small muted" style="margin-bottom:6px">Ссылка на приложение</div>' +
-          '<div style="font-size:13px;word-break:break-all">' + e(link) + '</div></div>' +
-          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.admin.copyInvite(\'' + e(link) + '\')">Скопировать</button>' +
-          '<p class="small muted center mt-12" style="line-height:1.5">Ученик открывает ссылку, нажимает «Добавить на главный экран» — и приложение у него как обычное.</p>'
+        title: 'Заметка к заявке',
+        body: ui.field('app-note', '', { textarea: true, value: (app && app.note) || '', placeholder: 'Причина отклонения или комментарий для себя' }) +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.admin.saveNote(\'' + id + '\')">Сохранить</button>'
       });
     },
 
-    copyInvite(link) {
-      if (navigator.clipboard) navigator.clipboard.writeText(link).then(() => ui.toast('Ссылка скопирована'));
-      else ui.toast('Скопируй вручную');
+    async saveNote(id) {
+      const note = (document.getElementById('app-note') || {}).value || '';
+      const app = (cache.applications.length ? cache.applications : store.state.applications).find((a) => a.id === id);
+      try {
+        await SH.api.adminSetApplication(id, (app && app.status) || 'pending', note);
+        ui.closeSheet();
+        ui.toast('Заметка сохранена');
+      } catch (err) { ui.toast('Ошибка: ' + err.message); }
     },
 
+    /* пользователи */
+    userForm(id, forcedRole) {
+      const u = id ? cache.users.find((x) => x.id === id) : null;
+      const roleFixed = forcedRole === 'admin';
+      const self = u && store.currentUser && u.id === store.currentUser.id;
+      const targetIsRoot = u && u.role === 'root';
+
+      ui.sheet({
+        title: u ? 'Редактировать пользователя' : (roleFixed ? 'Новый администратор' : 'Новый пользователь'),
+        subtitle: u ? (u.email || u.id) : 'Логин и пароль можно изменить позже',
+        body:
+          ui.field('u-name', 'Имя', { value: u ? u.name : '' }) +
+          '<div class="form-grid" style="margin-top:12px">' +
+            ui.field('u-login', 'Логин или почта', { value: u ? u.email || '' : '', placeholder: 'ivan или ivan@school.ru' }) +
+            (u ? ui.field('u-pass', 'Новый пароль (пусто — не менять)', { type: 'text', placeholder: 'оставьте пустым' })
+               : ui.field('u-pass', 'Пароль (пусто — сгенерировать)', { type: 'text', placeholder: 'автоматически' })) +
+          '</div>' +
+          '<div class="form-grid" style="margin-top:12px">' +
+            ui.field('u-grade', 'Класс', { value: u ? u.grade || '' : '' }) +
+            ui.field('u-school', 'Школа', { value: u ? u.school || '' : 'Школа №1520' }) +
+          '</div>' +
+          (isRoot() && !targetIsRoot && !self
+            ? '<div class="field" style="margin-top:12px"><label class="field-label">Роль</label>' +
+              '<select id="u-role">' +
+                '<option value="student"' + (u && u.role === 'student' ? ' selected' : '') + '>Ученик</option>' +
+                '<option value="admin"' + ((u && u.role === 'admin') || roleFixed ? ' selected' : '') + '>Администратор</option>' +
+              '</select></div>'
+            : '') +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.admin.saveUser(' + (u ? "'" + u.id + "'" : 'null') + ')">' +
+            (u ? 'Сохранить' : 'Создать') + '</button>'
+      });
+    },
+
+    async saveUser(id) {
+      const v = (f) => (document.getElementById(f) || {}).value || '';
+      const name = v('u-name').trim();
+      if (!name) { ui.toast('Введите имя'); return; }
+
+      try {
+        if (!id) {
+          const password = v('u-pass').trim();
+          const role = (document.getElementById('u-role') || {}).value || 'student';
+          const res = await SH.api.adminCreateUser({
+            name, login: v('u-login').trim(), password,
+            grade: v('u-grade'), school: v('u-school'), role
+          });
+          ui.closeSheet();
+          ui.sheet({
+            title: 'Пользователь создан',
+            body: '<p class="small muted" style="margin:0 0 12px">Передайте данные для входа:</p>' +
+              '<div class="card" style="background:var(--chip);border:0">' +
+                '<div class="small">Логин</div><div class="mono" style="margin-bottom:8px">' + e(res.login) + '</div>' +
+                '<div class="small">Пароль</div><div class="mono">' + e(res.password || password) + '</div>' +
+              '</div>' +
+              '<button class="btn btn--brand btn--block mt-16" data-close>Готово</button>'
+          });
+        } else {
+          const patch = {
+            name, login: v('u-login').trim(),
+            grade: v('u-grade'), school: v('u-school')
+          };
+          const roleSel = document.getElementById('u-role');
+          if (roleSel) patch.role = roleSel.value;
+
+          await SH.api.adminUpdateUser(id, patch);
+
+          const pass = v('u-pass').trim();
+          if (pass) await SH.api.adminResetPassword(id, pass);
+
+          ui.closeSheet();
+          ui.toast('Сохранено');
+        }
+        cache.loaded.users = false;
+        await loadData(true);
+        SH.app.render();
+      } catch (err) {
+        ui.toast('Ошибка: ' + err.message);
+      }
+    },
+
+    userAccess(id) {
+      const u = cache.users.find((x) => x.id === id);
+      if (!u) return;
+
+      ui.sheet({
+        title: 'Доступ: ' + u.name,
+        subtitle: u.email || u.id,
+        body:
+          '<div class="list">' +
+            accessRow('key', 'Сбросить пароль', 'Старый перестанет работать, все сессии закроются',
+              'SH.views.admin.resetPassword(\'' + u.id + '\')') +
+            accessRow('clock', 'Одноразовый пароль на 24 часа', 'Вход один раз, обычный пароль не меняется',
+              'SH.views.admin.makeOtp(\'' + u.id + '\')') +
+            accessRow('logout', 'Завершить все сессии', 'Разлогинит на всех устройствах',
+              'SH.views.admin.kickSessions(\'' + u.id + '\')') +
+            accessRow(u.blocked ? 'checkCircle' : 'lock',
+              u.blocked ? 'Разблокировать' : 'Заблокировать',
+              u.blocked ? 'Аккаунт снова сможет входить' : 'Вход будет запрещён до разблокировки',
+              'SH.views.admin.toggleBlock(\'' + u.id + '\')') +
+          '</div>'
+      });
+    },
+
+    resetPassword(id) {
+      ui.sheet({
+        title: 'Новый пароль',
+        subtitle: 'Оставьте пустым — сгенерируем автоматически',
+        body: ui.field('rp-pass', 'Пароль', { placeholder: 'минимум 6 символов' }) +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.admin.doReset(\'' + id + '\')">Установить</button>'
+      });
+    },
+
+    async doReset(id) {
+      const pass = (document.getElementById('rp-pass') || {}).value || '';
+      try {
+        const res = await SH.api.adminResetPassword(id, pass.trim());
+        ui.closeSheet();
+        ui.sheet({
+          title: 'Пароль обновлён',
+          body: '<div class="card" style="background:var(--chip);border:0">' +
+              '<div class="small">Новый пароль</div>' +
+              '<div class="mono" style="font-size:15px">' + e(res.password) + '</div></div>' +
+            '<p class="small muted mt-12" style="margin-bottom:0">Передайте его пользователю. Сессии закрыты.</p>' +
+            '<button class="btn btn--brand btn--block mt-16" data-close>Готово</button>'
+        });
+      } catch (err) { ui.toast('Ошибка: ' + err.message); }
+    },
+
+    async makeOtp(id) {
+      try {
+        const res = await SH.api.adminOtp(id);
+        ui.closeSheet();
+        ui.sheet({
+          title: 'Одноразовый пароль',
+          subtitle: 'Действует 24 часа и только для одного входа',
+          body:
+            '<div class="card" style="background:var(--mint);border:0;text-align:center;padding:20px">' +
+              '<div class="mono" style="font-size:20px;font-weight:700;letter-spacing:1px">' + e(res.code) + '</div>' +
+            '</div>' +
+            '<p class="small muted mt-12">Логин: <b class="mono">' + e(res.login) + '</b><br>' +
+              'Истекает: ' + e(new Date(res.expires).toLocaleString('ru-RU')) + '</p>' +
+            '<p class="small muted">Обычный пароль при этом не меняется — после входа по одноразовому он продолжит работать.</p>' +
+            '<button class="btn btn--brand btn--block" data-close>Понятно</button>'
+        });
+      } catch (err) { ui.toast('Ошибка: ' + err.message); }
+    },
+
+    async kickSessions(id) {
+      try {
+        await SH.api.adminKickSessions(id);
+        ui.closeSheet();
+        ui.toast('Сессии завершены');
+      } catch (err) { ui.toast('Ошибка: ' + err.message); }
+    },
+
+    async toggleBlock(id) {
+      const u = cache.users.find((x) => x.id === id);
+      if (!u) return;
+      try {
+        await SH.api.adminUpdateUser(id, { blocked: !u.blocked });
+        ui.closeSheet();
+        ui.toast(u.blocked ? 'Пользователь разблокирован' : 'Пользователь заблокирован');
+        cache.loaded.users = false;
+        await loadData(true);
+        SH.app.render();
+      } catch (err) { ui.toast('Ошибка: ' + err.message); }
+    },
+
+    async revokeAdmin(id) {
+      const u = cache.users.find((x) => x.id === id);
+      ui.confirmSheet('Снять админку?',
+        (u ? u.name : 'Пользователь') + ' станет учеником, все его сессии закроются.', 'Снять', async () => {
+          try {
+            await SH.api.adminUpdateUser(id, { role: 'student' });
+            await SH.api.adminKickSessions(id);
+            cache.loaded.users = false;
+            await loadData(true);
+            ui.toast('Права сняты');
+            SH.app.render();
+          } catch (err) { ui.toast('Ошибка: ' + err.message); }
+        });
+    },
+
+    removeUser(id) {
+      const u = cache.users.find((x) => x.id === id);
+      ui.confirmSheet('Удалить пользователя?',
+        (u ? u.name : 'Аккаунт') + ' будет удалён вместе с сессиями. Это необратимо.', 'Удалить', async () => {
+          try {
+            await SH.api.adminDeleteUser(id);
+            cache.loaded.users = false;
+            await loadData(true);
+            ui.toast('Пользователь удалён');
+            SH.app.render();
+          } catch (err) { ui.toast('Ошибка: ' + err.message); }
+        });
+    },
+
+    /* модерация */
+    async moderate(id, action) {
+      try {
+        if (action === 'delete') await SH.api.request('DELETE', '/api/posts/' + id);
+        else await SH.api.request('PATCH', '/api/posts/' + id, { status: action });
+        store.setPostStatus(id, action === 'delete' ? 'removed' : action);
+        cache.loaded.moderation = false;
+        await loadData(true);
+        ui.toast(action === 'hidden' ? 'Скрыто' : action === 'delete' ? 'Удалено' : 'Оставлено');
+        SH.app.render();
+      } catch (err) { ui.toast('Ошибка: ' + err.message); }
+    },
+
+    cleanup() {
+      ui.sheet({
+        title: 'Удалить старые обращения',
+        subtitle: 'Будут удалены скрытые и жалобы старше указанного срока',
+        body:
+          ui.field('clean-days', 'Старше (дней)', { type: 'number', value: '30' }) +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.admin.doCleanup()">Удалить</button>'
+      });
+    },
+
+    async doCleanup() {
+      const days = Number((document.getElementById('clean-days') || {}).value) || 30;
+      try {
+        const res = await SH.api.adminCleanup(days);
+        ui.closeSheet();
+        ui.toast('Удалено: ' + (res.removed || 0));
+        cache.loaded.moderation = false;
+        await loadData(true);
+        SH.app.render();
+      } catch (err) { ui.toast('Ошибка: ' + err.message); }
+    },
+
+    /* ИИ-ключи */
+    aiForm() {
+      ui.sheet({
+        title: 'Новый ключ Gemini',
+        subtitle: 'Ключи создаются на aistudio.google.com/apikey',
+        body:
+          ui.field('key-label', 'Название', { placeholder: 'Основной' }) +
+          ui.field('key-secret', 'Ключ', { placeholder: 'AIza…', style: 'margin-top:12px' }) +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.admin.addKey()">Добавить</button>'
+      });
+    },
+
+    async addKey() {
+      const label = (document.getElementById('key-label') || {}).value || '';
+      const key = (document.getElementById('key-secret') || {}).value || '';
+      try {
+        await SH.api.adminAddAiKey({ label: label.trim() || 'Gemini', key: key.trim() });
+        ui.closeSheet();
+        ui.toast('Ключ добавлен');
+        cache.loaded.aiKeys = false;
+        await loadData(true);
+        SH.app.render();
+      } catch (err) { ui.toast('Ошибка: ' + err.message); }
+    },
+
+    async toggleKey(id, enabled) {
+      try {
+        await SH.api.adminToggleAiKey(id, enabled);
+        cache.loaded.aiKeys = false;
+        await loadData(true);
+        SH.app.render();
+        ui.toast(enabled ? 'Ключ включён' : 'Ключ отключён');
+      } catch (err) { ui.toast('Ошибка: ' + err.message); }
+    },
+
+    async testKey(id) {
+      ui.toast('Проверяю ключ…');
+      try {
+        const res = await SH.api.adminTestAiKey(id);
+        cache.loaded.aiKeys = false;
+        await loadData(true);
+        SH.app.render();
+        if (res.ok) ui.toast('Ключ работает');
+        else ui.toast('Не работает: ' + (res.error || '').slice(0, 60));
+      } catch (err) { ui.toast('Ошибка: ' + err.message); }
+    },
+
+    deleteKey(id) {
+      ui.confirmSheet('Удалить ключ?', 'Он перестанет использоваться для запросов.', 'Удалить', async () => {
+        try {
+          await SH.api.adminDeleteAiKey(id);
+          cache.loaded.aiKeys = false;
+          await loadData(true);
+          SH.app.render();
+        } catch (err) { ui.toast('Ошибка: ' + err.message); }
+      });
+    },
+
+    /* прочее */
     exportCsv() {
-      const rows = [['Ученик', 'Класс', 'Интересы', 'Заявок']];
-      store.state.users.filter((u) => u.role === 'student').forEach((u) => {
-        rows.push([u.name, u.grade || '', (u.interests || []).join('; '),
-          store.state.applications.filter((a) => a.userId === u.id).length]);
+      const rows = [['Имя', 'Логин', 'Роль', 'Класс', 'Школа', 'Заявок']];
+      (cache.users.length ? cache.users : store.state.users).forEach((u) => {
+        rows.push([
+          u.name, u.email || '', u.role, u.grade || '', u.school || '',
+          store.state.applications.filter((a) => a.userId === u.id).length
+        ]);
       });
       const csv = rows.map((r) => r.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
       const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'student-hub-ученики.csv';
+      a.download = 'student-hub-users.csv';
       a.click();
       ui.toast('CSV скачан');
-    },
-
-    saveEndpoint() {
-      const el = document.getElementById('ai-endpoint');
-      ai.endpoint = el ? el.value.trim() : '';
-      ui.toast(ai.endpoint ? 'Прокси подключён' : 'Локальный режим');
     }
   };
 
+  function accessRow(ico, title, sub, action) {
+    return '<button class="item" style="width:100%;text-align:left" onclick="' + action + '">' +
+      '<span class="empty__icon" style="width:38px;height:38px;border-radius:12px;background:var(--chip);color:var(--text);margin:0">' +
+        icon(ico, 18) + '</span>' +
+      '<div class="grow" style="min-width:0"><div style="font-weight:650;font-size:13.5px">' + e(title) + '</div>' +
+      '<div class="small muted">' + e(sub) + '</div></div>' +
+      '<span class="muted">' + icon('chevronRight', 17) + '</span></button>';
+  }
+
   SH.views = SH.views || {};
-  SH.views.admin = Object.assign({ html }, actions);
+  SH.views.admin = Object.assign({ html, mount: actions.mount, loadData }, actions);
+  SH.views.admin.getSection = () => section;
+  SH.views.admin.resetCache = () => { Object.keys(cache.loaded).forEach((k) => delete cache.loaded[k]); };
 })(window.SH = window.SH || {});
 
 /* Установка PWA — та самая «инструкция в 3 шага» */
@@ -4152,7 +5502,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       case 'profile': return { html: SH.views.profile.html() };
       case 'auth': return { html: SH.views.profile.auth(p1 === 'register' ? 'register' : 'login') };
       case 'install': return { html: SH.views.install.html() };
-      case 'admin': return { html: SH.views.admin.html(), wide: true };
+      case 'user': return { html: SH.views.profile.user(p1) };
+      case 'admin': return { html: SH.views.admin.html(), wide: true, mount: () => SH.views.admin.mount() };
       default: return { html: SH.views.explore.html(), mount: SH.views.explore.mount };
     }
   }
@@ -4207,7 +5558,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     const names = {
       explore: 'Explore', event: 'Событие', community: 'Сообщество',
       roadmap: 'Роадмап', chats: 'Чаты', chat: 'Чат', profile: 'Профиль',
-      auth: 'Вход', install: 'Установка', admin: 'Админ-панель', all: 'События'
+      auth: 'Вход', install: 'Установка', admin: 'Админ-панель', all: 'События', user: 'Профиль'
     };
     return 'Student Hub — ' + (names[route.name] || 'Главная');
   }
