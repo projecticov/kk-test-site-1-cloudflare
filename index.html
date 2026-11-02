@@ -144,8 +144,10 @@ svg { display: block; }
 .screen {
   flex: 1;
   padding: 0 20px calc(var(--nav-h) + var(--safe-b) + 26px);
-  animation: screen-in 0.26s cubic-bezier(0.22, 0.9, 0.28, 1);
 }
+
+/* Анимация только при смене маршрута — её ставит роутер (см. app.js) */
+.screen--enter { animation: screen-in 0.26s cubic-bezier(0.22, 0.9, 0.28, 1); }
 
 @keyframes screen-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -184,7 +186,7 @@ svg { display: block; }
   height: calc(var(--nav-h) + var(--safe-b));
   padding-bottom: var(--safe-b);
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(var(--tabs, 5), 1fr);
   background: color-mix(in srgb, var(--surface) 86%, transparent);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
@@ -193,6 +195,11 @@ svg { display: block; }
 
 @media (min-width: 900px) {
   .app .tabbar { border-radius: 0 0 34px 34px; }
+}
+
+/* на телефоне вложенные экраны живут без нижнего меню — там кнопка «назад» */
+@media (max-width: 899px) {
+  .app .tabbar.tabbar--aux { display: none; }
 }
 
 .tab {
@@ -212,7 +219,7 @@ svg { display: block; }
 
 .tab[aria-selected='true'] { color: var(--text); }
 
-.tab[aria-selected='true']::after {
+.tabbar--enter .tab[aria-selected='true']::after {
   content: '';
   position: absolute;
   top: 6px;
@@ -439,7 +446,9 @@ html[data-theme='dark'] .pill[aria-pressed='true'] { background: #fff; color: #1
   overflow: hidden;
   user-select: none;
 }
+.avatar--26 { width: 26px; height: 26px; font-size: 11px; }
 .avatar--28 { width: 28px; height: 28px; font-size: 12px; }
+.avatar--34 { width: 34px; height: 34px; font-size: 13px; }
 .avatar--32 { width: 32px; height: 32px; font-size: 13px; }
 .avatar--40 { width: 40px; height: 40px; font-size: 15px; }
 .avatar--56 { width: 56px; height: 56px; font-size: 20px; }
@@ -492,6 +501,9 @@ html[data-theme='dark'] .pill[aria-pressed='true'] { background: #fff; color: #1
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
 }
+/* внутри экрана без отступов (карточка события) лента не вылезает за край */
+.screen--flush .hscroll { margin-left: 0; margin-right: 0; }
+
 .hscroll::-webkit-scrollbar { display: none; }
 .hscroll > * { scroll-snap-align: start; flex: 0 0 auto; }
 
@@ -852,7 +864,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 .event-hero__overlay {
   position: absolute; inset: auto 0 0 0;
   padding: 14px;
-  background: linear-gradient(transparent, rgba(10, 10, 14, 0.82) 58%);
+  background: linear-gradient(transparent 18%, rgba(10, 10, 14, 0.58) 58%, rgba(10, 10, 14, 0.8) 100%);
   color: #fff;
   display: flex; align-items: flex-end; gap: 10px;
 }
@@ -951,6 +963,26 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   right: auto;
 }
 
+/* Панель действия на карточке события */
+.event-cta {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  padding: 12px 20px calc(12px + var(--safe-b));
+  background: linear-gradient(to top, var(--bg) 0, var(--bg) calc(100% - 16px), transparent);
+  max-width: 540px; margin: 0 auto;
+  display: flex; gap: 10px; z-index: 30;
+}
+
+/* на десктопе кнопка живёт в колонке контента, а не поверх него */
+@media (min-width: 900px) {
+  .event-cta {
+    position: static;
+    max-width: none;
+    margin: 18px 0 0;
+    padding: 0;
+    background: none;
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════
    Десктоп: боковая навигация вместо нижней, контент по центру.
    Ничего не «уходит вниз»: страница скроллится целиком, навигация
@@ -961,35 +993,53 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   body { background: var(--bg); }
   body::before { display: none; }
 
+  body { height: 100%; }
+
   .app {
     max-width: 100%;
     width: 100%;
+    height: 100dvh;
     margin: 0;
-    min-height: 100dvh;
     border: 0;
     border-radius: 0;
     box-shadow: none;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 260px;
+    grid-template-columns: 264px minmax(0, 1fr);
     background: var(--bg);
+    overflow: hidden;
   }
 
   .app > .screen {
-    grid-column: 1;
+    grid-column: 2;
     grid-row: 1;
     width: 100%;
     max-width: 880px;
+    height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     margin: 0 auto;
     padding: 0 40px 64px;
   }
 
   .app > .screen.screen--flush { max-width: 880px; }
 
+  .app::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 264px; height: 100dvh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    pointer-events: none;
+    z-index: 0;
+  }
+
   .app > .tabbar {
-    grid-column: 2;
+    grid-column: 1;
     grid-row: 1;
     position: sticky;
     top: 0;
+    left: 0;
     height: 100dvh;
     display: flex;
     flex-direction: column;
@@ -998,9 +1048,12 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     gap: 4px;
     padding: 22px 14px;
     border-top: 0;
-    border-left: 1px solid var(--border);
+    border-left: 0;
+    border-right: 1px solid var(--border);
     border-radius: 0;
     background: var(--surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .app > .tabbar::before {
@@ -1030,7 +1083,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   .screen-head { padding-top: 26px; }
 
   /* карточки событий в две колонки */
-  .list--grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .list--grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+  .list--grid .event-hero__title { font-size: 17px; }
 
   /* шторки превращаются в модальные окна по центру */
   .sheet { max-width: 620px; }
@@ -1039,7 +1093,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 }
 
 @media (min-width: 1280px) {
-  .app { grid-template-columns: minmax(0, 1fr) 280px; }
+  .app { grid-template-columns: 284px minmax(0, 1fr); }
+  .app::before { width: 284px; }
 }
 
 /* ═════════════════ админка ═════════════════ */
@@ -1047,6 +1102,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 .admin-shell { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100dvh; }
 .admin-nav { border-right: 1px solid var(--border); background: var(--surface); padding: 22px 14px; position: sticky; top: 0; height: 100dvh; overflow-y: auto; }
 .admin-body { padding: 26px 30px 80px; min-width: 0; }
+.admin-split { display: grid; grid-template-columns: 1.5fr 1fr; gap: 14px; margin-top: 16px; align-items: start; }
+.ai-note > div { min-width: 0; overflow-wrap: anywhere; }
 
 @media (max-width: 980px) {
   .admin-shell { grid-template-columns: 1fr; }
@@ -1101,12 +1158,12 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
 /* ═════════════ общие элементы новых экранов ═════════════ */
 
-.cover--photo { overflow: hidden; background: var(--chip); }
+.cover--photo { overflow: hidden; }
 .cover--photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 .avatar-btn { border: 0; background: none; padding: 0; display: inline-flex; cursor: pointer; }
 .avatar-stack { display: inline-flex; }
-.avatar-stack .avatar { margin-left: -8px; border: 2px solid var(--surface); }
+.avatar-stack .avatar { margin-left: -9px; box-shadow: 0 0 0 2px var(--surface); }
 .avatar-stack .avatar:first-child { margin-left: 0; }
 
 .link-name { border: 0; background: none; padding: 0; font: inherit; font-weight: 650; font-size: 14px;
@@ -1179,11 +1236,104 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     z-index: 0;
     pointer-events: none;
   }
-  .app > .tabbar { position: relative; z-index: 1; background: transparent; border-left: 0; border-radius: 0; }
+  /* меню остаётся на месте: колонка контента скроллится отдельно */
+  .app > .tabbar { position: sticky; top: 0; z-index: 1; border-left: 0; border-radius: 0; }
 }
 @media (min-width: 1280px) {
   .app::before { width: 280px; }
 }
+
+/* ═════════════ кабинет организации (B2B) ═════════════ */
+
+.screen--org { padding-bottom: 32px; }
+
+.kpi-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 6px 0 14px; }
+@media (max-width: 700px) { .kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.kpi-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 14px 16px;
+}
+.kpi__value { font-size: 26px; font-weight: 800; letter-spacing: -1px; line-height: 1.1; }
+.kpi__value--danger { color: var(--danger); }
+.kpi__label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+.segmented {
+  display: inline-flex; gap: 4px; padding: 4px; margin: 4px 0 14px;
+  background: var(--chip); border-radius: 999px;
+}
+.segmented__item {
+  padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 650; color: var(--muted);
+  transition: background .18s ease, color .18s ease;
+}
+.segmented__item.is-active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+
+.panel__pad { padding: 14px 16px; }
+.panel--flush .table-wrap { margin: 0 -1px; }
+
+.list-flat { display: flex; flex-direction: column; }
+.row-line {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 13.5px;
+}
+.row-line:last-child { border-bottom: 0; }
+.row-line__mark { width: 8px; height: 8px; border-radius: 50%; background: var(--cal-color, var(--primary)); flex: 0 0 auto; }
+.row-line__date { width: 74px; flex: 0 0 auto; color: var(--muted); font-size: 12px; }
+.row-line__title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.row-line__title.is-done { text-decoration: line-through; color: var(--muted); font-weight: 500; }
+.row-line__who { color: var(--muted); font-size: 12px; flex: 0 0 auto; }
+
+.cal-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.cal-nav { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 190px; }
+.cal-actions { display: flex; gap: 8px; align-items: center; }
+.cal-title { font-weight: 750; font-size: 15px; flex: 1; text-align: center; text-transform: capitalize; }
+
+.cal-legend { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.cal-legend__item { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+.cal-legend__item i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.cal-legend__hint { font-size: 11px; color: var(--muted); opacity: .8; }
+
+.cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.cal-dow { padding: 8px 6px; font-size: 11px; font-weight: 700; color: var(--muted); text-align: center; text-transform: uppercase; letter-spacing: .04em; }
+.cal-grid--head { border-bottom: 1px solid var(--border); }
+.cal-cell {
+  min-height: 96px; padding: 6px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 3px; cursor: pointer;
+  transition: background .15s ease;
+}
+.cal-cell:hover { background: color-mix(in srgb, var(--chip) 45%, transparent); }
+.cal-cell:nth-child(7n) { border-right: 0; }
+.cal-cell.is-out { background: color-mix(in srgb, var(--chip) 30%, transparent); }
+.cal-cell.is-out .cal-cell__num { color: var(--muted); opacity: .6; }
+.cal-cell.is-today { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+.cal-cell.is-today .cal-cell__num { background: var(--primary); color: #fff; border-radius: 6px; padding: 1px 6px; display: inline-block; }
+.cal-cell__num { font-size: 11.5px; font-weight: 700; color: var(--muted); align-self: flex-start; }
+
+.cal-item {
+  display: flex; align-items: center; gap: 4px; min-width: 0;
+  padding: 3px 6px; border-radius: 7px; font-size: 10.5px; font-weight: 600;
+  background: var(--cal-soft, var(--chip)); color: var(--text);
+  cursor: grab; overflow: hidden;
+}
+.cal-item__dot { width: 5px; height: 5px; border-radius: 50%; background: var(--cal-color, var(--primary)); flex: 0 0 auto; }
+.cal-item__text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cal-item.is-done { opacity: .55; text-decoration: line-through; }
+.cal-more { font-size: 10px; color: var(--muted); padding-left: 4px; }
+
+@media (max-width: 640px) {
+  .cal-cell { min-height: 68px; padding: 3px; }
+  .cal-item { padding: 2px 4px; font-size: 9.5px; }
+  .cal-item__text { display: none; }
+  .cal-item { justify-content: center; }
+  .cal-legend__hint { display: none; }
+}
+
+.cred-box { background: var(--chip); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.cred-box__row { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.cred-box__row span { color: var(--muted); }
+
+.alert { padding: 12px 14px; border-radius: 12px; font-size: 13px; margin-bottom: 12px; }
+.alert--danger { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
 
 </style>
 </head>
@@ -1237,94 +1387,98 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     const events = [
       {
         id: 'e1', title: 'Хакатон «AI для школы»', category: 'hackathon', organizer: 'Кружок ИИ · Школа №1520',
-        format: 'Онлайн', isFree: true, applicants: 128, views: 640,
+        format: 'Онлайн', isFree: true, views: 640,
         deadlineDate: inDays(5), eligibility: '8–11 классы', location: null,
         tags: ['ИИ', 'Команда 3–4', '48 часов'], status: 'published',
         description: 'Два дня, чтобы собрать прототип, который решает настоящую задачу школы: расписание, навигация по кабинетам, помощь с домашкой. Наставники — выпускники и студенты МФТИ. Лучший проект школа внедряет у себя.'
       },
       {
         id: 'e2', title: 'Городская олимпиада по информатике', category: 'olympiad', organizer: 'Департамент образования',
-        format: 'Офлайн', isFree: true, applicants: 412, views: 1580,
+        format: 'Офлайн', isFree: true, views: 1580,
         deadlineDate: inDays(9), eligibility: '7–11 классы', location: 'Москва, ул. Тверская, 12',
         tags: ['Алгоритмы', 'C++', 'Python'], status: 'published',
         description: 'Отборочный тур городской олимпиады. Два уровня сложности, победители едут на всероссийский этап. Решение задач в течение 4 часов.'
       },
       {
         id: 'e3', title: 'Летняя школа по Data Science', category: 'course', organizer: 'ВШЭ · Факультет компьютерных наук',
-        format: 'Гибрид', isFree: true, applicants: 96, views: 880,
+        format: 'Гибрид', isFree: true, views: 880,
         deadlineDate: inDays(21), eligibility: '9–11 классы', location: 'Москва / онлайн',
         tags: ['Python', 'Pandas', '3 недели'], status: 'published',
         description: 'Три недели практики: разберёшь реальный датасет, соберёшь первую модель и защитишь проект перед менторами. По итогам — сертификат и рекомендация для портфолио.'
       },
       {
         id: 'e4', title: 'Стажировка для школьников в IT-компании', category: 'internship', organizer: 'Яндекс · Образовательные проекты',
-        format: 'Гибрид', isFree: false, applicants: 340, views: 2140,
+        format: 'Гибрид', isFree: false, views: 2140,
         deadlineDate: inDays(14), eligibility: '10–11 классы', location: 'Москва, офис на Льва Толстого',
         tags: ['Оплачиваемая', 'Frontend', 'Ментор'], status: 'published',
         description: 'Два месяца в команде продукта: реальные задачи, код-ревью и ментор. Нужен базовый опыт в одном из языков и желание разбираться в чужом коде.'
       },
       {
         id: 'e5', title: 'Конкурс школьных проектов «Стартап»', category: 'competition', organizer: 'Фонд «Талант»',
-        format: 'Офлайн', isFree: true, applicants: 74, views: 430,
+        format: 'Офлайн', isFree: true, views: 430,
         deadlineDate: inDays(30), eligibility: '8–11 классы', location: 'Москва, Технопарк',
         tags: ['Питч', 'Приз 100 000 ₽', 'Команда'], status: 'published',
         description: 'Питч-конкурс для школьных команд. Нужна идея, прототип и умение рассказать о ней за 3 минуты. Финалисты получают менторскую поддержку и грант на развитие.'
       },
       {
         id: 'e6', title: 'Курс по веб-разработке с нуля', category: 'course', organizer: 'Онлайн-школа Skillbox',
-        format: 'Онлайн', isFree: true, applicants: 512, views: 3020,
+        format: 'Онлайн', isFree: true, views: 3020,
         deadlineDate: inDays(40), eligibility: 'Все классы', location: null,
         tags: ['HTML', 'CSS', 'JavaScript'], status: 'published',
         description: 'Самый быстрый способ собрать первое портфолио: HTML, CSS, JavaScript и один законченный сайт в конце. Домашки проверяют кураторы.'
       },
       {
         id: 'e7', title: 'Международная олимпиада по математике', category: 'olympiad', organizer: 'IMO Committee',
-        format: 'Офлайн', isFree: true, applicants: 940, views: 4100,
+        format: 'Офлайн', isFree: true, views: 4100,
         deadlineDate: inDays(25), eligibility: '9–11 классы', location: 'Разные города',
         tags: ['Математика', 'Отбор'], status: 'published',
         description: 'Региональный отборочный тур. Задачи уровня IMO, шесть задач, два дня по 4,5 часа. Победители получают приглашение в национальную сборную.'
       },
       {
         id: 'e8', title: 'Школьный научный фестиваль', category: 'event', organizer: 'Школа №1520 · Научное общество',
-        format: 'Офлайн', isFree: true, applicants: 58, views: 210,
+        format: 'Офлайн', isFree: true, views: 210,
         deadlineDate: inDays(3), eligibility: 'Все классы', location: 'Актовый зал, 3 этаж',
         tags: ['Наука', 'Выставка', 'Своя школа'], status: 'published',
         description: 'Один день, чтобы показать свой проект: стенды, эксперименты и короткие выступления. Можно прийти без проекта — просто посмотреть и найти команду.'
       },
       {
         id: 'e9', title: 'Стипендия «Талант» на обучение', category: 'fellowship', organizer: 'Образовательный фонд',
-        format: 'Онлайн', isFree: true, applicants: 205, views: 1200,
+        format: 'Онлайн', isFree: true, views: 1200,
         deadlineDate: inDays(18), eligibility: '9–11 классы', location: null,
         tags: ['Грант', 'Портфолио', 'Мотивационное письмо'], status: 'published',
         description: 'Ежемесячная стипендия на дополнительное обучение: языки, курсы, олимпиадные школы. Нужно портфолио достижений и мотивационное письмо на 500 слов.'
       },
       {
         id: 'e10', title: 'Инженерный буткемп: роботы', category: 'course', organizer: 'Политехнический музей',
-        format: 'Офлайн', isFree: false, applicants: 43, views: 390,
+        format: 'Офлайн', isFree: false, views: 390,
         deadlineDate: inDays(11), eligibility: '8–11 классы', location: 'Москва, Политех',
         tags: ['Робототехника', 'Ардуино', '2 недели'], status: 'published',
         description: 'Две недели в лаборатории: собираем автономного робота, программируем контроллеры, в конце — гонки на время и демо-день для родителей.'
       },
       {
         id: 'e11', title: 'Волонтёрская программа «Школа — району»', category: 'event', organizer: 'Штаб волонтёров Москвы',
-        format: 'Офлайн', isFree: true, applicants: 31, views: 140,
+        format: 'Офлайн', isFree: true, views: 140,
         deadlineDate: inDays(7), eligibility: '8–11 классы', location: 'Районные площадки',
         tags: ['Волонтёрство', 'Часы в портфолио'], status: 'published',
         description: 'Помогаем младшим классам с домашкой и проводим мастер-классы. Часы засчитываются в индивидуальные достижения.'
       },
       {
         id: 'e12', title: 'Конкурс эссе «Город будущего»', category: 'competition', organizer: 'МГУ · Школа юного журналиста',
-        format: 'Онлайн', isFree: true, applicants: 87, views: 500,
+        format: 'Онлайн', isFree: true, views: 500,
         deadlineDate: inDays(12), eligibility: '8–11 классы', location: null,
         tags: ['Эссе', 'Литература', 'Гуманитарное'], status: 'draft',
         description: 'Эссе на 3000 знаков о том, каким будет твой город через двадцать лет. Победители публикуются в школьном альманахе и получают приглашение на лекции МГУ.'
       }
     ];
 
+    // Student Hub — агрегатор: заявок внутри нет, кнопка ведёт на сайт мероприятия.
+    const EVENT_LINKS = {'e1': 'https://events.yandex.ru/', 'e2': 'https://olimpiada.ru/', 'e3': 'https://www.hse.ru/', 'e4': 'https://yandex.ru/jobs/', 'e5': 'https://olimpiada.ru/', 'e6': 'https://skillbox.ru/', 'e7': 'https://www.imo-official.org/', 'e8': 'https://polymus.ru/', 'e9': 'https://olimpiada.ru/', 'e10': 'https://polymus.ru/', 'e11': 'https://dobro.ru/', 'e12': 'https://www.msu.ru/'};
+    events.forEach((ev) => { ev.link = EVENT_LINKS[ev.id] || ''; });
+
     const posts = [
       { id: 'p1', authorId: 'u2', text: 'Ищу двух человек в команду на хакатон «AI для школы». Нужен дизайнер и кто-нибудь, кто умеет говорить с людьми 😅 Пишите в личку.', createdAt: iso(t - 2 * 3600e3), likes: 14, replies: 3, status: 'published', tag: 'Поиск команды' },
       { id: 'p2', authorId: 'u1', text: 'Кто-нибудь готовится к городской олимпиаде по информатике? Разбираю задачи прошлых лет, могу объяснить, как решать задачу про графы. Собираемся в 105 кабинете.', createdAt: iso(t - 26 * 3600e3), likes: 22, replies: 7, status: 'published', tag: 'Учёба' },
-      { id: 'p3', authorId: 'u3', text: 'Подала заявку на стипендию «Талант». Если кто-то тоже подаёт — давайте вместе вычитывать мотивационные письма, глаза замыливаются.', createdAt: iso(t - 3 * DAY), likes: 9, replies: 4, status: 'published', tag: 'Стипендия' },
+      { id: 'p3', authorId: 'u3', text: 'Разобрала стипендию «Талант»: дедлайн 20 ноября, нужны два письма и портфолио. Кто идёт — давайте вместе вычитывать мотивационные письма, глаза замыливаются.', createdAt: iso(t - 3 * DAY), likes: 9, replies: 4, status: 'published', tag: 'Стипендия' },
       { id: 'p4', authorId: 'u5', text: 'Продаю решённые варианты ЕГЭ по истории. Пишите, недорого.', createdAt: iso(t - 4 * DAY), likes: 1, replies: 0, status: 'flagged', tag: '' }
     ];
 
@@ -1350,7 +1504,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         ] },
       { id: 'c3', title: 'Классный руководитель', memberIds: ['u_me', 'u_admin'], lastAt: iso(t - 2 * DAY), unread: 0,
         messages: [
-          { id: 'm1', authorId: 'u_admin', text: 'Напоминаю: заявки на школьный фестиваль принимаются до пятницы.', at: iso(t - 2 * DAY) }
+          { id: 'm1', authorId: 'u_admin', text: 'Напоминаю: школьный фестиваль в пятницу, сбор участников в 15:00 в актовом зале.', at: iso(t - 2 * DAY) }
         ] }
     ];
 
@@ -1361,17 +1515,9 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     const tasks = [
       { id: 'tk1', goalId: 'g1', userId: 'u_me', title: 'Собрать портфолио из 3 проектов', dateLabel: 'до 20 ноября', status: 'done' },
       { id: 'tk2', goalId: 'g1', userId: 'u_me', title: 'Пройти курс по веб-разработке', dateLabel: 'до 5 декабря', status: 'done' },
-      { id: 'tk3', goalId: 'g1', userId: 'u_me', title: 'Подать заявку на городскую олимпиаду', dateLabel: 'до 11 ноября', status: 'current' },
+      { id: 'tk3', goalId: 'g1', userId: 'u_me', title: 'Зарегистрироваться на городскую олимпиаду', dateLabel: 'до 11 ноября', status: 'current' },
       { id: 'tk4', goalId: 'g1', userId: 'u_me', title: 'Выступить с проектом на школьном фестивале', dateLabel: '14 ноября', status: 'planned' },
       { id: 'tk5', goalId: 'g1', userId: 'u_me', title: 'Подготовить мотивационное письмо на стипендию', dateLabel: 'до 20 ноября', status: 'planned' }
-    ];
-
-    const applications = [
-      { id: 'a1', eventId: 'e6', userId: 'u_me', status: 'accepted', createdAt: iso(t - 9 * DAY) },
-      { id: 'a2', eventId: 'e1', userId: 'u_me', status: 'pending', createdAt: iso(t - 1 * DAY) },
-      { id: 'a3', eventId: 'e2', userId: 'u1', status: 'accepted', createdAt: iso(t - 4 * DAY) },
-      { id: 'a4', eventId: 'e4', userId: 'u2', status: 'pending', createdAt: iso(t - 2 * DAY) },
-      { id: 'a5', eventId: 'e9', userId: 'u3', status: 'pending', createdAt: iso(t - 3 * DAY) }
     ];
 
     return {
@@ -1383,7 +1529,6 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       chats,
       goals,
       tasks,
-      applications,
       // стартовое состояние — гость. Вход только через экран авторизации
       // (в облаке — по токену из /api/auth/login, офлайн — по локальной проверке)
       session: { userId: null },
@@ -1425,6 +1570,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     circle: '<circle cx="12" cy="12" r="9"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
     install: '<rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M12 7v6M9.5 10.5 12 13l2.5-2.5"/><path d="M10.5 18.5h3"/>',
+    bookmark: '<path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.2L5 21V4.5a1 1 0 0 1 1-1z"/>',
     share: '<path d="M12 15V3M8.5 6.5 12 3l3.5 3.5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',
     sun: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"/>',
     moon: '<path d="M20 14.2A8.2 8.2 0 0 1 9.8 4 8.4 8.4 0 1 0 20 14.2z"/>',
@@ -1452,6 +1598,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     mail: '<rect x="2.5" y="5" width="19" height="14" rx="3"/><path d="m3.5 6.5 8.5 6 8.5-6"/>',
     eye: '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/>',
     heart: '<path d="M12 20s-7.5-4.7-7.5-9.4A4.1 4.1 0 0 1 12 7.6a4.1 4.1 0 0 1 7.5 3C19.5 15.3 12 20 12 20z"/>',
+    database: '<ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/><path d="M4 11.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
     message: '<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.8-.9L3 21l1.9-5a8.4 8.4 0 0 1-.9-3.8 8.4 8.4 0 0 1 8.4-8.4A8.4 8.4 0 0 1 21 11.5z"/>',
     pin: '<path d="M12 21s-6.5-6-6.5-11A6.5 6.5 0 0 1 18.5 10c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>',
     wifi: '<path d="M5 12.2a10 10 0 0 1 14 0M8.5 15.7a5 5 0 0 1 7 0"/><path d="M12 19.5h.01"/>',
@@ -1625,18 +1772,46 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     adminOtp(id) { return this.request('POST', '/api/admin/users/' + id + '/otp', {}); },
     adminKickSessions(id) { return this.request('DELETE', '/api/admin/users/' + id + '/sessions'); },
 
-    adminApplications() { return this.request('GET', '/api/admin/applications'); },
-    adminSetApplication(id, status, note) { return this.request('PATCH', '/api/admin/applications/' + id, { status, note }); },
+    /* заявок больше нет: платформа — агрегатор событий */
 
     adminAiKeys() { return this.request('GET', '/api/admin/ai-keys'); },
     adminAddAiKey(payload) { return this.request('POST', '/api/admin/ai-keys', payload); },
     adminToggleAiKey(id, enabled) { return this.request('PATCH', '/api/admin/ai-keys/' + id, { enabled }); },
+    adminUpdateAiKey(id, patch) { return this.request('PATCH', '/api/admin/ai-keys/' + id, patch); },
     adminTestAiKey(id) { return this.request('POST', '/api/admin/ai-keys/' + id + '/test', {}); },
     adminDeleteAiKey(id) { return this.request('DELETE', '/api/admin/ai-keys/' + id); },
 
     adminModeration() { return this.request('GET', '/api/admin/moderation'); },
     adminCleanup(days) { return this.request('POST', '/api/admin/moderation/cleanup', { days }); },
     adminAudit() { return this.request('GET', '/api/admin/audit'); },
+
+    /* ── владелец: вход в аккаунт, массовые операции, бэкап ── */
+    impersonate(id) { return this.request('POST', '/api/admin/users/' + id + '/impersonate', {}); },
+    adminBulkDeleteUsers(ids) { return this.request('POST', '/api/admin/users/bulk-delete', { ids }, 20000); },
+    adminBulkDeleteEvents(ids) { return this.request('POST', '/api/admin/events/bulk-delete', { ids }, 20000); },
+    adminBackup() { return this.request('GET', '/api/admin/backup', undefined, 30000); },
+    adminRestore(data) { return this.request('POST', '/api/admin/restore', { data }, 60000); },
+
+    /* ── системные промты ── */
+    adminPrompts() { return this.request('GET', '/api/admin/prompts'); },
+    adminSavePrompt(key, template) { return this.request('PATCH', '/api/admin/prompts/' + key, { template }); },
+
+    /* ── организации (B2B) ── */
+    adminOrgs() { return this.request('GET', '/api/admin/orgs'); },
+    adminCreateOrg(payload) { return this.request('POST', '/api/admin/orgs', payload); },
+    adminUpdateOrg(id, patch) { return this.request('PATCH', '/api/admin/orgs/' + id, patch); },
+    adminDeleteOrg(id) { return this.request('DELETE', '/api/admin/orgs/' + id); },
+
+    orgOverview(orgId) {
+      return this.request('GET', '/api/org/overview' + (orgId ? '?org=' + encodeURIComponent(orgId) : ''));
+    },
+    orgCreateUser(payload) { return this.request('POST', '/api/org/users', payload); },
+    orgCreateSlot(payload) { return this.request('POST', '/api/org/slots', payload); },
+    orgUpdateSlot(id, patch) { return this.request('PATCH', '/api/org/slots/' + id, patch); },
+    orgDeleteSlot(id) { return this.request('DELETE', '/api/org/slots/' + id); },
+
+    /* ── закладки ── */
+    toggleSaved(eventId) { return this.request('POST', '/api/saved/' + eventId, {}); },
 
     /* ── старт: дослать очередь и забрать снапшот ── */
     async bootstrap() {
@@ -1721,8 +1896,9 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     },
 
     /* ── ИИ через воркер (с откатом на локальный режим в SH.ai) ── */
-    async ask(prompt, model) {
-      const data = await this.request('POST', '/ai', { prompt, model }, 20000);
+    async ask(payload) {
+      const body = typeof payload === 'string' ? { prompt: payload } : (payload || {});
+      const data = await this.request('POST', '/ai', body, 25000);
       if (!data || !data.text) throw new Error('пустой ответ модели');
       return data.text;
     }
@@ -1832,6 +2008,16 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       const u = store.currentUser;
       return !!u && (u.role === 'admin' || u.role === 'root');
     },
+    /** управляющий организацией: видит кабинет только своей организации */
+    get isOrgManager() {
+      const u = store.currentUser;
+      return !!u && u.role === 'org';
+    },
+    orgById(id) { return (state.orgs || []).find((o) => o.id === id) || null; },
+    myOrg() {
+      const u = store.currentUser;
+      return u && u.orgId ? store.orgById(u.orgId) : null;
+    },
 
     /* ── вход: облако, а при недоступности — локальная проверка ── */
 
@@ -1922,6 +2108,43 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       emit('auth');
     },
 
+    /* ── «войти в аккаунт» из админки: сессия админа откладывается ── */
+    async impersonate(userId) {
+      if (!SH.api || !SH.api.enabled()) return { ok: false, error: 'Нужен сервер' };
+      const adminToken = SH.api.token();
+      try {
+        const res = await SH.api.impersonate(userId);
+        try {
+          localStorage.setItem('studenthub:adminToken', adminToken);
+          localStorage.setItem('studenthub:adminId', (store.currentUser || {}).id || '');
+        } catch (e) { /* приватный режим */ }
+        SH.api.setToken(res.token);
+        await store.afterLogin(res.user);
+        return { ok: true, user: res.user };
+      } catch (e) {
+        return { ok: false, error: String(e.message || e) };
+      }
+    },
+
+    hasAdminBackup() {
+      try { return !!localStorage.getItem('studenthub:adminToken'); } catch (e) { return false; }
+    },
+
+    async backToAdmin() {
+      let token = '';
+      try { token = localStorage.getItem('studenthub:adminToken') || ''; } catch (e) {}
+      if (!token) return { ok: false, error: 'Сессия администратора не найдена' };
+      SH.api.setToken(token);
+      const user = await SH.api.me();
+      if (!user) return { ok: false, error: 'Сессия администратора истекла' };
+      try {
+        localStorage.removeItem('studenthub:adminToken');
+        localStorage.removeItem('studenthub:adminId');
+      } catch (e) {}
+      await store.afterLogin(user);
+      return { ok: true, user };
+    },
+
     updateUser(patch) {
       const u = store.currentUser;
       if (!u) return;
@@ -1940,7 +2163,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       if (exists) {
         Object.assign(state.events.find((e) => e.id === ev.id), ev);
       } else {
-        const fresh = Object.assign({ id: uid('e'), status: 'published', views: 0, applicants: 0, tags: [] }, ev);
+        const fresh = Object.assign({ id: uid('e'), status: 'published', views: 0, link: '', tags: [] }, ev);
         state.events.unshift(fresh);
         ev.id = fresh.id;
       }
@@ -1953,27 +2176,21 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       emit('events');
       SH.api && SH.api.push('DELETE', '/api/events/' + id);
     },
-    isApplied(eventId) {
-      const u = store.currentUser;
-      if (!u) return false;
-      return state.applications.some((a) => a.eventId === eventId && a.userId === u.id);
+    /* ── закладки: агрегатор не принимает заявки, событие сохраняют на будущее ── */
+    savedEvents() {
+      const ids = state.saved || [];
+      return ids.map((id) => store.event(id)).filter(Boolean);
     },
-    apply(eventId) {
-      const u = store.currentUser;
-      if (!u) return { ok: false, error: 'Нужен вход' };
-      if (store.isApplied(eventId)) return { ok: false, error: 'Заявка уже отправлена' };
-      const app = { id: uid('a'), eventId, userId: u.id, status: 'pending', createdAt: iso(now()) };
-      state.applications.unshift(app);
-      const ev = store.event(eventId);
-      if (ev) ev.applicants = (ev.applicants || 0) + 1;
-      emit('applications');
-      SH.api && SH.api.push('POST', '/api/applications', { id: app.id, eventId });
-      return { ok: true };
-    },
-    myApplications() {
-      const u = store.currentUser;
-      if (!u) return [];
-      return state.applications.filter((a) => a.userId === u.id);
+    isSaved(eventId) { return (state.saved || []).includes(eventId); },
+    toggleSaved(eventId) {
+      state.saved = state.saved || [];
+      const on = !state.saved.includes(eventId);
+      state.saved = on ? state.saved.concat(eventId) : state.saved.filter((x) => x !== eventId);
+      emit('saved');
+      if (SH.api && SH.api.enabled()) {
+        SH.api.toggleSaved(eventId).catch(() => {});
+      }
+      return { ok: true, saved: on };
     },
 
     /* ── сообщество ── */
@@ -1985,7 +2202,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     addPost(text) {
       const u = store.currentUser;
       if (!u) return { ok: false };
-      const post = { id: uid('p'), authorId: u.id, text, createdAt: iso(now()), likes: 0, replies: 0, status: 'published', tag: '', comments: [] };
+      const post = { id: uid('p'), authorId: u.id, text, createdAt: iso(now()), likes: 0, status: 'published', tag: '', comments: [] };
       state.posts.unshift(post);
       emit('posts');
 
@@ -2005,15 +2222,6 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         SH.api && SH.api.push('POST', '/api/posts/' + id + '/like');
       }
     },
-    setApplicationStatus(id, status) {
-      const a = state.applications.find((x) => x.id === id);
-      if (!a) return null;
-      a.status = status;
-      a.updatedAt = iso(Date.now());
-      commit(() => {}, 'applications');
-      return a;
-    },
-
     addComment(postId, text) {
       const u = store.currentUser;
       if (!u) return Promise.resolve({ ok: false, error: 'Нужен вход' });
@@ -2217,11 +2425,12 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     /** Применить снапшот из облака (D1) поверх локального состояния. */
     hydrate(remote) {
       if (!remote || !Array.isArray(remote.users) || !remote.users.length) return false;
-      ['users', 'events', 'posts', 'teams', 'chats', 'goals', 'tasks', 'applications'].forEach((f) => {
+      ['users', 'events', 'posts', 'teams', 'chats', 'goals', 'tasks', 'saved', 'orgs'].forEach((f) => {
         if (Array.isArray(remote[f])) state[f] = remote[f];
       });
       state.meta = Object.assign({}, state.meta, {
         cloud: true,
+        aiEnabled: !!remote.aiEnabled,
         syncedAt: remote.serverTime || new Date().toISOString()
       });
       // если активный пользователь «пропал» из базы — разлогиниваем.
@@ -2242,15 +2451,14 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     /* ── админ-статистика ── */
     stats() {
       const students = state.users.filter((u) => u.role === 'student').length;
-      const active = state.applications.length;
       return {
         students,
+        admins: state.users.filter((u) => u.role === 'admin').length,
         events: state.events.filter((e) => e.status === 'published').length,
         drafts: state.events.filter((e) => e.status === 'draft').length,
-        applications: active,
-        pending: state.applications.filter((a) => a.status === 'pending').length,
         flagged: state.posts.filter((p) => p.status === 'flagged').length,
-        posts: state.posts.filter((p) => p.status === 'published').length
+        posts: state.posts.filter((p) => p.status === 'published').length,
+        saved: (state.saved || []).length
       };
     },
     userById(id) { return state.users.find((u) => u.id === id) || { name: 'Неизвестный', color: 'sky' }; }
@@ -2341,7 +2549,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     const radiusCss = radius != null ? 'border-radius:' + radius + 'px;' : '';
 
     if (event.image) {
-      return '<div class="cover cover--photo" style="height:' + h + 'px;' + radiusCss + '">' +
+      return '<div class="cover cover--' + (event.category || 'event') + ' cover--photo" style="height:' + h + 'px;' + radiusCss + '">' +
         '<img src="' + esc(event.image) + '" alt="" loading="lazy" ' +
           'onerror="this.style.display=&quot;none&quot;">' +
         '</div>';
@@ -2621,22 +2829,48 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     /* ── дайджест недели для админа ── */
     digest() {
       const s = SH.store.stats();
+      const users = SH.store.state.users;
+      const emptyProfiles = users.filter((u) => u.role === 'student' && (u.interests || []).length === 0).length;
+      const soon = SH.store.events().filter((ev) => {
+        const d = Math.ceil((new Date(ev.deadlineDate) - Date.now()) / 864e5);
+        return d >= 0 && d <= 7;
+      }).length;
+
       return [
-        'За неделю ' + s.applications + ' заявок от учеников — на ' + Math.max(1, Math.round(s.applications * 0.3)) + ' больше, чем на прошлой.',
-        'Самое популярное направление — хакатоны и курсы по программированию: их открывают в 3 раза чаще, чем остальные.',
-        s.pending + ' заявок ждут проверки. ' + (s.drafts ? s.drafts + ' событие в черновиках — стоит опубликовать.' : 'Черновиков нет, всё опубликовано.'),
-        'Рекомендация: у ' + Math.max(2, Math.round(s.students * 0.25)) + ' учеников пустые интересы в профиле — из-за этого подбор работает хуже. Отправьте им напоминание.'
+        'В базе ' + s.students + ' учеников и ' + s.events + ' опубликованных событий.',
+        soon
+          ? 'У ' + soon + ' событий дедлайн на этой неделе — самое время напомнить о них в сообществе.'
+          : 'На этой неделе дедлайнов нет — можно добавить новые события.',
+        s.drafts ? 'В черновиках ' + s.drafts + ' — стоит опубликовать.' : 'Черновиков нет, всё опубликовано.',
+        emptyProfiles
+          ? 'У ' + emptyProfiles + ' учеников пустые интересы — подбор работает хуже. Отправьте напоминание заполнить профиль.'
+          : 'Профили заполнены у всех учеников — подбор работает на полную.'
       ];
     },
 
-    /* ── запрос к реальному бэкенду (если задан endpoint) ── */
-    async complete(prompt) {
+    /* ── запрос к модели через воркер ──
+       promptKey — ключ системного промта из админки ("plan", "why", "digest"),
+       vars — значения для подстановки {{переменных}} в шаблон.            */
+    async complete(payload) {
+      const body = typeof payload === 'string' ? { prompt: payload } : Object.assign({}, payload);
+      body.model = body.model || ai.model;
+
+      // ключей нет — не дёргаем сервер зря, локальный расчёт лучше ошибки в консоли
+      if (SH.store && SH.store.state && SH.store.state.meta && SH.store.state.meta.aiEnabled === false) return null;
+
+      if (SH.api && SH.api.enabled()) {
+        try { return await SH.api.ask(body); }
+        catch (e) {
+          console.warn('AI: сервер недоступен, локальный режим:', e.message);
+          return null;
+        }
+      }
       if (!ai.endpoint) return null;
       try {
         const res = await fetch(ai.endpoint, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ prompt, model: ai.model })
+          body: JSON.stringify(body)
         });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
@@ -2666,7 +2900,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     let list = store.events();
     list = list.map((ev) => ({ ev, match: ai.matchPercent(ev, user) }));
 
-    if (filter === 'trending') list.sort((a, b) => (b.ev.views + b.ev.applicants * 3) - (a.ev.views + a.ev.applicants * 3));
+    if (filter === 'trending') list.sort((a, b) => (b.ev.views || 0) - (a.ev.views || 0));
     else if (filter === 'competitions') list = list.filter((x) => ['competition', 'olympiad', 'hackathon'].includes(x.ev.category));
     else list.sort((a, b) => b.match - a.match);
 
@@ -2722,7 +2956,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         '<span class="rank-badge' + (i < 3 ? ' rank-badge--top' : '') + '">' + (i + 1) + '</span>' +
         '<div class="grow">' +
           '<div class="ellipsis" style="font-weight:650;font-size:14px">' + e(ev.title) + '</div>' +
-          '<div class="small muted ellipsis">' + e(cat.label) + ' · ' + ev.applicants + ' заявок</div>' +
+          '<div class="small muted ellipsis">' + e(cat.label) + ' · ' + (ev.views || 0) + ' просмотров</div>' +
         '</div>' +
         '<span class="muted">' + icon('chevronRight', 18) + '</span>' +
       '</div>'
@@ -2755,7 +2989,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         '<div class="screen-head">' +
           '<div class="grow">' +
             '<h1 class="screen-title">Explore</h1>' +
-            '<p class="screen-sub">' + (user ? 'Привет, ' + e(user.name.split(' ')[0]) + ' 👋' : 'Возможности для школьников') + '</p>' +
+            '<p class="screen-sub">' + (user ? 'Привет, ' + e(user.role === 'root' ? user.name : user.name.split(' ')[0]) + ' 👋' : 'Возможности для школьников') + '</p>' +
           '</div>' +
           '<button class="icon-btn icon-btn--plain" onclick="SH.views.explore.showNotifications()" aria-label="Уведомления" style="position:relative">' +
             icon('bell', 22) +
@@ -2770,7 +3004,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
         '<div class="row" style="margin-bottom:14px">' +
           '<div class="search grow">' + icon('search') +
-            '<input id="explore-search" placeholder="Найти олимпиаду, курс, стажировку…" value="' + e(query) + '">' +
+            '<input id="explore-search" placeholder="Олимпиады, курсы, стажировки" value="' + e(query) + '">' +
           '</div>' +
           '<button class="icon-btn" onclick="SH.views.explore.openFilters()" aria-label="Фильтры">' + icon('tune', 20) + '</button>' +
         '</div>' +
@@ -2786,7 +3020,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           : '' +
             (picked.length ? '<div class="section-head"><span class="h2 grow">Подобрано для тебя</span>' +
               '<span class="section-link" onclick="SH.app.go(\'#/all/picked\')">Все</span></div>' +
-              '<div class="list">' + picked.map(heroCard).join('') + '</div>' : '') +
+              '<div class="list list--grid">' + picked.map(heroCard).join('') + '</div>' : '') +
 
             (popular.length ? '<div class="section-head"><span class="h2 grow">Популярно рядом</span></div>' : '') +
             (popular.length ? '<div class="hscroll">' + popular.map(miniCard).join('') + '</div>' : '') +
@@ -2825,7 +3059,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     const cat = store.CATEGORIES[ev.category] || store.CATEGORIES.event;
     const match = ai.matchPercent(ev, user);
     const dl = ui.deadlineInfo(ev.deadlineDate);
-    const applied = store.isApplied(ev.id);
+    const saved = store.isSaved(ev.id);
 
     return (
       '<div class="screen screen--flush" style="padding-bottom:120px">' +
@@ -2834,9 +3068,13 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           '<button class="icon-btn" onclick="SH.app.back()" aria-label="Назад" ' +
             'style="position:absolute;top:calc(var(--safe-t) + 12px);left:16px;background:rgba(255,255,255,.9)">' +
             icon('arrowLeft', 20) + '</button>' +
-          '<button class="icon-btn" onclick="SH.views.explore.share(\'' + ev.id + '\')" aria-label="Поделиться" ' +
-            'style="position:absolute;top:calc(var(--safe-t) + 12px);right:16px;background:rgba(255,255,255,.9)">' +
-            icon('share', 19) + '</button>' +
+          '<div style="position:absolute;top:calc(var(--safe-t) + 12px);right:16px;display:flex;gap:8px">' +
+            '<button class="icon-btn" onclick="SH.views.explore.toggleSave(\'' + ev.id + '\')" aria-label="Сохранить" ' +
+              'style="background:rgba(255,255,255,.9)' + (saved ? ';color:var(--primary)' : '') + '">' +
+              icon('bookmark', 19) + '</button>' +
+            '<button class="icon-btn" onclick="SH.views.explore.share(\'' + ev.id + '\')" aria-label="Поделиться" ' +
+              'style="background:rgba(255,255,255,.9)">' + icon('share', 19) + '</button>' +
+          '</div>' +
         '</div>' +
 
         '<div style="padding:0 20px">' +
@@ -2850,15 +3088,16 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           '<h1 style="font-size:24px;line-height:1.2;letter-spacing:-0.7px;margin:0 0 6px">' + e(ev.title) + '</h1>' +
           '<p class="muted" style="margin:0 0 14px;font-size:13.5px">' + e(ev.organizer) + '</p>' +
 
-          '<div class="ai-note">' + icon('sparkles') +
-            '<div><b>Почему это тебе:</b> ' + e(ai.explain(ev, user)) + '</div>' +
+          '<div class="ai-note" data-explain="' + ev.id + '">' + icon('sparkles') +
+            '<div style="flex:1;min-width:0;overflow-wrap:anywhere"><b>Почему это тебе:</b> ' +
+              '<span data-explain-text>' + e(ai.explain(ev, user)) + '</span></div>' +
           '</div>' +
 
           '<div class="card mt-16" style="padding:4px 16px">' +
             metaRow('calendar', dl.label, ui.shortDate(ev.deadlineDate) + ' — последний день подачи') +
             metaRow('wifi', ev.format, ev.location || 'Можно участвовать из дома') +
             metaRow('users', ev.eligibility || 'Все желающие', 'Кто может участвовать') +
-            metaRow('chart', ev.applicants + ' заявок', ev.views + ' просмотров') +
+            metaRow('chart', (ev.views || 0) + ' просмотров', saved ? 'Сохранено в профиле' : 'Можно сохранить на будущее') +
           '</div>' +
 
           '<div class="section-head"><span class="h2">О событии</span></div>' +
@@ -2869,21 +3108,22 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           '<div class="section-head"><span class="h2">Похожие</span></div>' +
         '</div>' +
 
-        '<div class="hscroll">' +
-          store.events().filter((x) => x.id !== ev.id && x.category === ev.category).slice(0, 4)
-            .map((x) => miniCard({ ev: x })).join('') +
-          store.events().filter((x) => x.id !== ev.id && x.category !== ev.category).slice(0, 2)
-            .map((x) => miniCard({ ev: x })).join('') +
+        '<div style="padding:0 20px">' +
+          '<div class="hscroll">' +
+            store.events().filter((x) => x.id !== ev.id && x.category === ev.category).slice(0, 4)
+              .map((x) => miniCard({ ev: x })).join('') +
+            store.events().filter((x) => x.id !== ev.id && x.category !== ev.category).slice(0, 2)
+              .map((x) => miniCard({ ev: x })).join('') +
+          '</div>' +
         '</div>' +
 
-        '<div style="position:fixed;left:0;right:0;bottom:0;padding:12px 20px calc(12px + var(--safe-b));' +
-          'background:linear-gradient(transparent,var(--bg) 26%);max-width:540px;margin:0 auto;display:flex;gap:10px;z-index:30">' +
+        '<div class="event-cta">' +
           '<button class="icon-btn" style="width:50px;height:50px;background:var(--chip)" ' +
             'onclick="SH.views.explore.addToRoadmap(\'' + ev.id + '\')" aria-label="В роадмап">' + icon('map', 20) + '</button>' +
-          (applied
-            ? '<button class="btn btn--soft grow" disabled>' + icon('checkCircle') + 'Заявка отправлена</button>'
-            : '<button class="btn btn--brand grow" onclick="SH.views.explore.apply(\'' + ev.id + '\')">' +
-                'Подать заявку' + icon('arrowRight') + '</button>') +
+          (ev.link
+            ? '<a class="btn btn--brand grow" href="' + e(ev.link) + '" target="_blank" rel="noopener noreferrer" ' +
+                'onclick="SH.views.explore.visit(\'' + ev.id + '\')">Перейти на сайт мероприятия' + icon('arrowRight') + '</a>'
+            : '<button class="btn btn--soft grow" disabled>' + icon('info') + 'Ссылку добавит администратор</button>') +
         '</div>' +
       '</div>'
     );
@@ -2933,27 +3173,51 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           ? '<div class="list">' + items.map((n) =>
               '<button class="item" style="width:100%;text-align:left" onclick="SH.views.explore.openNotification(\'' +
                 n.href + '\')">' + notificationHtml(n) + '</button>').join('') + '</div>'
-          : ui.empty('bell', 'Пока тихо', 'Здесь появятся дедлайны, ответы по заявкам и новые сообщения.')
+          : ui.empty('bell', 'Пока тихо', 'Здесь появятся дедлайны, сохранённые события и новые сообщения.')
       });
     },
     openNotification(href) {
       ui.closeSheet();
       SH.app.go(href);
     },
-    apply(id) {
-      if (!store.isAuthed) { SH.app.go('#/auth'); return; }
-      const res = store.apply(id);
-      if (res.ok) {
-        ui.toast('Заявка отправлена ✓');
-        SH.app.render();
-      } else ui.toast(res.error);
+    toggleSave(id) {
+      const res = store.toggleSaved(id);
+      ui.toast(res.saved ? 'Сохранено в профиле' : 'Убрано из сохранённых');
+      SH.app.render();
+    },
+
+    visit(id) {
+      // заявок внутри нет: уводим на сайт организатора и пишем визит в статистику
+      const ev = store.event(id);
+      if (ev) ev.views = (ev.views || 0) + 1;
+      if (SH.api && SH.api.enabled()) SH.api.push('POST', '/api/events/' + id + '/visit');
+    },
+
+    async explainRemote(id) {
+      const ev = store.event(id);
+      if (!ev) return;
+      const me = store.currentUser || {};
+      const text = await ai.complete({
+        promptKey: 'why',
+        vars: {
+          event: ev.title,
+          description: ev.description || '',
+          tags: (ev.tags || []).join(', '),
+          grade: me.grade || 'не указан',
+          skills: (me.skills || []).join(', ') || 'не указаны',
+          interests: (me.interests || []).join(', ') || 'не указаны'
+        }
+      });
+      if (!text) return;
+      const box = document.querySelector('[data-explain="' + id + '"] [data-explain-text]');
+      if (box) box.textContent = text.trim().slice(0, 400);
     },
     addToRoadmap(id) {
       const ev = store.event(id);
       if (!store.isAuthed) { SH.app.go('#/auth'); return; }
       let goal = store.goals()[0];
       if (!goal) goal = store.addGoal('Мои цели');
-      store.addTask(goal.id, 'Подать заявку: ' + ev.title, 'до ' + ui.shortDate(ev.deadlineDate));
+      store.addTask(goal.id, 'Участвовать: ' + ev.title, 'до ' + ui.shortDate(ev.deadlineDate));
       ui.toast('Добавлено в роадмап');
     },
     share(id) {
@@ -2964,23 +3228,11 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     }
   };
 
-  /** Что реально произошло: дедлайны, ответы по заявкам, непрочитанные чаты. */
+  /** Что реально произошло: дедлайны, сохранённые события, непрочитанные чаты. */
   function notifications() {
     const user = store.currentUser;
     if (!user) return [];
     const out = [];
-
-    store.myApplications().forEach((a) => {
-      const ev = store.event(a.eventId);
-      if (!ev) return;
-      if (a.status === 'accepted') {
-        out.push({ icon: 'checkCircle', tone: 'var(--mint)', title: 'Заявка принята',
-          sub: ev.title, href: '#/event/' + ev.id });
-      } else if (a.status === 'rejected') {
-        out.push({ icon: 'info', tone: 'var(--blush)', title: 'Заявка отклонена',
-          sub: ev.title, href: '#/event/' + ev.id });
-      }
-    });
 
     store.chats().filter((c) => c.unread > 0).forEach((c) => {
       out.push({ icon: 'message', tone: 'var(--sky)', title: 'Новое в чате «' + c.title + '»',
@@ -2988,12 +3240,21 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         href: '#/chat/' + c.id });
     });
 
+    store.savedEvents().forEach((ev) => {
+      const days = Math.ceil((new Date(ev.deadlineDate) - Date.now()) / 864e5);
+      if (days >= 0 && days <= 7) {
+        out.push({ icon: 'bookmark', tone: 'var(--lavender)',
+          title: days === 0 ? 'Сегодня дедлайн' : 'Дедлайн через ' + days + ' ' + ui.plural(days, 'день', 'дня', 'дней'),
+          sub: ev.title, href: '#/event/' + ev.id });
+      }
+    });
+
     store.events().forEach((ev) => {
       const days = Math.ceil((new Date(ev.deadlineDate) - Date.now()) / 864e5);
-      if (days >= 0 && days <= 5 && !store.isApplied(ev.id)) {
+      if (days >= 0 && days <= 3 && !store.isSaved(ev.id)) {
         out.push({ icon: 'calendar', tone: 'var(--sun)',
           title: days === 0 ? 'Дедлайн сегодня' : 'Дедлайн через ' + days + ' ' + ui.plural(days, 'день', 'дня', 'дней'),
-          sub: ev.title + ' — заявка не отправлена', href: '#/event/' + ev.id });
+          sub: ev.title, href: '#/event/' + ev.id });
       }
     });
 
@@ -3019,13 +3280,18 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           '<button class="icon-btn icon-btn--plain" onclick="SH.app.back()">' + icon('arrowLeft', 21) + '</button>' +
           '<h1 class="screen-title" style="font-size:22px">' + (mode === 'picked' ? 'Подобрано для тебя' : 'Все события') + '</h1>' +
         '</div>' +
-        '<div class="list">' + list.map(heroCard).join('') + '</div>' +
+        '<div class="list list--grid">' + list.map(heroCard).join('') + '</div>' +
       '</div>'
     );
   }
 
+  function mountDetail(root, id) {
+    // «Почему это тебе» подтягиваем у модели; локальное объяснение остаётся запасным
+    actions.explainRemote(id);
+  }
+
   SH.views = SH.views || {};
-  SH.views.explore = Object.assign({ html, mount, detail, all }, actions);
+  SH.views.explore = Object.assign({ html, mount, mountDetail, detail, all }, actions);
 })(window.SH = window.SH || {});
 
 /* Сообщество: команды и обсуждения с комментариями под постом */
@@ -3059,7 +3325,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         '<div class="wrap" style="margin-bottom:12px">' + (t.tags || []).map((x) => ui.tag(x)).join('') + '</div>' +
         '<div class="row">' +
           '<div class="avatar-stack">' +
-            members.slice(0, 4).map((m) => ui.avatar(m, 26)).join('') +
+            members.slice(0, 3).map((m) => ui.avatar(m, 26)).join('') +
           '</div>' +
           '<span class="small muted grow" style="margin-left:8px">' +
             e(lead.name) + ' · ' + members.length + ' ' + ui.plural(members.length, 'участник', 'участника', 'участников') +
@@ -3190,7 +3456,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
         (tab === 'team'
           ? '<button class="btn btn--brand btn--block" onclick="SH.views.community.newTeam()">' +
-              icon('plus') + 'Создать заявку на команду</button>' +
+              icon('plus') + 'Собрать команду</button>' +
             '<div class="list mt-16">' +
               (teams.length ? teams.map(teamCard).join('') :
                 ui.empty('users', 'Пока нет открытых команд', 'Создай первую — тебе ответят те, кому нужна компания.')) +
@@ -3422,11 +3688,13 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           '</button>' +
         '</div>' +
 
-        '<div class="hscroll" style="margin-bottom:18px">' +
+        (goals.length ? '<div class="hscroll" style="margin-bottom:18px">' +
           goals.map((g) => goalChip(g)).join('') +
-          '<button class="chip-add" style="align-self:stretch;flex-direction:column;justify-content:center;min-width:92px" ' +
-            'onclick="SH.views.roadmap.addGoal()">' + icon('plus', 16) + 'Цель</button>' +
-        '</div>' +
+          (goals.length
+            ? '<button class="chip-add" style="align-self:stretch;flex-direction:column;justify-content:center;min-width:92px" ' +
+                'onclick="SH.views.roadmap.addGoal()">' + icon('plus', 16) + 'Цель</button>'
+            : '') +
+        '</div>' : '') +
 
         (goal
           ? '' +
@@ -3565,7 +3833,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       SH.app.render();
     },
 
-    generate() {
+    async generate() {
       const goal = store.goals().find((g) => g.id === selectedGoalId);
       if (!goal) return;
       ui.sheet({
@@ -3574,20 +3842,40 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         body: '<div style="padding:8px 0 4px">' + ui.skeletonList(3) + '</div>',
         dismissible: false
       });
-      setTimeout(() => {
-        const plan = ai.generateRoadmap(goal.title);
-        store.replaceTasks(goal.id, plan);
-        ui.closeSheet();
-        ui.toast('План из ' + plan.length + ' шагов готов');
-        SH.app.render();
-      }, 1100);
+
+      const me = store.currentUser || {};
+      // сначала — модель (промт редактируется в админке), потом локальный план
+      let plan = null;
+      const text = await ai.complete({
+        promptKey: 'plan',
+        vars: {
+          goal: goal.title,
+          grade: me.grade || 'не указан',
+          skills: (me.skills || []).join(', ') || 'не указаны',
+          interests: (me.interests || []).join(', ') || 'не указаны'
+        }
+      });
+      if (text) {
+        plan = text.split('\n')
+          .map((line) => line.replace(/^[-*\d.\s]+/, '').trim())
+          .filter((line) => line.length > 3)
+          .slice(0, 6)
+          .map((title) => ({ title, dateLabel: '' }));
+      }
+      const usedModel = !!plan && plan.length >= 3;
+      if (!usedModel) plan = ai.generateRoadmap(goal.title);
+
+      store.replaceTasks(goal.id, plan);
+      ui.closeSheet();
+      ui.toast(usedModel ? 'План от ИИ: ' + plan.length + ' шагов' : 'План из ' + plan.length + ' шагов готов');
+      SH.app.render();
     },
 
     addFromEvent(id) {
       const ev = store.event(id);
       let goal = store.goals().find((g) => g.id === selectedGoalId) || store.goals()[0];
       if (!goal) goal = store.addGoal('Мои цели');
-      store.addTask(goal.id, 'Заявка: ' + ev.title, 'до ' + ui.shortDate(ev.deadlineDate));
+      store.addTask(goal.id, 'Участвовать: ' + ev.title, 'до ' + ui.shortDate(ev.deadlineDate));
       selectedGoalId = goal.id;
       ui.toast('Добавлено в план');
       SH.app.render();
@@ -3652,8 +3940,9 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
             (c.kind === 'direct' ? '<span class="tag" style="margin-left:6px">личный</span>' : '') +
             '<span class="spacer"></span><span class="small muted">' + e(ui.relTime(c.lastAt)) + '</span></div>' +
           '<div class="small muted ellipsis" style="margin-top:2px">' +
-            (last.authorId === me.id ? 'Ты: ' : (author.name ? author.name.split(' ')[0] + ': ' : '')) +
-            e(last.text || 'Сообщений пока нет') + '</div>' +
+            (last.text
+              ? (last.authorId === me.id ? 'Ты: ' : (author.name ? author.name.split(' ')[0] + ': ' : '')) + e(last.text)
+              : 'Сообщений пока нет') + '</div>' +
         '</div>' +
         (c.unread ? '<span class="badge-count">' + c.unread + '</span>' : '') +
       '</div>'
@@ -3877,12 +4166,16 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     const done = tasks.filter((t) => t.status === 'done').length;
     const planScore = tasks.length ? Math.round((done / tasks.length) * 25) : 0;
 
-    const apps = store.myApplications();
-    const appliedScore = Math.round((Math.min(apps.length, 4) / 4) * 20);
-    const accepted = apps.filter((a) => a.status === 'accepted').length;
-    const resultScore = Math.round((Math.min(accepted, 2) / 2) * 20);
+    const saved = store.savedEvents().length;
+    const savedScore = Math.round((Math.min(saved, 4) / 4) * 20);
 
-    const total = Math.min(100, profileScore + planScore + appliedScore + resultScore);
+    const posts = store.posts().filter((p) => p.authorId === u.id).length;
+    const comments = store.state.posts.reduce((n, p) =>
+      n + (p.comments || []).filter((c) => c.authorId === u.id).length, 0);
+    const activity = Math.min(posts + comments, 5);
+    const activityScore = Math.round((activity / 5) * 20);
+
+    const total = Math.min(100, profileScore + planScore + savedScore + activityScore);
 
     return {
       total,
@@ -3891,10 +4184,10 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           hint: profileFilled + ' из ' + profileParts.length + ' пунктов' },
         { label: 'План развития', score: planScore, max: 25,
           hint: tasks.length ? done + ' из ' + tasks.length + ' шагов' : 'шагов пока нет' },
-        { label: 'Заявки на события', score: appliedScore, max: 20,
-          hint: apps.length + ' ' + ui.plural(apps.length, 'заявка', 'заявки', 'заявок') },
-        { label: 'Принятые заявки', score: resultScore, max: 20,
-          hint: accepted + ' ' + ui.plural(accepted, 'принята', 'приняты', 'принято') }
+        { label: 'Сохранённые события', score: savedScore, max: 20,
+          hint: saved + ' из 4' },
+        { label: 'Активность в сообществе', score: activityScore, max: 20,
+          hint: activity + ' из 5 действий' }
       ]
     };
   }
@@ -3913,7 +4206,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     }
 
     const u = store.currentUser;
-    const apps = store.myApplications();
+    const saved = store.savedEvents();
     const r = readinessOf(u);
 
     return (
@@ -3924,13 +4217,22 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
             icon('settings', 21) + '</button>' +
         '</div>' +
 
+        (store.hasAdminBackup()
+          ? '<div class="ai-note" style="margin-bottom:16px">' + icon('shield') +
+              '<div class="grow"><b>Открыт аккаунт ученика.</b><br>' +
+                'Это режим поддержки — вы вошли сюда из админки.' +
+                '<div style="margin-top:8px"><button class="btn btn--soft btn--sm" ' +
+                  'onclick="SH.views.profile.backToAdmin()">Вернуться в админку</button></div>' +
+              '</div></div>'
+          : '') +
+
         '<div class="row" style="gap:14px;margin-bottom:18px">' +
           ui.avatar(u, 56) +
           '<div class="grow" style="min-width:0">' +
             '<div class="h2" style="font-size:19px">' + e(u.name) + '</div>' +
             '<div class="small muted">' + e([u.grade, u.school, u.city].filter(Boolean).join(' · ') || 'Заполни профиль') + '</div>' +
             (u.role === 'admin' || u.role === 'root'
-              ? '<span class="tag tag--lav" style="margin-top:6px">' + (u.role === 'root' ? 'владелец' : 'администратор') + '</span>'
+              ? '<span class="tag tag--lav" style="margin-top:6px">' + (u.role === 'root' ? 'Владелец' : (u.role === 'org' ? 'Управляющий организации' : 'Администратор')) + '</span>'
               : '') +
           '</div>' +
           '<button class="btn btn--soft btn--xs" onclick="SH.views.profile.editProfile()">' + icon('edit', 14) + 'Изменить</button>' +
@@ -3957,16 +4259,18 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         '<div class="section-head"><span class="h2">Интересы</span></div>' +
         chips(u.interests || [], 'interests') +
 
-        '<div class="section-head"><span class="h2">Мои заявки</span></div>' +
-        (apps.length
-          ? '<div class="list">' + apps.map(appRow).join('') + '</div>'
-          : ui.empty('file', 'Заявок пока нет', 'Открой любое событие в Explore и подай заявку — она появится здесь.')) +
+        '<div class="section-head"><span class="h2">Сохранённые события</span>' +
+          (saved.length ? '<span class="section-link" onclick="SH.app.go(\'#/explore\')">Найти ещё</span>' : '') + '</div>' +
+        (saved.length
+          ? '<div class="list">' + saved.map(savedRow).join('') + '</div>'
+          : ui.empty('bookmark', 'Пока ничего не сохранено',
+              'Открой событие в Explore и нажми «Сохранить» — оно появится здесь и в напоминаниях.')) +
 
         '<div class="section-head"><span class="h2">Ещё</span></div>' +
         '<div class="list">' +
           row('install', 'Установить приложение', 'Иконка на главном экране', "SH.app.go('#/install')") +
           ((u.role === 'admin' || u.role === 'root')
-            ? row('shield', 'Админ-панель', 'События, заявки, ученики', "SH.app.go('#/admin')", 'tag--lav')
+            ? row('shield', 'Админ-панель', 'События, ученики, модерация', "SH.app.go('#/admin')", 'tag--lav')
             : '') +
           row('moon', 'Тема оформления', themeLabel(), 'SH.views.profile.themeSheet()') +
           row('lock', 'Пароль', 'Сменить пароль от аккаунта', 'SH.views.profile.passwordSheet()') +
@@ -3991,20 +4295,19 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     '<button class="chip-add" onclick="SH.views.profile.addChip(\'' + field + '\')">' + icon('plus', 13) + 'Добавить</button></div>';
   }
 
-  function appRow(a) {
-    const ev = store.event(a.eventId);
-    if (!ev) return '';
-    const tone = { pending: 'sun', accepted: 'mint', rejected: 'blush' }[a.status] || 'sky';
-    const label = { pending: 'На проверке', accepted: 'Принята', rejected: 'Отклонена' }[a.status] || a.status;
+  function savedRow(ev) {
+    const dl = ui.deadlineInfo(ev.deadlineDate);
+    const days = Math.ceil((new Date(ev.deadlineDate) - Date.now()) / 864e5);
+    const soon = days >= 0 && days <= 5;
     return (
       '<div class="item card--tap" onclick="SH.app.go(\'#/event/' + ev.id + '\')" style="cursor:pointer">' +
         '<span class="empty__icon" style="width:40px;height:40px;border-radius:13px;background:var(--primary-soft);color:var(--primary)">' +
           icon((store.CATEGORIES[ev.category] || store.CATEGORIES.event).glyph, 19) + '</span>' +
         '<div class="grow" style="min-width:0">' +
           '<div class="ellipsis" style="font-weight:650;font-size:13.5px">' + e(ev.title) + '</div>' +
-          '<div class="small muted">' + e(ui.relTime(a.createdAt)) + '</div>' +
+          '<div class="small muted">' + e(dl.label) + '</div>' +
         '</div>' +
-        '<span class="tag tag--' + tone + '">' + e(label) + '</span>' +
+        '<span class="tag tag--' + (soon ? 'sun' : 'mint') + '">' + e(ui.shortDate(ev.deadlineDate)) + '</span>' +
       '</div>'
     );
   }
@@ -4051,7 +4354,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
             '<div class="h2" style="font-size:20px">' + e(u.name) + '</div>' +
             '<div class="small muted">' + e([u.grade, u.school, u.city].filter(Boolean).join(' · ') || 'ученик') + '</div>' +
             (u.role === 'admin' || u.role === 'root'
-              ? '<span class="tag tag--lav" style="margin-top:6px">' + (u.role === 'root' ? 'владелец' : 'администратор') + '</span>'
+              ? '<span class="tag tag--lav" style="margin-top:6px">' + (u.role === 'root' ? 'Владелец' : 'Администратор') + '</span>'
               : '') +
           '</div>' +
         '</div>' +
@@ -4088,6 +4391,13 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   /* ─────────────────────────── настройки ─────────────────────────── */
 
   const actions = {
+    async backToAdmin() {
+      const res = await store.backToAdmin();
+      if (!res.ok) { ui.toast(res.error || 'Не удалось вернуться'); return; }
+      ui.toast('Снова в админке');
+      SH.app.go('#/admin');
+    },
+
     addChip(field) {
       ui.sheet({
         title: 'Добавить в ' + (field === 'skills' ? 'навыки' : 'интересы'),
@@ -4169,7 +4479,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
                 '<b style="font-size:14px">' + p.score + '<span class="muted small">/' + p.max + '</span></b></div>').join('') +
           '</div>' +
           '<p class="small muted mt-16" style="margin-bottom:0">Чтобы процент рос: заполни класс, школу и город, добавь навыки и интересы, ' +
-            'выполняй шаги в плане и отправляй заявки на события. Принятая заявка даёт больше, чем отправленная.</p>'
+            'выполняй шаги в плане, сохраняй интересные события и участвуй в жизни сообщества.</p>'
       });
     },
 
@@ -4335,7 +4645,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
     ui.toast('С возвращением, ' + res.user.name.split(' ')[0]);
     const boss = res.user.role === 'admin' || res.user.role === 'root';
-    SH.app.go(boss ? '#/admin' : '#/explore');
+    SH.app.go(boss ? '#/admin' : (res.user.role === 'org' ? '#/org' : '#/explore'));
   }
 
   SH.views = SH.views || {};
@@ -4349,7 +4659,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   const e = ui.esc;
 
   /* локальный кэш админских данных */
-  const cache = { users: [], applications: [], aiKeys: [], audit: [], moderation: [], loaded: {} };
+  const cache = { users: [], aiKeys: [], audit: [], moderation: [], prompts: [], orgs: [], loaded: {} };
   const adminMount = { pending: false };
 
   let section = 'overview';
@@ -4358,14 +4668,19 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   const SECTION_TITLES = {
     overview: 'Обзор',
     events: 'События',
-    applications: 'Заявки',
     users: 'Пользователи',
+    orgs: 'Организации',
     admins: 'Администраторы',
     moderation: 'Модерация',
-    ai: 'ИИ-ключи',
+    ai: 'ИИ',
+    prompts: 'Промты',
     audit: 'Журнал',
-    settings: 'Настройки'
+    data: 'Данные'
   };
+
+  /* выделение строк для массовых операций */
+  const picked = { users: new Set(), events: new Set() };
+  let selectMode = { users: false, events: false };
 
   function isRoot() { return store.currentUser && store.currentUser.role === 'root'; }
   function isAdminLike() { const u = store.currentUser; return u && (u.role === 'admin' || u.role === 'root'); }
@@ -4376,13 +4691,15 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     const items = [
       ['overview', 'grid', 'Обзор'],
       ['events', 'calendar', 'События'],
-      ['applications', 'file', 'Заявки'],
       ['users', 'users', 'Пользователи'],
+      ['orgs', 'building', 'Организации'],
       ['moderation', 'flag', 'Модерация'],
-      ['ai', 'sparkles', 'ИИ-ключи']
+      ['ai', 'sparkles', 'ИИ-ключи'],
+      ['prompts', 'message', 'Промты']
     ];
-    if (isRoot()) items.splice(4, 0, ['admins', 'shield', 'Администраторы']);
+    if (isRoot()) items.splice(3, 0, ['admins', 'shield', 'Администраторы']);
     items.push(['audit', 'chart', 'Журнал']);
+    if (isRoot()) items.push(['data', 'database', 'Данные']);
 
     return (
       '<aside class="admin-nav">' +
@@ -4416,12 +4733,14 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
   function content() {
     if (section === 'events') return eventsSection();
-    if (section === 'applications') return applicationsSection();
     if (section === 'users') return usersSection();
+    if (section === 'orgs') return orgsSection();
     if (section === 'admins') return adminsSection();
     if (section === 'moderation') return moderationSection();
     if (section === 'ai') return aiSection();
+    if (section === 'prompts') return promptsSection();
     if (section === 'audit') return auditSection();
+    if (section === 'data') return dataSection();
     return overviewSection();
   }
 
@@ -4436,6 +4755,40 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   function searchBox(placeholder) {
     return '<div class="search" style="max-width:340px;margin-bottom:16px">' + icon('search') +
       '<input id="admin-search" placeholder="' + e(placeholder) + '" value="' + e(query) + '"></div>';
+  }
+
+  /* На мобильных меню админки — горизонтальная лента. Держим её на выбранном
+     пункте, а не у логотипа: после перерисовки прокручиваем к активному. */
+  let navScroll = 0;
+
+  function mountNavScroll() {
+    const nav = document.querySelector('.admin-nav');
+    if (!nav) return;
+    const active = nav.querySelector('[aria-current="true"]');
+    const remember = () => { navScroll = nav.scrollLeft; };
+    nav.addEventListener('scroll', remember, { passive: true });
+
+    if (window.matchMedia('(max-width: 980px)').matches) {
+      if (active) {
+        const target = active.offsetLeft - (nav.clientWidth - active.offsetWidth) / 2;
+        nav.scrollLeft = Math.max(0, target);
+      } else {
+        nav.scrollLeft = navScroll;
+      }
+    } else {
+      nav.scrollLeft = 0;
+    }
+  }
+
+  function mountRestore() {
+    const input = document.querySelector('#restore-file');
+    if (!input) return;
+    input.addEventListener('change', (ev) => {
+      const file = ev.target.files && ev.target.files[0];
+      const label = document.querySelector('#restore-name');
+      if (label && file) label.textContent = 'Выбран файл: ' + file.name;
+      if (file) actions.restoreFile(file);
+    });
   }
 
   function mountSearch() {
@@ -4454,63 +4807,64 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
   function overviewSection() {
     const s = store.stats();
-    const pending = (cache.applications.length ? cache.applications : store.state.applications)
-      .filter((a) => a.status === 'pending').slice(0, 6);
+    const soon = store.events()
+      .map((ev) => ({ ev, days: Math.ceil((new Date(ev.deadlineDate) - Date.now()) / 864e5) }))
+      .filter((x) => x.days >= 0 && x.days <= 14)
+      .sort((a, b) => a.days - b.days)
+      .slice(0, 5);
+
+    const emptyProfiles = store.state.users.filter((u) =>
+      u.role === 'student' && (u.interests || []).length === 0).length;
 
     return pageHead('Обзор', isRoot() ? 'Полный доступ: пользователи, админы, содержимое' : 'Управление содержимым и учениками',
-      '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.eventForm()">' + icon('plus', 16) + 'Событие</button>') +
+      '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.eventForm()">' + icon('plus', 16) + 'Событие</button>' +
+      '<button class="btn btn--soft btn--sm" onclick="SH.views.admin.digest()">' + icon('sparkles', 16) + 'ИИ-сводка</button>') +
 
       '<div class="kpi">' +
-        kpi(store.state.users.filter((u) => u.role === 'student').length, 'учеников') +
-        kpi(store.state.users.filter((u) => u.role === 'admin').length, 'админов') +
+        kpi(s.students, 'учеников') +
+        kpi(s.admins, 'админов') +
         kpi(s.events, 'событий') +
-        kpi(pending.length ? pending.length : s.pending, 'заявок в работе') +
+        kpi(s.saved, 'сохранений') +
       '</div>' +
 
-      '<div style="display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-top:16px" class="admin-split">' +
+      '<div class="admin-split">' +
         '<div class="panel panel--flush">' +
-          '<div class="panel__head"><b style="font-size:14px">Заявки, требующие решения</b>' +
+          '<div class="panel__head"><b style="font-size:14px">Ближайшие дедлайны</b>' +
             '<span class="spacer"></span>' +
-            '<span class="section-link" onclick="SH.views.admin.go(\'applications\')">Все</span></div>' +
-          (pending.length
-            ? pending.map((a) => {
-                const u = store.userById(a.userId);
-                const ev = store.event(a.eventId);
-                return '<div class="rowline">' + ui.avatar(u, 30) +
+            '<span class="section-link" onclick="SH.views.admin.go(\'events\')">Все события</span></div>' +
+          (soon.length
+            ? soon.map(({ ev, days }) =>
+                '<div class="rowline">' +
+                  '<span class="rank-badge" style="width:34px;height:34px;border-radius:10px">' +
+                    icon((store.CATEGORIES[ev.category] || store.CATEGORIES.event).glyph, 16) + '</span>' +
                   '<div class="grow" style="min-width:0">' +
-                    '<div class="ellipsis" style="font-size:13.5px;font-weight:600">' + e(u.name) + '</div>' +
-                    '<div class="small muted ellipsis">' + e(ev ? ev.title : 'событие удалено') + '</div></div>' +
-                  '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.setApplication(\'' + a.id + '\',\'accepted\')">Принять</button>' +
-                  '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.setApplication(\'' + a.id + '\',\'rejected\')">Отклонить</button>' +
-                '</div>';
-              }).join('')
-            : '<div class="panel__body"><p class="small muted" style="margin:0">Новых заявок нет</p></div>') +
+                    '<div class="ellipsis" style="font-size:13.5px;font-weight:600">' + e(ev.title) + '</div>' +
+                    '<div class="small muted ellipsis">' + e(ui.shortDate(ev.deadlineDate)) +
+                      (ev.link ? ' · ' + (ev.format || 'Онлайн') + ' · ссылка есть' : ' · ссылки нет') + '</div></div>' +
+                  '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.eventForm(\'' + ev.id + '\')">Открыть</button>' +
+                '</div>').join('')
+            : '<div class="panel__body"><p class="small muted" style="margin:0">На две недели вперёд дедлайнов нет</p></div>') +
         '</div>' +
 
-        '<div class="panel">' +
-          '<div class="panel__head"><b style="font-size:14px">' + icon('sparkles', 15) + ' Сводка</b></div>' +
-          '<div class="panel__body">' +
-            '<p class="small" style="margin:0 0 10px;line-height:1.55">' +
-              'За последнюю неделю: <b>' + store.state.applications.length + '</b> заявок, ' +
-              '<b>' + store.state.posts.length + '</b> публикаций, ' +
-              '<b>' + s.flagged + '</b> жалоб.</p>' +
-            '<p class="small muted" style="margin:0 0 12px;line-height:1.5">' +
-              (s.drafts ? s.drafts + ' событие в черновиках.' : 'Черновиков нет.') + '</p>' +
-            '<button class="btn btn--soft btn--sm btn--block" onclick="SH.views.admin.go(\'moderation\')">Открыть модерацию</button>' +
+        '<div class="panel panel--flush">' +
+          '<div class="panel__head"><b style="font-size:14px">Требует внимания</b></div>' +
+          '<div class="panel__body" style="display:grid;gap:12px">' +
+            attentionRow('flag', 'Жалобы и скрытые посты', s.flagged, 'moderation') +
+            attentionRow('calendar', 'Черновики событий', s.drafts, 'events') +
+            attentionRow('users', 'Пустые интересы в профиле', emptyProfiles, 'users') +
           '</div>' +
         '</div>' +
-      '</div>' +
-
-      '<div class="panel" style="margin-top:16px">' +
-        '<div class="panel__head"><b style="font-size:14px">Быстрые действия</b></div>' +
-        '<div class="panel__body" style="display:flex;gap:10px;flex-wrap:wrap">' +
-          '<button class="btn btn--outline btn--sm" onclick="SH.views.admin.eventForm()">' + icon('plus', 15) + 'Новое событие</button>' +
-          '<button class="btn btn--outline btn--sm" onclick="SH.views.admin.userForm()">' + icon('users', 15) + 'Добавить пользователя</button>' +
-          '<button class="btn btn--outline btn--sm" onclick="SH.views.admin.go(\'applications\')">' + icon('file', 15) + 'Заявки</button>' +
-          '<button class="btn btn--outline btn--sm" onclick="SH.views.admin.go(\'ai\')">' + icon('sparkles', 15) + 'ИИ-ключи</button>' +
-          '<button class="btn btn--outline btn--sm" onclick="SH.views.admin.exportCsv()">' + icon('download', 15) + 'Экспорт CSV</button>' +
-        '</div>' +
       '</div>';
+  }
+
+  function attentionRow(ico, label, value, section) {
+    return '<button class="rowline" style="width:100%;text-align:left;border-radius:12px;border:1px solid var(--border)" ' +
+      'onclick="SH.views.admin.go(\'' + section + '\')">' +
+      '<span class="empty__icon" style="width:34px;height:34px;border-radius:10px;background:var(--chip);color:var(--text);margin:0">' +
+        icon(ico, 16) + '</span>' +
+      '<span class="grow" style="font-size:13.5px">' + e(label) + '</span>' +
+      '<b style="font-size:15px">' + value + '</b>' +
+      '<span class="muted">' + icon('chevronRight', 15) + '</span></button>';
   }
 
   function kpi(v, label) {
@@ -4525,14 +4879,22 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       .slice()
       .sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
-    return pageHead('События', 'Публикация, приоритет и оформление',
+    const picking = selectMode.events;
+
+    return pageHead('События', 'Публикация, приоритет, ссылка на сайт мероприятия',
+      '<button class="btn btn--soft btn--sm" onclick="SH.views.admin.toggleSelect(\'events\')">' +
+        (picking ? 'Отменить выбор' : 'Выбрать') + '</button>' +
       '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.eventForm()">' + icon('plus', 16) + 'Создать</button>') +
       searchBox('Поиск по названию или организатору') +
+      bulkBar('events', 'событий') +
       '<div class="panel panel--flush"><div class="table-wrap"><table class="table"><thead><tr>' +
-        '<th>Приоритет</th><th>Событие</th><th>Дедлайн</th><th>Заявки</th><th>Статус</th><th></th>' +
+        (picking ? '<th style="width:34px"></th>' : '') +
+        '<th>Приоритет</th><th>Событие</th><th>Дедлайн</th><th>Просмотры</th><th>Сайт</th><th>Статус</th><th></th>' +
       '</tr></thead><tbody>' +
       list.map((ev) =>
-        '<tr>' +
+        '<tr' + (picked.events.has(ev.id) ? ' style="background:var(--primary-soft)"' : '') + '>' +
+          (picking ? '<td><input type="checkbox" ' + (picked.events.has(ev.id) ? 'checked ' : '') +
+            'onchange="SH.views.admin.pick(\'events\',\'' + ev.id + '\',this.checked)"></td>' : '') +
           '<td><div class="row" style="gap:4px">' +
             '<button class="icon-btn icon-btn--plain" style="width:26px;height:26px" onclick="SH.views.admin.moveEvent(\'' + ev.id + '\',1)">' + icon('arrowLeft', 13) + '</button>' +
             '<b class="mono">' + (ev.priority || 0) + '</b>' +
@@ -4545,7 +4907,10 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
             '<div style="min-width:0"><div style="font-weight:650;max-width:260px" class="ellipsis">' + e(ev.title) + '</div>' +
             '<div class="small muted ellipsis" style="max-width:260px">' + e(ev.organizer || '') + '</div></div></div></td>' +
           '<td>' + e(ui.shortDate(ev.deadlineDate)) + '</td>' +
-          '<td>' + ev.applicants + '</td>' +
+          '<td>' + (ev.views || 0) + '</td>' +
+          '<td>' + (ev.link
+            ? '<a class="tag tag--mint" href="' + e(ev.link) + '" target="_blank" rel="noopener noreferrer">открыть</a>'
+            : '<span class="tag tag--sun">нет ссылки</span>') + '</td>' +
           '<td>' + (ev.status === 'published'
             ? '<span class="tag tag--mint">опубликовано</span>'
             : '<span class="tag tag--sun">черновик</span>') + '</td>' +
@@ -4560,53 +4925,18 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       '</div>';
   }
 
-  /* ───────────────────────── заявки ───────────────────────── */
+  /* ───────────────────────── панель массовых действий ───────────────────────── */
 
-  function applicationsSection() {
-    const list = (cache.applications.length ? cache.applications : store.state.applications)
-      .filter((a) => {
-        if (!query) return true;
-        const u = store.userById(a.userId);
-        const ev = store.event(a.eventId);
-        const hay = (u.name + ' ' + (ev ? ev.title : '')).toLowerCase();
-        return hay.includes(query.toLowerCase());
-      });
-
-    const byStatus = { pending: [], accepted: [], rejected: [] };
-    list.forEach((a) => (byStatus[a.status] || byStatus.pending).push(a));
-
-    const block = (title, items, tone) =>
-      '<div class="panel panel--flush" style="margin-bottom:14px">' +
-        '<div class="panel__head"><b style="font-size:14px">' + e(title) + '</b>' +
-          '<span class="tag tag--' + tone + '" style="margin-left:auto">' + items.length + '</span></div>' +
-        (items.length
-          ? items.map((a) => {
-              const u = store.userById(a.userId);
-              const ev = store.event(a.eventId);
-              return '<div class="rowline">' + ui.avatar(u, 32) +
-                '<div class="grow" style="min-width:0">' +
-                  '<div style="font-size:13.5px;font-weight:650" class="ellipsis">' + e(u.name) + '</div>' +
-                  '<div class="small muted ellipsis">' + e(ev ? ev.title : 'событие удалено') + ' · ' + e(ui.relTime(a.createdAt)) + '</div>' +
-                '</div>' +
-                (a.status !== 'pending' ? '<span class="tag tag--' + (a.status === 'accepted' ? 'mint' : 'blush') + '">' +
-                  (a.status === 'accepted' ? 'принята' : 'отклонена') + '</span>' : '') +
-                (a.status !== 'accepted'
-                  ? '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.setApplication(\'' + a.id + '\',\'accepted\')">Принять</button>'
-                  : '') +
-                (a.status !== 'rejected'
-                  ? '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.setApplication(\'' + a.id + '\',\'rejected\')">Отклонить</button>'
-                  : '') +
-                '<button class="icon-btn icon-btn--plain" style="width:30px;height:30px" onclick="SH.views.admin.applicationNote(\'' + a.id + '\')">' + icon('edit', 15) + '</button>' +
-              '</div>';
-            }).join('')
-          : '<div class="panel__body"><p class="small muted" style="margin:0">Пусто</p></div>') +
+  function bulkBar(kind, what) {
+    const n = picked[kind].size;
+    if (!selectMode[kind]) return '';
+    return '<div class="bulkbar">' +
+      '<b>Выбрано: ' + n + '</b>' +
+      '<span class="spacer"></span>' +
+      '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.pickAll(\'' + kind + '\')">Выбрать все</button>' +
+      '<button class="btn btn--danger btn--xs" ' + (n ? '' : 'disabled ') +
+        'onclick="SH.views.admin.bulkDelete(\'' + kind + '\')">' + icon('trash', 14) + 'Удалить ' + what + '</button>' +
       '</div>';
-
-    return pageHead('Заявки', 'Приём, отклонение и заметки по заявкам учеников', '') +
-      searchBox('Поиск по ученику или событию') +
-      block('На рассмотрении', byStatus.pending, 'sun') +
-      block('Принятые', byStatus.accepted, 'mint') +
-      block('Отклонённые', byStatus.rejected, 'blush');
   }
 
   /* ───────────────────────── пользователи ───────────────────────── */
@@ -4616,18 +4946,30 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       .filter((u) => isRoot() || u.role !== 'root')
       .filter((u) => !query || (u.name + ' ' + (u.email || '')).toLowerCase().includes(query.toLowerCase()));
 
+    const picking = selectMode.users;
+    const me = store.currentUser || {};
+
     return pageHead('Пользователи',
       isRoot() ? 'Все аккаунты: ученики и администраторы' : 'Ученики и администраторы (кроме владельца)',
+      (isRoot()
+        ? '<button class="btn btn--soft btn--sm" onclick="SH.views.admin.toggleSelect(\'users\')">' +
+            (picking ? 'Отменить выбор' : 'Выбрать') + '</button>'
+        : '') +
       '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.userForm()">' + icon('plus', 16) + 'Добавить</button>') +
       searchBox('Поиск по имени или логину') +
+      bulkBar('users', 'пользователей') +
       '<div class="panel panel--flush"><div class="table-wrap"><table class="table"><thead><tr>' +
+        (picking ? '<th style="width:34px"></th>' : '') +
         '<th>Пользователь</th><th>Роль</th><th>Класс</th><th>Состояние</th><th></th>' +
       '</tr></thead><tbody>' +
       list.map((u) =>
-        '<tr>' +
+        '<tr' + (picked.users.has(u.id) ? ' style="background:var(--primary-soft)"' : '') + '>' +
+          (picking ? '<td><input type="checkbox" ' + (picked.users.has(u.id) ? 'checked ' : '') +
+            (u.role === 'root' ? 'disabled ' : '') +
+            'onchange="SH.views.admin.pick(\'users\',\'' + u.id + '\',this.checked)"></td>' : '') +
           '<td><div style="display:flex;gap:10px;align-items:center">' + ui.avatar(u, 32) +
             '<div style="min-width:0"><div style="font-weight:650">' + e(u.name) +
-              (u.id === (store.currentUser || {}).id ? ' <span class="tag" style="font-size:10px">вы</span>' : '') + '</div>' +
+              (u.id === me.id ? ' <span class="tag" style="font-size:10px">вы</span>' : '') + '</div>' +
             '<div class="small muted mono">' + e(u.email || '—') + '</div></div></div></td>' +
           '<td>' + roleTag(u.role) + '</td>' +
           '<td>' + e(u.grade || '—') + '</td>' +
@@ -4635,6 +4977,10 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           '<td style="text-align:right;white-space:nowrap">' +
             '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px" title="Изменить" onclick="SH.views.admin.userForm(\'' + u.id + '\')">' + icon('edit', 16) + '</button>' +
             '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px" title="Доступ" onclick="SH.views.admin.userAccess(\'' + u.id + '\')">' + icon('key', 16) + '</button>' +
+            (u.id !== me.id
+              ? '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px" title="Войти в аккаунт" ' +
+                  'onclick="SH.views.admin.impersonate(\'' + u.id + '\')">' + icon('person', 16) + '</button>'
+              : '') +
             (u.role !== 'root' && (isRoot() || u.role === 'student')
               ? '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px;color:var(--danger)" title="Удалить" onclick="SH.views.admin.removeUser(\'' + u.id + '\')">' + icon('trash', 16) + '</button>'
               : '') +
@@ -4645,7 +4991,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       '<p class="small muted mt-12">' +
         (isRoot()
           ? 'Владелец не отображается в списке для администраторов и не может быть изменён ими.'
-          : 'Аккаунт владельца скрыт и недоступен для изменений.') + '</p>';
+          : 'Аккаунт владельца скрыт и недоступен для изменений.') +
+        ' Кнопка с человечком — вход в аккаунт ученика с возвратом в админку.</p>';
   }
 
   /* ───────────────────────── администраторы (только root) ───────────────────────── */
@@ -4678,6 +5025,37 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   }
 
   /* ───────────────────────── модерация ───────────────────────── */
+
+  function orgsSection() {
+    const list = cache.orgs.filter((o) => !query || o.name.toLowerCase().includes(query.toLowerCase()));
+    return pageHead('Организации',
+      'Школы и агентства: свои ученики, задачи и календарь. Платформа остаётся общей.',
+      '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.orgForm()">' + icon('plus', 16) + 'Создать организацию</button>') +
+      searchBox('Поиск по названию') +
+      (list.length
+        ? '<div class="panel panel--flush"><div class="table-wrap"><table class="table"><thead><tr>' +
+            '<th>Организация</th><th>Тип</th><th>Управляющий</th><th>Учеников</th><th>Задач</th><th></th>' +
+          '</tr></thead><tbody>' +
+          list.map((o) =>
+            '<tr>' +
+              '<td><div style="font-weight:650">' + e(o.name) + '</div>' +
+                '<div class="small muted">' + e(o.city || '—') + '</div></td>' +
+              '<td><span class="tag">' + (o.plan === 'school' ? 'школа' : 'агентство') + '</span>' +
+                (o.status !== 'active' ? ' <span class="tag tag--blush">' + e(o.status === 'paused' ? 'на паузе' : 'архив') + '</span>' : '') + '</td>' +
+              '<td>' + e(o.managerName || '—') + '</td>' +
+              '<td>' + (o.students != null ? o.students : 0) + '</td>' +
+              '<td>' + (o.openTasks != null ? o.openTasks : 0) + '</td>' +
+              '<td style="text-align:right;white-space:nowrap">' +
+                '<button class="btn btn--soft btn--xs" onclick="SH.app.go(\'#/org/' + o.id + '\')">Кабинет</button> ' +
+                '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.orgStudentForm(\'' + o.id + '\')">+ ученик</button>' +
+              '</td>' +
+            '</tr>'
+          ).join('') +
+        '</tbody></table></div></div>'
+        : '<div class="panel">' + ui.empty('building', 'Организаций пока нет',
+            'Создайте агентство или школу — и заведите управляющего, который будет вести своих учеников.',
+            '<button class="btn btn--brand" onclick="SH.views.admin.orgForm()">' + icon('plus', 16) + 'Создать организацию</button>') + '</div>');
+  }
 
   function moderationSection() {
     const posts = (cache.moderation.length ? cache.moderation : store.state.posts)
@@ -4726,22 +5104,28 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     const keys = cache.aiKeys;
     const envCount = cache.envKeys || 0;
 
-    return pageHead('ИИ-ключи', 'Ключи хранятся на сервере. В браузере видны только последние 4 символа.',
+    return pageHead('ИИ-ключи', 'Ключи и адреса моделей хранятся на сервере. В браузере видны только последние 4 символа.',
       '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.aiForm()">' + icon('plus', 16) + 'Добавить ключ</button>') +
 
       '<div class="panel panel--flush">' +
         (keys.length
           ? keys.map((k) =>
-              '<div class="rowline">' +
+              '<div class="rowline" style="align-items:flex-start">' +
                 '<span class="rank-badge" style="width:36px;height:36px;border-radius:10px;background:' +
                   (k.enabled ? 'var(--mint)' : 'var(--chip)') + '">' + icon('key', 17) + '</span>' +
                 '<div class="grow" style="min-width:0">' +
                   '<div style="font-weight:650;font-size:13.5px">' + e(k.label) + ' <span class="mono muted">' + e(k.masked) + '</span></div>' +
+                  '<div class="small muted mono ellipsis" style="max-width:460px">' +
+                    (k.endpoint ? e(k.endpoint) : '<span style="color:var(--danger)">эндпоинт не задан</span>') + '</div>' +
                   '<div class="small muted">' +
                     (k.lastStatus
                       ? (k.lastStatus === 'ok' ? 'работает' : e(k.lastStatus)) + ' · ' + e(ui.relTime(k.lastChecked))
                       : 'не проверялся') +
                   '</div>' +
+                  (k.lastResponse
+                    ? '<div class="mono small muted ellipsis" style="max-width:460px;margin-top:4px">ответ: ' +
+                        e(String(k.lastResponse).replace(/\s+/g, ' ').slice(0, 90)) + '</div>'
+                    : '') +
                 '</div>' +
                 '<button class="switch" role="switch" aria-checked="' + k.enabled + '" ' +
                   'onclick="SH.views.admin.toggleKey(\'' + k.id + '\',' + (!k.enabled) + ')"></button>' +
@@ -4749,15 +5133,85 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
                 '<button class="icon-btn icon-btn--plain" style="width:30px;height:30px;color:var(--danger)" onclick="SH.views.admin.deleteKey(\'' + k.id + '\')">' + icon('trash', 15) + '</button>' +
               '</div>'
             ).join('')
-          : '<div class="panel__body"><p class="small muted" style="margin:0">Ключей в базе нет.</p></div>') +
+          : '<div class="panel__body"><p class="small muted" style="margin:0">Ключей в базе нет. Добавьте хотя бы один — без него ИИ работает в локальном режиме.</p></div>') +
       '</div>' +
 
       '<div class="ai-note mt-16">' + icon('info') +
         '<div>' + (envCount
           ? 'На сервере дополнительно задано ключей: ' + envCount + '. Они используются, только если в списке нет активных.'
-          : 'Резервных ключей на сервере нет. Держите в списке хотя бы два активных — при лимите запрос уйдёт на следующий.') +
+          : 'Ссылка на эндпоинт обязательна: это адрес, куда уходит запрос. Подходит Gemini API или любой OpenAI-совместимый адрес.') +
         '</div></div>' +
-      '<p class="small muted mt-12">При лимите одного ключа (<b>429</b>) запрос автоматически уходит на следующий активный — это и есть резерв.</p>';
+      '<p class="small muted mt-12">При лимите одного ключа (<b>429</b>) запрос автоматически уходит на следующий активный. ' +
+        'Кнопка «Проверить» показывает реальный ответ провайдера.</p>';
+  }
+
+  /* ───────────────────────── системные промты ───────────────────────── */
+
+  function promptsSection() {
+    const list = cache.prompts;
+
+    return pageHead('Промты ИИ', 'Что именно получает модель. Правки применяются сразу — без пересборки.',
+      '<button class="btn btn--soft btn--sm" onclick="SH.views.admin.loadData(true).then(() => SH.app.render())">' +
+        icon('refresh', 15) + 'Обновить</button>') +
+
+      '<div class="panel panel--flush">' +
+        (list.length
+          ? list.map((pr) =>
+              '<div class="rowline" style="align-items:flex-start">' +
+                '<span class="rank-badge" style="width:34px;height:34px;border-radius:10px">' + icon('sparkles', 16) + '</span>' +
+                '<div class="grow" style="min-width:0">' +
+                  '<div style="font-weight:650;font-size:13.5px">' + e(pr.title) +
+                    (pr.isDefault ? ' <span class="tag">по умолчанию</span>' : ' <span class="tag tag--mint">изменён</span>') + '</div>' +
+                  '<div class="small muted">Где используется: ' + e(pr.whereUsed) + '</div>' +
+                  '<div class="small muted ellipsis" style="margin-top:4px;max-width:520px">' +
+                    e(String(pr.template).replace(/\s+/g, ' ').slice(0, 120)) + '…</div>' +
+                '</div>' +
+                '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.promptForm(\'' + pr.key + '\')">Изменить</button>' +
+                (pr.isDefault ? ''
+                  : '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.resetPrompt(\'' + pr.key + '\')">Сбросить</button>') +
+              '</div>'
+            ).join('')
+          : '<div class="panel__body"><p class="small muted" style="margin:0">Промты не загружены.</p></div>') +
+      '</div>' +
+      '<div class="ai-note mt-16">' + icon('info') +
+        '<div>В шаблонах можно использовать переменные вида <b>{{goal}}</b>, <b>{{event}}</b>, <b>{{grade}}</b>. ' +
+        'Если модель недоступна, приложение показывает локальный расчёт — интерфейс не ломается.</div></div>';
+  }
+
+  /* ───────────────────────── данные: бэкап и восстановление (root) ───────────────────────── */
+
+  function dataSection() {
+    if (!isRoot()) return ui.empty('lock', 'Только для владельца', 'Экспорт и импорт базы доступны аккаунту root.');
+
+    const users = store.state.users.length;
+    const events = store.state.events.length;
+
+    return pageHead('Данные', 'Резервная копия всей базы и восстановление из файла',
+      '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.backup()">' + icon('download', 15) + 'Скачать базу</button>') +
+
+      '<div class="panel" style="margin-bottom:14px">' +
+        '<div class="panel__head"><b style="font-size:14px">Что внутри</b></div>' +
+        '<div class="panel__body">' +
+          '<p class="small" style="margin:0 0 10px">В файл попадают пользователи, события, публикации и комментарии, команды, чаты и сообщения, планы, ИИ-ключи и промты. Сессии и одноразовые коды не переносятся.</p>' +
+          '<div class="row" style="gap:8px;flex-wrap:wrap">' +
+            '<span class="tag">' + users + ' пользователей</span>' +
+            '<span class="tag">' + events + ' событий</span>' +
+            '<span class="tag">' + store.state.posts.length + ' публикаций</span>' +
+            '<span class="tag">' + store.state.chats.length + ' чатов</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="panel" style="border-color:var(--blush)">' +
+        '<div class="panel__head"><b style="font-size:14px;color:var(--danger)">Восстановление из файла</b></div>' +
+        '<div class="panel__body">' +
+          '<p class="small" style="margin:0 0 12px">Текущие данные будут заменены содержимым файла. Владелец и системные промты восстанавливаются автоматически.</p>' +
+          '<label class="btn btn--soft btn--sm" style="cursor:pointer">' + icon('download', 15) + 'Выбрать файл' +
+            '<input type="file" id="restore-file" accept="application/json,.json" style="display:none"></label>' +
+          '<div id="restore-name" class="small muted mt-12"></div>' +
+        '</div>' +
+      '</div>' +
+      '<p class="small muted mt-12">Файл — обычный JSON. Откройте его в текстовом редакторе, если нужно проверить данные перед загрузкой.</p>';
   }
 
   /* ───────────────────────── журнал ───────────────────────── */
@@ -4785,6 +5239,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   function roleTag(role) {
     if (role === 'root') return '<span class="tag tag--lav">владелец</span>';
     if (role === 'admin') return '<span class="tag tag--sky">админ</span>';
+    if (role === 'org') return '<span class="tag tag--lav">управляющий</span>';
     return '<span class="tag">ученик</span>';
   }
 
@@ -4797,10 +5252,11 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     };
 
     load('users', () => SH.api.adminUsers().then((r) => r.users || []));
-    load('applications', () => SH.api.adminApplications().then((r) => r.applications || []));
     load('moderation', () => SH.api.adminModeration().then((r) => r.posts || []));
     load('aiKeys', () => SH.api.adminAiKeys().then((r) => { cache.envKeys = r.envKeys || 0; return r.keys || []; }));
+    load('prompts', () => SH.api.adminPrompts().then((r) => r.prompts || []));
     load('audit', () => SH.api.adminAudit().then((r) => r.log || []));
+    load('orgs', () => SH.api.adminOrgs().then((r) => r.orgs || []));
 
     await Promise.all(jobs);
   }
@@ -4818,8 +5274,10 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     // вызывается роутером после каждой отрисовки: догружаем недостающее один раз
     mount() {
       mountSearch();
+      mountNavScroll();
+      mountRestore();
       if (adminMount.pending) return;
-      const missing = ['users', 'applications', 'moderation', 'aiKeys', 'audit']
+      const missing = ['users', 'moderation', 'aiKeys', 'prompts', 'audit', 'orgs']
         .filter((n) => !cache.loaded[n]);
       if (!missing.length) return;
       adminMount.pending = true;
@@ -4960,39 +5418,162 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       });
     },
 
-    /* заявки */
-    async setApplication(id, status) {
-      try {
-        await SH.api.adminSetApplication(id, status, '');
-        store.setApplicationStatus(id, status);
-        cache.loaded.applications = false;
-        ui.toast(status === 'accepted' ? 'Заявка принята' : 'Заявка отклонена');
-        SH.app.render();
-      } catch (err) {
-        ui.toast('Не удалось: ' + err.message);
+    /* массовые операции */
+    toggleSelect(kind) {
+      selectMode[kind] = !selectMode[kind];
+      picked[kind].clear();
+      SH.app.render();
+    },
+
+    pick(kind, id, on) {
+      if (on) picked[kind].add(id); else picked[kind].delete(id);
+      SH.app.render();
+    },
+
+    pickAll(kind) {
+      if (!selectMode[kind]) return;
+      if (kind === 'users') {
+        cache.users.filter((u) => u.role !== 'root' && u.id !== (store.currentUser || {}).id)
+          .forEach((u) => picked.users.add(u.id));
+      } else {
+        store.state.events.forEach((ev) => picked.events.add(ev.id));
       }
+      SH.app.render();
     },
 
-    applicationNote(id) {
-      const app = (cache.applications.length ? cache.applications : store.state.applications).find((a) => a.id === id);
-      ui.sheet({
-        title: 'Заметка к заявке',
-        body: ui.field('app-note', '', { textarea: true, value: (app && app.note) || '', placeholder: 'Причина отклонения или комментарий для себя' }) +
-          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.admin.saveNote(\'' + id + '\')">Сохранить</button>'
-      });
+    bulkDelete(kind) {
+      const ids = Array.from(picked[kind]);
+      if (!ids.length) return;
+      const what = kind === 'users' ? 'пользователей' : 'событий';
+      ui.confirmSheet('Удалить ' + ids.length + ' ' + what + '?',
+        'Действие необратимо. Связанные сессии и закладки тоже исчезнут.', 'Удалить', async () => {
+          try {
+            const res = kind === 'users'
+              ? await SH.api.adminBulkDeleteUsers(ids)
+              : await SH.api.adminBulkDeleteEvents(ids);
+            picked[kind].clear();
+            if (kind === 'events') {
+              store.state.events = store.state.events.filter((ev) => !ids.includes(ev.id));
+            }
+            cache.loaded.users = false;
+            await loadData(true);
+            ui.toast('Удалено: ' + (res.removed || ids.length));
+            SH.app.render();
+          } catch (err) { ui.toast('Ошибка: ' + err.message); }
+        });
     },
 
-    async saveNote(id) {
-      const note = (document.getElementById('app-note') || {}).value || '';
-      const app = (cache.applications.length ? cache.applications : store.state.applications).find((a) => a.id === id);
-      try {
-        await SH.api.adminSetApplication(id, (app && app.status) || 'pending', note);
-        ui.closeSheet();
-        ui.toast('Заметка сохранена');
-      } catch (err) { ui.toast('Ошибка: ' + err.message); }
+    /* вход в аккаунт ученика */
+    impersonate(id) {
+      const u = cache.users.find((x) => x.id === id) || {};
+      ui.confirmSheet('Войти в аккаунт ' + (u.name || 'пользователя') + '?',
+        'Вы выйдете из своей сессии, но сможете вернуться: в профиле появится кнопка «Вернуться в админку».',
+        'Войти', async () => {
+          const res = await store.impersonate(id);
+          if (!res.ok) { ui.toast(res.error || 'Не удалось войти'); return; }
+          ui.toast('Вы в аккаунте ученика');
+          SH.app.go('#/profile');
+        });
     },
 
     /* пользователи */
+    orgForm() {
+      ui.sheet({
+        title: 'Новая организация',
+        subtitle: 'Агентство или школа — со своими учениками и календарём',
+        body:
+          ui.field('org-name', 'Название', { placeholder: 'Агентство «Путь в вуз»' }) +
+          '<div style="margin-top:12px">' +
+            ui.select('org-plan', 'Тип', [{ value: 'agency', label: 'Агентство' }, { value: 'school', label: 'Школа' }], 'agency') +
+          '</div>' +
+          '<div class="form-grid" style="margin-top:12px">' +
+            ui.field('org-city', 'Город', { value: 'Москва' }) +
+            ui.field('org-contact', 'Контакт', { placeholder: 'телефон или почта' }) +
+          '</div>' +
+          '<div class="card" style="background:var(--chip);border:0;margin-top:14px;padding:14px">' +
+            '<div class="small muted" style="margin-bottom:10px">Управляющий организацией (необязательно)</div>' +
+            ui.field('org-m-name', 'Имя', { placeholder: 'Ирина Соколова' }) +
+            ui.field('org-m-login', 'Логин', { placeholder: 'irina@agency.ru' }) +
+            ui.field('org-m-pass', 'Пароль', { placeholder: 'пусто — сгенерируем' }) +
+          '</div>' +
+          '<button class="btn btn--brand btn--block mt-16" id="org-save">Создать организацию</button>',
+        onMount(el, destroy) {
+          el.querySelector('#org-save').addEventListener('click', () => {
+            const name = el.querySelector('#org-name').value.trim();
+            if (name.length < 2) { ui.toast('Введите название'); return; }
+            const payload = {
+              name,
+              plan: el.querySelector('#org-plan').value,
+              city: el.querySelector('#org-city').value.trim(),
+              contact: el.querySelector('#org-contact').value.trim(),
+              managerName: el.querySelector('#org-m-name').value.trim(),
+              managerLogin: el.querySelector('#org-m-login').value.trim().toLowerCase(),
+              managerPassword: el.querySelector('#org-m-pass').value.trim()
+            };
+            destroy();
+            SH.api.adminCreateOrg(payload)
+              .then((res) => {
+                cache.loaded.orgs = false;
+                loadData(true).then(() => { if (section === 'orgs') SH.app.render(); });
+                if (res.manager) {
+                  ui.sheet({
+                    title: 'Организация создана',
+                    subtitle: name,
+                    body: '<p class="small muted" style="margin:0 0 12px">Данные управляющего — передайте ему:</p>' +
+                      '<div class="cred-box"><div class="cred-box__row"><span>Логин</span><b>' + e(res.manager.login) + '</b></div>' +
+                      '<div class="cred-box__row"><span>Пароль</span><b>' + e(res.manager.password) + '</b></div></div>' +
+                      '<button class="btn btn--soft btn--block" data-close style="margin-top:14px">Готово</button>'
+                  });
+                } else {
+                  ui.toast('Организация создана');
+                }
+              })
+              .catch((err) => ui.toast('Ошибка: ' + err.message));
+          });
+        }
+      });
+    },
+
+    orgStudentForm(orgId) {
+      const org = (cache.orgs || []).find((o) => o.id === orgId) || {};
+      ui.sheet({
+        title: 'Новый ученик',
+        subtitle: org.name || 'Организация',
+        body:
+          ui.field('os-name', 'Имя и фамилия', { placeholder: 'Азиз Рахимов' }) +
+          '<div class="form-grid" style="margin-top:12px">' +
+            ui.field('os-login', 'Логин', { placeholder: 'aziz@school.ru' }) +
+            ui.field('os-pass', 'Пароль', { placeholder: 'пусто — сгенерируем' }) +
+          '</div>' +
+          ui.field('os-grade', 'Класс', { placeholder: '10 класс', style: 'margin-top:12px' }) +
+          '<button class="btn btn--brand btn--block mt-16" id="os-save">Создать аккаунт</button>',
+        onMount(el, destroy) {
+          el.querySelector('#os-save').addEventListener('click', () => {
+            const name = el.querySelector('#os-name').value.trim();
+            const login = el.querySelector('#os-login').value.trim().toLowerCase();
+            if (name.length < 2) { ui.toast('Укажите имя'); return; }
+            if (login.length < 3) { ui.toast('Логин минимум 3 символа'); return; }
+            const password = el.querySelector('#os-pass').value.trim();
+            const grade = el.querySelector('#os-grade').value.trim();
+            destroy();
+            SH.api.adminCreateUser({ name, login, password, grade, role: 'student', orgId })
+              .then((res) => {
+                cache.loaded.orgs = false; cache.loaded.users = false;
+                loadData(true).then(() => SH.app.render());
+                ui.sheet({
+                  title: 'Аккаунт создан',
+                  body: '<p class="small muted" style="margin:0 0 12px">Передайте ученику данные для входа:</p>' +
+                    '<div class="cred-box"><div class="cred-box__row"><span>Логин</span><b>' + e(res.login) + '</b></div>' +
+                    '<div class="cred-box__row"><span>Пароль</span><b>' + e(res.password || password) + '</b></div></div>' +
+                    '<button class="btn btn--soft btn--block" data-close style="margin-top:14px">Готово</button>'
+                });
+              })
+              .catch((err) => ui.toast('Ошибка: ' + err.message));
+          });
+        }
+      });
+    },
+
     userForm(id, forcedRole) {
       const u = id ? cache.users.find((x) => x.id === id) : null;
       const roleFixed = forcedRole === 'admin';
@@ -5017,7 +5598,16 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
             ? '<div class="field" style="margin-top:12px"><label class="field-label">Роль</label>' +
               '<select id="u-role">' +
                 '<option value="student"' + (u && u.role === 'student' ? ' selected' : '') + '>Ученик</option>' +
+                '<option value="org"' + (u && u.role === 'org' ? ' selected' : '') + '>Управляющий организации</option>' +
                 '<option value="admin"' + ((u && u.role === 'admin') || roleFixed ? ' selected' : '') + '>Администратор</option>' +
+              '</select></div>'
+            : '') +
+          (!targetIsRoot && !self && (cache.orgs || []).length
+            ? '<div class="field" style="margin-top:12px"><label class="field-label">Организация</label>' +
+              '<select id="u-org">' +
+                '<option value="">Без организации</option>' +
+                cache.orgs.map((o) => '<option value="' + o.id + '"' +
+                  ((u && u.orgId === o.id) ? ' selected' : '') + '>' + e(o.name) + '</option>').join('') +
               '</select></div>'
             : '') +
           '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.admin.saveUser(' + (u ? "'" + u.id + "'" : 'null') + ')">' +
@@ -5036,7 +5626,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           const role = (document.getElementById('u-role') || {}).value || 'student';
           const res = await SH.api.adminCreateUser({
             name, login: v('u-login').trim(), password,
-            grade: v('u-grade'), school: v('u-school'), role
+            grade: v('u-grade'), school: v('u-school'), role,
+            orgId: v('u-org') || null
           });
           ui.closeSheet();
           ui.sheet({
@@ -5053,6 +5644,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
             name, login: v('u-login').trim(),
             grade: v('u-grade'), school: v('u-school')
           };
+          const orgSel = document.getElementById('u-org');
+          if (orgSel) patch.orgId = orgSel.value || null;
           const roleSel = document.getElementById('u-role');
           if (roleSel) patch.role = roleSel.value;
 
@@ -5227,11 +5820,19 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     /* ИИ-ключи */
     aiForm() {
       ui.sheet({
-        title: 'Новый ключ Gemini',
-        subtitle: 'Ключи создаются на aistudio.google.com/apikey',
+        title: 'Новый ключ',
+        subtitle: 'Ключ создаётся у провайдера, ссылка на модель обязательна',
         body:
           ui.field('key-label', 'Название', { placeholder: 'Основной' }) +
           ui.field('key-secret', 'Ключ', { placeholder: 'AIza…', style: 'margin-top:12px' }) +
+          ui.field('key-endpoint', 'Ссылка на эндпоинт', {
+            value: 'https://generativelanguage.googleapis.com/v1beta',
+            placeholder: 'https://…',
+            style: 'margin-top:12px'
+          }) +
+          '<p class="small muted mt-12">Gemini: <span class="mono">https://generativelanguage.googleapis.com/v1beta</span><br>' +
+            'OpenAI-совместимый: адрес до <span class="mono">/chat/completions</span>. ' +
+            'Можно вставить <span class="mono">{key}</span> и <span class="mono">{model}</span> в ссылку — они подставятся сами.</p>' +
           '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.admin.addKey()">Добавить</button>'
       });
     },
@@ -5239,8 +5840,10 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     async addKey() {
       const label = (document.getElementById('key-label') || {}).value || '';
       const key = (document.getElementById('key-secret') || {}).value || '';
+      const endpoint = (document.getElementById('key-endpoint') || {}).value || '';
+      if (!/^https:\/\//.test(endpoint.trim())) { ui.toast('Укажите ссылку на эндпоинт'); return; }
       try {
-        await SH.api.adminAddAiKey({ label: label.trim() || 'Gemini', key: key.trim() });
+        await SH.api.adminAddAiKey({ label: label.trim() || 'Gemini', key: key.trim(), endpoint: endpoint.trim() });
         ui.closeSheet();
         ui.toast('Ключ добавлен');
         cache.loaded.aiKeys = false;
@@ -5266,8 +5869,22 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         cache.loaded.aiKeys = false;
         await loadData(true);
         SH.app.render();
-        if (res.ok) ui.toast('Ключ работает');
-        else ui.toast('Не работает: ' + (res.error || '').slice(0, 60));
+
+        const raw = String(res.raw || res.error || '(пусто)');
+        ui.sheet({
+          title: res.ok ? 'Ключ работает' : 'Ключ не ответил',
+          subtitle: (res.httpStatus ? 'HTTP ' + res.httpStatus + ' · ' : '') + (res.ms || 0) + ' мс',
+          body:
+            (res.ok
+              ? '<div class="card" style="background:var(--mint);border:0;margin-bottom:12px">' +
+                  '<div class="small">Ответ модели</div><div style="font-weight:650">' + e(res.sample || '') + '</div></div>'
+              : '<div class="card" style="background:var(--blush);border:0;margin-bottom:12px">' +
+                  '<div class="small">Ошибка</div><div style="font-weight:650">' + e(res.error || 'нет ответа') + '</div></div>') +
+            '<div class="field-label">Что вернул провайдер</div>' +
+            '<pre class="mono" style="white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:auto;' +
+              'background:var(--chip);padding:12px;border-radius:12px;margin:6px 0 0">' + e(raw.slice(0, 1800)) + '</pre>' +
+            '<button class="btn btn--brand btn--block mt-16" data-close>Понятно</button>'
+        });
       } catch (err) { ui.toast('Ошибка: ' + err.message); }
     },
 
@@ -5282,13 +5899,121 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       });
     },
 
+    /* промты */
+    promptForm(key) {
+      const pr = cache.prompts.find((x) => x.key === key);
+      if (!pr) return;
+      ui.sheet({
+        title: pr.title,
+        subtitle: 'Где используется: ' + pr.whereUsed,
+        body:
+          '<div class="field-label">Текст промта</div>' +
+          '<textarea id="prompt-text" spellcheck="false" style="min-height:230px;width:100%;padding:12px 14px;' +
+            'background:var(--surface);border:1.5px solid var(--border);border-radius:14px;outline:none;' +
+            'font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;line-height:1.6">' +
+            e(pr.template) + '</textarea>' +
+          '<p class="small muted mt-12" style="margin-bottom:0">Переменные: {{goal}}, {{event}}, {{description}}, {{tags}}, ' +
+            '{{grade}}, {{skills}}, {{interests}}, {{stats}}.</p>' +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.admin.savePrompt(\'' + key + '\')">Сохранить</button>'
+      });
+    },
+
+    async savePrompt(key) {
+      const el = document.getElementById('prompt-text');
+      const template = el ? el.value.trim() : '';
+      if (template.length < 10) { ui.toast('Слишком короткий промт'); return; }
+      try {
+        await SH.api.adminSavePrompt(key, template);
+        ui.closeSheet();
+        ui.toast('Промт сохранён');
+        cache.loaded.prompts = false;
+        await loadData(true);
+        SH.app.render();
+      } catch (err) { ui.toast('Ошибка: ' + err.message); }
+    },
+
+    async resetPrompt(key) {
+      const pr = cache.prompts.find((x) => x.key === key);
+      if (!pr || !pr.defaultTemplate) return;
+      try {
+        await SH.api.adminSavePrompt(key, pr.defaultTemplate);
+        ui.toast('Промт сброшен к стандартному');
+        cache.loaded.prompts = false;
+        await loadData(true);
+        SH.app.render();
+      } catch (err) { ui.toast('Ошибка: ' + err.message); }
+    },
+
+    /* ИИ-сводка по данным школы */
+    async digest() {
+      ui.sheet({
+        title: 'ИИ-сводка',
+        subtitle: 'Модель смотрит на цифры платформы',
+        body: '<div style="padding:8px 0 4px">' + ui.skeletonList(3) + '</div>',
+        dismissible: false
+      });
+      const s = store.stats();
+      const stats = 'учеников ' + s.students + ', админов ' + s.admins + ', событий ' + s.events +
+        ', черновиков ' + s.drafts + ', публикаций ' + s.posts + ', жалоб ' + s.flagged;
+      const text = await SH.ai.complete({ promptKey: 'digest', vars: { stats } });
+      const lines = text ? text.split('\n').filter(Boolean) : SH.ai.digest();
+      ui.closeSheet();
+      ui.sheet({
+        title: 'ИИ-сводка',
+        subtitle: text ? 'Ответ модели' : 'Локальный расчёт',
+        body: '<div class="list">' + lines.map((line) =>
+          '<div class="rowline" style="align-items:flex-start"><span class="muted" style="margin-top:2px">' +
+            icon('sparkles', 15) + '</span><div style="font-size:13.5px;line-height:1.5">' + e(line) + '</div></div>'
+        ).join('') + '</div>' +
+        '<button class="btn btn--brand btn--block mt-16" data-close>Понятно</button>'
+      });
+    },
+
+    /* бэкап */
+    async backup() {
+      ui.toast('Готовлю файл…');
+      try {
+        const res = await SH.api.adminBackup();
+        const payload = JSON.stringify(res.data, null, 2);
+        const blob = new Blob([payload], { type: 'application/json' });
+        const a = document.createElement('a');
+        const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'student-hub-backup-' + stamp + '.json';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+        ui.toast('Файл скачан');
+      } catch (err) { ui.toast('Ошибка: ' + err.message); }
+    },
+
+    async restoreFile(file) {
+      if (!file) return;
+      let data;
+      try {
+        data = JSON.parse(await file.text());
+      } catch (e) { ui.toast('Файл не читается: нужен JSON'); return; }
+      const rows = data && data.tables
+        ? Object.keys(data.tables).map((k) => k + ': ' + (data.tables[k] || []).length).join(', ')
+        : 'неизвестно';
+      ui.confirmSheet('Восстановить базу из файла?',
+        'Текущие данные будут заменены. Содержимое файла — ' + rows + '.', 'Восстановить', async () => {
+          try {
+            const res = await SH.api.adminRestore(data);
+            ui.toast('Готово: ' + Object.keys(res.restored || {}).length + ' таблиц');
+            cache.loaded.users = false;
+            await loadData(true);
+            SH.app.render();
+          } catch (err) { ui.toast('Ошибка: ' + err.message); }
+        });
+    },
+
     /* прочее */
     exportCsv() {
-      const rows = [['Имя', 'Логин', 'Роль', 'Класс', 'Школа', 'Заявок']];
+      const rows = [['Имя', 'Логин', 'Роль', 'Класс', 'Школа', 'Состояние']];
       (cache.users.length ? cache.users : store.state.users).forEach((u) => {
         rows.push([
           u.name, u.email || '', u.role, u.grade || '', u.school || '',
-          store.state.applications.filter((a) => a.userId === u.id).length
+          u.blocked ? 'заблокирован' : 'активен'
         ]);
       });
       const csv = rows.map((r) => r.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
@@ -5314,6 +6039,480 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   SH.views.admin = Object.assign({ html, mount: actions.mount, loadData }, actions);
   SH.views.admin.getSection = () => section;
   SH.views.admin.resetCache = () => { Object.keys(cache.loaded).forEach((k) => delete cache.loaded[k]); };
+})(window.SH = window.SH || {});
+
+/* ==========================================================================
+   Кабинет организации (B2B): ученики, задачи и календарь портфеля.
+   Доступен управляющему организации, а также админу и владельцу платформы
+   (они могут открыть любую организацию: #/org/<id>).
+   ========================================================================== */
+(function (SH) {
+  'use strict';
+
+  const e = SH.ui.esc;
+  const icon = SH.icon;
+  const store = SH.store;
+
+  const KIND = {
+    external: { label: 'Внешний дедлайн', color: '#e74c3c', soft: '#fde8e6' },
+    internal: { label: 'Внутренняя задача', color: '#3b82f6', soft: '#e6efff' },
+    milestone: { label: 'Веха проекта', color: '#22a06b', soft: '#e3f7ec' }
+  };
+
+  let data = { org: null, manager: null, students: [], slots: [], deadlines: [], kpi: null };
+  let tab = 'overview';
+  let month = startOfMonth(new Date());
+  let loading = false;
+  let error = '';
+  let loadedFor = '';
+
+  function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+  function monthName() {
+    const m = SH.ui.MONTHS[month.getMonth()] || '';
+    return m.charAt(0).toUpperCase() + m.slice(1) + ' ' + month.getFullYear();
+  }
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parseDay(s) { const p = String(s || '').slice(0, 10).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function dayLabel(d) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const diff = Math.round((d - today) / 864e5);
+    if (diff === 0) return 'сегодня';
+    if (diff === 1) return 'завтра';
+    if (diff === -1) return 'вчера';
+    return d.getDate() + ' ' + SH.ui.MONTHS[d.getMonth()].toLowerCase();
+  }
+
+  /* ─────────────────────────── данные ─────────────────────────── */
+
+  function orgId() {
+    const route = (location.hash.replace(/^#\/?/, '').split('/') || []);
+    if (route[0] === 'org' && route[1]) return route[1];
+    const me = store.currentUser || {};
+    return me.orgId || null;
+  }
+
+  function load(force) {
+    const id = orgId();
+    if (!id) { data = { org: null, students: [], slots: [], deadlines: [], kpi: null }; return Promise.resolve(); }
+    if (!force && loadedFor === id) return Promise.resolve();
+    loading = true; error = '';
+    return SH.api.orgOverview(id)
+      .then((d) => {
+        data = d || data;
+        loadedFor = id;
+      })
+      .catch((err) => { error = err.message || 'Не удалось загрузить организацию'; })
+      .finally(() => {
+        loading = false;
+        if (SH.app && store.isAuthed) SH.app.render();
+      });
+  }
+
+  /* ─────────────────────────── разметка ─────────────────────────── */
+
+  function kpiBar() {
+    const k = data.kpi || { students: 0, open: 0, overdue: 0, weekDeadlines: 0 };
+    const item = (value, label, tone) =>
+      '<div class="kpi-card">' +
+        '<div class="kpi__value' + (tone ? ' kpi__value--' + tone : '') + '">' + value + '</div>' +
+        '<div class="kpi__label">' + e(label) + '</div>' +
+      '</div>';
+    return '<div class="kpi-row">' +
+      item(k.students, 'учеников') +
+      item(k.open, 'задач в работе') +
+      item(k.overdue, 'просрочено', k.overdue ? 'danger' : '') +
+      item(k.weekDeadlines, 'дедлайнов на неделе') +
+    '</div>';
+  }
+
+  function tabs() {
+    const list = [['overview', 'Обзор'], ['students', 'Ученики'], ['calendar', 'Календарь']];
+    return '<div class="segmented">' + list.map(([id, label]) =>
+      '<button class="segmented__item' + (tab === id ? ' is-active' : '') +
+        '" onclick="SH.views.org.setTab(\'' + id + '\')">' + e(label) + '</button>'
+    ).join('') + '</div>';
+  }
+
+  function slotChip(s, compact) {
+    const k = KIND[s.kind] || KIND.internal;
+    const student = data.students.find((u) => u.id === s.studentId);
+    return '<div class="cal-item cal-item--' + e(s.kind || 'internal') + (s.done ? ' is-done' : '') + '"' +
+      ' draggable="true" title="' + e(s.title) + '" ondragstart="SH.views.org.dragStart(event,\'' + s.id + '\')"' +
+      ' onclick="SH.views.org.openSlot(\'' + s.id + '\')"' +
+      ' style="--cal-color:' + k.color + ';--cal-soft:' + k.soft + '">' +
+      '<span class="cal-item__dot"></span>' +
+      '<span class="cal-item__text">' + e(s.title) + (compact || !student ? '' : ' · ' + e(student.name.split(' ')[0])) + '</span>' +
+    '</div>';
+  }
+
+  function overviewTab() {
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    const horizon = new Date(now.getTime() + 30 * 864e5);
+    const upcoming = []
+      .concat((data.deadlines || []).map((d) => ({ date: d.date, title: d.title, kind: 'external', studentId: d.studentId, eventId: d.eventId })))
+      .concat((data.slots || []).map((s) => ({ date: s.date, title: s.title, kind: s.kind, studentId: s.studentId, id: s.id, done: s.done })))
+      .filter((x) => x.date && parseDay(x.date) >= new Date(now.getTime() - 864e5) && parseDay(x.date) <= horizon)
+      .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+      .slice(0, 20);
+
+    if (!data.org) {
+      return ui_empty('Организация не найдена', 'Владелец платформы ещё не привязал вас к организации.');
+    }
+
+    return (
+      '<div class="panel">' +
+        '<div class="panel__head"><span class="h3">Ближайшие 30 дней</span>' +
+          '<button class="btn btn--soft btn--sm" onclick="SH.views.org.slotForm()">' + icon('plus', 15) + 'Задача</button></div>' +
+        (upcoming.length
+          ? '<div class="list-flat">' + upcoming.map((x) => {
+              const k = KIND[x.kind] || KIND.internal;
+              const student = data.students.find((u) => u.id === x.studentId);
+              return '<div class="row-line" style="--cal-color:' + k.color + '">' +
+                '<span class="row-line__mark"></span>' +
+                '<span class="row-line__date">' + e(dayLabel(parseDay(x.date))) + '</span>' +
+                '<span class="row-line__title' + (x.done ? ' is-done' : '') + '">' + e(x.title) + '</span>' +
+                '<span class="row-line__who">' + e(student ? student.name.split(' ')[0] : (x.kind === 'external' ? 'дедлайн' : 'вся команда')) + '</span>' +
+              '</div>';
+            }).join('') + '</div>'
+          : ui_empty('Пока пусто', 'Добавьте задачу или дождитесь дедлайнов учеников.')) +
+      '</div>' +
+
+      '<div class="panel mt-16">' +
+        '<div class="panel__head"><span class="h3">Кто в зоне риска</span>' +
+          '<button class="btn btn--soft btn--sm" onclick="SH.views.org.setTab(\'calendar\')">Календарь</button></div>' +
+        riskList() +
+      '</div>'
+    );
+  }
+
+  function riskList() {
+    const now = new Date();
+    const rows = (data.slots || []).filter((s) => !s.done && parseDay(s.date) < now);
+    if (!rows.length) return '<p class="small muted" style="margin:10px 2px">Просроченных задач нет — все в графике.</p>';
+    return '<div class="list-flat">' + rows.slice(0, 12).map((s) => {
+      const student = data.students.find((u) => u.id === s.studentId);
+      return '<div class="row-line" style="--cal-color:' + (KIND[s.kind] || KIND.internal).color + '">' +
+        '<span class="row-line__mark"></span>' +
+        '<span class="row-line__date">' + e(dayLabel(parseDay(s.date))) + '</span>' +
+        '<span class="row-line__title">' + e(s.title) + '</span>' +
+        '<span class="row-line__who">' + e(student ? student.name.split(' ')[0] : 'команда') + '</span>' +
+      '</div>';
+    }).join('') + '</div>';
+  }
+
+  function studentsTab() {
+    if (!data.students.length) {
+      return '<div class="panel">' +
+        ui_empty('В организации пока никого нет', 'Создайте первый аккаунт ученика — он сразу войдёт под этим логином.',
+          '<button class="btn btn--brand" onclick="SH.views.org.studentForm()">' + icon('plus', 16) + 'Создать аккаунт</button>') +
+      '</div>';
+    }
+    return '<div class="panel panel--flush">' +
+      '<div class="panel__pad row"><span class="h3">Ученики и сотрудники</span><span class="spacer"></span>' +
+        '<button class="btn btn--brand btn--sm" onclick="SH.views.org.studentForm()">' + icon('plus', 15) + 'Создать аккаунт</button></div>' +
+      '<div class="table-wrap"><table class="table"><thead><tr>' +
+        '<th>Кто</th><th>Роль</th><th>Класс</th><th>Задачи</th><th>Состояние</th>' +
+      '</tr></thead><tbody>' +
+      data.students.map((u) => {
+        const mine = data.slots.filter((s) => s.studentId === u.id);
+        const open = mine.filter((s) => !s.done).length;
+        return '<tr>' +
+          '<td><div style="display:flex;gap:10px;align-items:center">' + SH.ui.avatar(u, 32) +
+            '<div><div style="font-weight:650">' + e(u.name) + '</div>' +
+            '<div class="small muted mono">' + e(u.email || '—') + '</div></div></div></td>' +
+          '<td>' + (u.role === 'org' ? '<span class="tag tag--lav">управляющий</span>'
+            : (u.role === 'admin' ? '<span class="tag tag--lav">админ</span>' : '<span class="tag">ученик</span>')) + '</td>' +
+          '<td>' + e(u.grade || '—') + '</td>' +
+          '<td>' + (open ? open + ' в работе' : '—') + '</td>' +
+          '<td>' + (u.blocked ? '<span class="tag tag--blush">заблокирован</span>' : '<span class="tag tag--mint">активен</span>') + '</td>' +
+        '</tr>';
+      }).join('') +
+      '</tbody></table></div></div>';
+  }
+
+  function calendarTab() {
+    const first = new Date(month.getFullYear(), month.getMonth(), 1);
+    const startShift = (first.getDay() + 6) % 7; // понедельник первый
+    const gridStart = new Date(first.getFullYear(), first.getMonth(), 1 - startShift);
+    const cells = [];
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+
+    const events = {};
+    (data.deadlines || []).forEach((d) => {
+      const key = String(d.date).slice(0, 10);
+      (events[key] = events[key] || []).push({ kind: 'external', title: d.title, studentId: d.studentId, external: true });
+    });
+    (data.slots || []).forEach((s) => {
+      const key = String(s.date).slice(0, 10);
+      (events[key] = events[key] || []).push(s);
+    });
+
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+      const key = ymd(d);
+      const list = (events[key] || []).slice(0, 3);
+      const more = (events[key] || []).length - list.length;
+      cells.push(
+        '<div class="cal-cell' + (d.getMonth() !== month.getMonth() ? ' is-out' : '') +
+          (d.getTime() === today.getTime() ? ' is-today' : '') + '"' +
+          ' ondragover="event.preventDefault()" ondrop="SH.views.org.drop(event,\'' + key + '\')"' +
+          ' onclick="SH.views.org.slotForm(null,\'' + key + '\')">' +
+          '<div class="cal-cell__num">' + d.getDate() + '</div>' +
+          list.map((x) => x.external
+            ? '<div class="cal-item cal-item--external" title="' + e(x.title) + '" style="--cal-color:' + KIND.external.color + ';--cal-soft:' + KIND.external.soft + '">' +
+                '<span class="cal-item__dot"></span><span class="cal-item__text">' + e(x.title) + '</span></div>'
+            : slotChip(x, true)).join('') +
+          (more > 0 ? '<div class="cal-more">+' + more + '</div>' : '') +
+        '</div>'
+      );
+    }
+
+    return (
+      '<div class="panel">' +
+        '<div class="cal-head">' +
+          '<div class="cal-nav">' +
+            '<button class="icon-btn icon-btn--plain" onclick="SH.views.org.shiftMonth(-1)" aria-label="Предыдущий месяц">' + icon('arrowLeft', 18) + '</button>' +
+            '<div class="cal-title">' + monthName() + '</div>' +
+            '<button class="icon-btn icon-btn--plain" onclick="SH.views.org.shiftMonth(1)" aria-label="Следующий месяц">' + icon('arrowRight', 18) + '</button>' +
+          '</div>' +
+          '<div class="cal-actions">' +
+            '<button class="btn btn--soft btn--sm" onclick="SH.views.org.todayMonth()">Сегодня</button>' +
+            '<button class="btn btn--brand btn--sm" onclick="SH.views.org.slotForm()">' + icon('plus', 15) + 'Задача</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="cal-legend">' +
+          ['external', 'internal', 'milestone'].map((k) =>
+            '<span class="cal-legend__item"><i style="background:' + KIND[k].color + '"></i>' + KIND[k].label + '</span>').join('') +
+          '<span class="cal-legend__hint">перетащите задачу на другой день, чтобы перенести дедлайн</span>' +
+        '</div>' +
+        '<div class="cal-grid cal-grid--head">' +
+          ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map((d) => '<div class="cal-dow">' + d + '</div>').join('') +
+        '</div>' +
+        '<div class="cal-grid">' + cells.join('') + '</div>' +
+      '</div>'
+    );
+  }
+
+  function ui_empty(title, text, action) {
+    return '<div class="empty" style="padding:28px 12px">' +
+      '<div class="empty__icon">' + icon('grid') + '</div>' +
+      '<h3>' + e(title) + '</h3><p>' + e(text) + '</p>' +
+      (action ? '<div class="mt-16">' + action + '</div>' : '') +
+    '</div>';
+  }
+
+  function html() {
+    const me = store.currentUser || {};
+    const isStaff = me.role === 'admin' || me.role === 'root';
+    const org = data.org;
+    const title = org ? org.name : (isStaff ? 'Организации' : 'Моя организация');
+
+    return '<div class="screen screen--org">' +
+      '<div class="screen-head">' +
+        '<div class="grow">' +
+          '<h1 class="screen-title">' + e(title) + '</h1>' +
+          '<p class="screen-sub">' +
+            (org
+              ? (org.plan === 'school' ? 'Школа' : 'Агентство') +
+                (org.city ? ' · ' + e(org.city) : '') +
+                (org.managerName ? ' · управляющий ' + e(org.managerName) : '')
+              : 'B2B-кабинет: ученики, задачи и дедлайны в одном календаре') +
+          '</p>' +
+        '</div>' +
+        (isStaff
+          ? '<button class="btn btn--soft btn--sm" onclick="SH.app.go(\'#/admin\')">В админку</button>'
+          : '') +
+      '</div>' +
+
+      (error ? '<div class="alert alert--danger">' + e(error) + '</div>' : '') +
+      (loading && !org ? '<div class="panel">' + SH.ui.skeletonList(3) + '</div>' : '')
+
+      + (org ? kpiBar() + tabs() : '')
+
+      + (org
+          ? (tab === 'students' ? studentsTab() : tab === 'calendar' ? calendarTab() : overviewTab())
+          : (loading ? '' : noOrgBlock(isStaff)))
+
+      + '<div style="height:24px"></div>' +
+    '</div>';
+  }
+
+  function noOrgBlock(isStaff) {
+    if (isStaff) {
+      return '<div class="panel">' + ui_empty('Организаций пока нет',
+        'Создайте первую организацию в админке — раздел «Организации».',
+        '<button class="btn btn--brand" onclick="SH.app.go(\'#/admin\')">Открыть админку</button>') + '</div>';
+    }
+    return '<div class="panel">' + ui_empty('Нет привязки к организации',
+      'Напишите администратору платформы: он добавит вас в организацию — и здесь появятся ученики.') + '</div>';
+  }
+
+  /* ─────────────────────────── действия ─────────────────────────── */
+
+  const actions = {
+    setTab(next) { tab = next; SH.app.render(); },
+    shiftMonth(delta) {
+      month = new Date(month.getFullYear(), month.getMonth() + delta, 1);
+      SH.app.render();
+    },
+    todayMonth() { month = startOfMonth(new Date()); SH.app.render(); },
+
+    dragStart(ev, id) {
+      try {
+        ev.dataTransfer.setData('text/plain', id);
+        ev.dataTransfer.effectAllowed = 'move';
+      } catch (err) { /* старый браузер */ }
+    },
+
+    drop(ev, date) {
+      ev.preventDefault();
+      let id = '';
+      try { id = ev.dataTransfer.getData('text/plain'); } catch (err) { /* ignore */ }
+      if (!id) return;
+      const slot = (data.slots || []).find((s) => s.id === id);
+      if (!slot) return;
+      if (String(slot.date).slice(0, 10) === date) return;
+      const prev = slot.date;
+      slot.date = date + 'T09:00:00.000Z';
+      SH.app.render();
+      SH.api.orgUpdateSlot(id, { date: slot.date })
+        .then(() => SH.ui.toast('Перенесено на ' + dayLabel(parseDay(date))))
+        .catch((err) => {
+          slot.date = prev;
+          SH.app.render();
+          SH.ui.toast('Не удалось перенести: ' + (err.message || 'ошибка'));
+        });
+    },
+
+    openSlot(id) {
+      const slot = (data.slots || []).find((s) => s.id === id);
+      if (!slot) return;
+      const students = data.students.map((u) => ({ value: u.id, label: u.name }));
+      SH.ui.sheet({
+        title: slot.title,
+        subtitle: dayLabel(parseDay(slot.date)) + ' · ' + (KIND[slot.kind] || KIND.internal).label,
+        body:
+          '<p class="small muted" style="margin:0 0 14px">' + (slot.note ? e(slot.note) : 'Без описания') + '</p>' +
+          '<div class="row" style="gap:10px;flex-wrap:wrap">' +
+            '<button class="btn btn--soft btn--sm" id="slot-toggle">' + (slot.done ? 'Вернуть в работу' : 'Отметить готово') + '</button>' +
+            '<button class="btn btn--soft btn--sm" id="slot-edit">Изменить</button>' +
+            '<button class="btn btn--danger btn--sm" id="slot-del">Удалить</button>' +
+          '</div>' +
+          (students.length ? '' : ''),
+        onMount(el, destroy) {
+          el.querySelector('#slot-toggle').addEventListener('click', () => {
+            const next = !slot.done;
+            slot.done = next;
+            destroy(); SH.app.render();
+            SH.api.orgUpdateSlot(id, { done: next })
+              .then(() => SH.ui.toast(next ? 'Задача закрыта' : 'Задача снова в работе'))
+              .catch((err) => SH.ui.toast('Ошибка: ' + err.message));
+          });
+          el.querySelector('#slot-edit').addEventListener('click', () => { destroy(); actions.slotForm(slot); });
+          el.querySelector('#slot-del').addEventListener('click', () => {
+            destroy();
+            SH.ui.confirmSheet('Удалить задачу?', slot.title, 'Удалить', () => {
+              data.slots = data.slots.filter((s) => s.id !== id);
+              SH.app.render();
+              SH.api.orgDeleteSlot(id)
+                .then(() => SH.ui.toast('Задача удалена'))
+                .catch((err) => SH.ui.toast('Ошибка: ' + err.message));
+            });
+          });
+        }
+      });
+    },
+
+    slotForm(slot, presetDate) {
+      if (!data.org) return;
+      const students = [{ value: '', label: 'Вся организация' }]
+        .concat(data.students.map((u) => ({ value: u.id, label: u.name })));
+      const date = presetDate || (slot ? String(slot.date).slice(0, 10) : ymd(new Date()));
+      SH.ui.sheet({
+        title: slot ? 'Изменить задачу' : 'Новая задача',
+        subtitle: 'Задача появится в календаре организации',
+        body:
+          SH.ui.field('slot-title', 'Что сделать', { value: slot ? slot.title : '', placeholder: 'Например: черновик эссе по Гарварду' }) +
+          SH.ui.field('slot-date', 'Дата', { type: 'date', value: date }) +
+          SH.ui.select('slot-kind', 'Тип', Object.keys(KIND).map((k) => ({ value: k, label: KIND[k].label })), slot ? slot.kind : 'internal') +
+          SH.ui.select('slot-student', 'Кому', students, slot && slot.studentId ? slot.studentId : '') +
+          SH.ui.field('slot-note', 'Заметка', { value: slot && slot.note ? slot.note : '', textarea: true, placeholder: 'Необязательно' }) +
+          '<button class="btn btn--brand btn--block" id="slot-save" style="margin-top:6px">' +
+            (slot ? 'Сохранить' : 'Добавить в календарь') + '</button>',
+        onMount(el, destroy) {
+          el.querySelector('#slot-save').addEventListener('click', () => {
+            const title = el.querySelector('#slot-title').value.trim();
+            const dateVal = el.querySelector('#slot-date').value;
+            if (title.length < 2) return SH.ui.toast('Название слишком короткое');
+            if (!dateVal) return SH.ui.toast('Выберите дату');
+            const payload = {
+              title: title,
+              date: dateVal + 'T09:00:00.000Z',
+              kind: el.querySelector('#slot-kind').value,
+              studentId: el.querySelector('#slot-student').value || null,
+              note: el.querySelector('#slot-note').value.trim()
+            };
+            destroy();
+            const done = () => { SH.ui.toast(slot ? 'Задача обновлена' : 'Задача добавлена'); load(true); };
+            if (slot) SH.api.orgUpdateSlot(slot.id, payload).then(done).catch((err) => SH.ui.toast('Ошибка: ' + err.message));
+            else SH.api.orgCreateSlot(payload).then(done).catch((err) => SH.ui.toast('Ошибка: ' + err.message));
+          });
+        }
+      });
+    },
+
+    studentForm() {
+      if (!data.org) return;
+      SH.ui.sheet({
+        title: 'Новый аккаунт ученика',
+        subtitle: data.org.name,
+        body:
+          SH.ui.field('new-name', 'Имя и фамилия', { placeholder: 'Азиз Рахимов' }) +
+          SH.ui.field('new-login', 'Логин', { placeholder: 'aziz@school.ru', autocomplete: 'off' }) +
+          SH.ui.field('new-pass', 'Пароль', { placeholder: 'оставьте пустым — сгенерируем', autocomplete: 'off' }) +
+          SH.ui.field('new-grade', 'Класс', { placeholder: '10 класс' }) +
+          '<button class="btn btn--brand btn--block" id="new-save" style="margin-top:6px">Создать аккаунт</button>',
+        onMount(el, destroy) {
+          el.querySelector('#new-save').addEventListener('click', () => {
+            const name = el.querySelector('#new-name').value.trim();
+            const login = el.querySelector('#new-login').value.trim().toLowerCase();
+            if (name.length < 2) return SH.ui.toast('Укажите имя');
+            if (login.length < 3) return SH.ui.toast('Логин минимум 3 символа');
+            const payload = {
+              name, login,
+              password: el.querySelector('#new-pass').value.trim(),
+              grade: el.querySelector('#new-grade').value.trim()
+            };
+            destroy();
+            SH.api.orgCreateUser(payload)
+              .then((res) => {
+                SH.ui.sheet({
+                  title: 'Аккаунт создан',
+                  subtitle: 'Передайте ученику логин и пароль',
+                  body:
+                    '<div class="cred-box"><div class="cred-box__row"><span>Логин</span><b>' + e(res.login) + '</b></div>' +
+                    '<div class="cred-box__row"><span>Пароль</span><b>' + e(res.password) + '</b></div></div>' +
+                    '<p class="small muted" style="margin:12px 0 0">Пароль показывается один раз — сохраните его.</p>' +
+                    '<button class="btn btn--soft btn--block" data-close style="margin-top:14px">Готово</button>'
+                });
+                load(true);
+              })
+              .catch((err) => SH.ui.toast('Ошибка: ' + err.message));
+          });
+        }
+      });
+    },
+
+    reload() { load(true); }
+  };
+
+  function mount() {
+    load();
+  }
+
+  SH.views = SH.views || {};
+  SH.views.org = Object.assign({ html, mount }, actions);
 })(window.SH = window.SH || {});
 
 /* Установка PWA — та самая «инструкция в 3 шага» */
@@ -5472,13 +6671,27 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
   /* ─────────────────────────── роутер ─────────────────────────── */
 
-  const TABS = [
+  const STUDENT_TABS = [
     ['explore', 'explore', 'Explore'],
     ['community', 'groups', 'Сообщество'],
     ['roadmap', 'map', 'Роадмап'],
     ['chats', 'chat', 'Чаты'],
     ['profile', 'person', 'Профиль']
   ];
+
+  const ORG_TABS = [
+    ['org', 'grid', 'Организация'],
+    ['community', 'groups', 'Сообщество'],
+    ['chats', 'chat', 'Чаты'],
+    ['profile', 'person', 'Профиль']
+  ];
+
+  function tabsList() {
+    const me = store.currentUser || {};
+    return me.role === 'org' ? ORG_TABS : STUDENT_TABS;
+  }
+
+  const TABS = STUDENT_TABS.slice();
 
   function parse() {
     const raw = location.hash.replace(/^#\/?/, '');
@@ -5487,13 +6700,23 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     return { name: parts[0], params: parts.slice(1) };
   }
 
-  function isTab(name) { return TABS.some(([id]) => id === name); }
+  function isTab(name) { return tabsList().some(([id]) => id === name); }
+
+  /* какой пункт меню подсветить на «вложенном» экране */
+  function tabFor(route) {
+    if (isTab(route.name)) return route.name;
+    if (route.name === 'event' || route.name === 'all') return 'explore';
+    if (route.name === 'org') return 'org';
+    if (route.name === 'user') return 'profile';
+    if (route.name === 'chat') return 'chats';
+    return '';
+  }
 
   function screenFor(route) {
     const [p1, p2] = route.params;
     switch (route.name) {
       case 'explore': return { html: SH.views.explore.html(), mount: SH.views.explore.mount };
-      case 'event': return { html: SH.views.explore.detail(p1) };
+      case 'event': return { html: SH.views.explore.detail(p1), mount: (root) => SH.views.explore.mountDetail(root, p1) };
       case 'all': return { html: SH.views.explore.all(p1) };
       case 'community': return { html: SH.views.community.html() };
       case 'roadmap': return { html: SH.views.roadmap.html() };
@@ -5504,6 +6727,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       case 'install': return { html: SH.views.install.html() };
       case 'user': return { html: SH.views.profile.user(p1) };
       case 'admin': return { html: SH.views.admin.html(), wide: true, mount: () => SH.views.admin.mount() };
+      case 'org': return { html: SH.views.org.html(), mount: () => SH.views.org.mount() };
       default: return { html: SH.views.explore.html(), mount: SH.views.explore.mount };
     }
   }
@@ -5527,15 +6751,25 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
     // авторизованному на экране входа делать нечего
     if (store.isAuthed && route.name === 'auth') {
-      location.replace('#/explore');
+      location.replace(store.isOrgManager ? '#/org' : '#/explore');
       return;
     }
 
     const key = location.hash || '#/explore';
     const root = document.getElementById('root');
     const view = screenFor(route);
+    // анимация входа — только на смене маршрута, а не на каждую перерисовку
+    const routeChanged = key !== lastRouteKey;
+    lastRouteKey = key;
 
-    const tabbar = isTab(route.name) ? buildTabbar(route.name) : '';
+    // на десктопе меню слева есть на всех экранах; на мобильном —
+    // на вложенных страницах его заменяет кнопка «назад»
+    const activeTab = tabFor(route);
+    const aux = !isTab(route.name);
+    // в админке своя навигация — общее меню там не нужно
+    const tabbar = (route.name === 'admin' || route.name === 'auth')
+      ? ''
+      : buildTabbar(activeTab, aux);
 
     root.innerHTML =
       (view.wide ? '' : '<div class="app">') +
@@ -5543,13 +6777,25 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       tabbar +
       (view.wide ? '' : '</div>');
 
+    if (routeChanged) {
+      const screen = root.querySelector('.screen');
+      if (screen) screen.classList.add('screen--enter');
+      if (tabbar) {
+        const bar = root.querySelector('.tabbar');
+        if (bar) bar.classList.add('tabbar--enter');
+      }
+    }
+
     if (view.mount) {
       try { view.mount(root); } catch (err) { console.warn('mount error', err); }
     }
 
-    if (key !== lastRouteKey) {
-      window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
-      lastRouteKey = key;
+    if (routeChanged) {
+      // на десктопе скроллится колонка контента, на мобильном — окно
+      const scroller = root.querySelector('.screen');
+      if (scroller) scroller.scrollTop = 0;
+      window.scrollTo(0, 0);
+      if (history.scrollRestoration) history.scrollRestoration = 'manual';
     }
     document.title = pageTitle(route);
   }
@@ -5558,15 +6804,17 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     const names = {
       explore: 'Explore', event: 'Событие', community: 'Сообщество',
       roadmap: 'Роадмап', chats: 'Чаты', chat: 'Чат', profile: 'Профиль',
-      auth: 'Вход', install: 'Установка', admin: 'Админ-панель', all: 'События', user: 'Профиль'
+      auth: 'Вход', install: 'Установка', admin: 'Админ-панель', all: 'События', user: 'Профиль',
+      org: 'Организация'
     };
     return 'Student Hub — ' + (names[route.name] || 'Главная');
   }
 
-  function buildTabbar(active) {
+  function buildTabbar(active, aux) {
     const unread = store.unreadTotal();
-    return '<nav class="tabbar" role="tablist">' +
-      TABS.map(([id, ico, label]) =>
+    const list = tabsList();
+    return '<nav class="tabbar' + (aux ? ' tabbar--aux' : '') + '" role="tablist" style="--tabs:' + list.length + '">' +
+      list.map(([id, ico, label]) =>
         '<button class="tab" role="tab" aria-selected="' + (id === active) + '" onclick="SH.app.go(\'#/' + id + '\')">' +
           icon(ico) +
           (id === 'chats' && unread ? '<span class="dot-badge"></span>' : '') +
@@ -5616,8 +6864,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     if (SH.api && SH.api.enabled()) {
       store.restoreSession().then((restored) => {
         if (restored) render();
-        // публичные данные (события) подтягиваем и без входа —
-        // экран входа показывает живой контент
+        // без сессии данные не запрашиваем: база закрыта токеном
+        if (!store.isAuthed) return null;
         return SH.api.bootstrap();
       }).then((snapshot) => {
         if (snapshot && store.hydrate(snapshot)) render();
