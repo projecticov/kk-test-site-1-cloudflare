@@ -1857,6 +1857,11 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     },
 
     /* ── чаты ── */
+    chats() { return this.request('GET', '/api/chats'); },
+    chatMessages(chatId, after) {
+      const q = after ? '?after=' + encodeURIComponent(after) : '';
+      return this.request('GET', '/api/chats/' + chatId + '/messages' + q);
+    },
     directChat(userId) {
       return this.request('POST', '/api/chats/direct', { userId });
     },
@@ -2442,6 +2447,53 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         .sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt));
     },
     chat(id) { return state.chats.find((c) => c.id === id); },
+
+    /** Обновить метаданные чатов из лёгкого ответа GET /api/chats. */
+    mergeChatList(list) {
+      if (!Array.isArray(list) || !list.length) return false;
+      let changed = false;
+      list.forEach((row) => {
+        let c = state.chats.find((x) => x.id === row.id);
+        if (!c) {
+          state.chats.push({
+            id: row.id, title: row.title, kind: row.kind || 'group',
+            memberIds: row.memberIds || [], messages: [], unread: row.unread || 0,
+            lastAt: row.lastAt || iso(now())
+          });
+          changed = true;
+          return;
+        }
+        if (row.memberIds && row.memberIds.length && row.memberIds.length !== (c.memberIds || []).length) {
+          c.memberIds = row.memberIds; changed = true;
+        }
+        if (row.title && c.title !== row.title) { c.title = row.title; changed = true; }
+        if ((c.unread || 0) !== (row.unread || 0)) { c.unread = row.unread || 0; changed = true; }
+        if (row.lastAt && c.lastAt !== row.lastAt) {
+          c.lastAt = row.lastAt; changed = true;
+          c.preview = { text: row.lastText || '', authorId: row.lastAuthorId || '', at: row.lastAt };
+        }
+      });
+      return changed;
+    },
+
+    /** Добавить пришедшие сообщения в чат. Возвращает только новые. */
+    mergeMessages(chatId, list) {
+      const c = store.chat(chatId);
+      if (!c || !Array.isArray(list)) return [];
+      if (!Array.isArray(c.messages)) c.messages = [];
+      const fresh = [];
+      list.forEach((m) => {
+        if (!m || !m.id) return;
+        if (!c.messages.some((x) => x.id === m.id)) { c.messages.push(m); fresh.push(m); }
+      });
+      if (fresh.length) {
+        c.messages.sort((a, b) => String(a.at).localeCompare(String(b.at)));
+        c.lastAt = c.messages[c.messages.length - 1].at;
+        c.unread = 0;
+        c.preview = null;
+      }
+      return fresh;
+    },
     sendMessage(chatId, text) {
       const u = store.currentUser;
       const chat = store.chat(chatId);
@@ -4039,8 +4091,13 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   }
 
   function chatRow(c) {
-    const last = c.messages[c.messages.length - 1] || {};
-    const author = store.userById(last.authorId);
+    const msgs = Array.isArray(c.messages) ? c.messages : [];
+    const last = msgs[msgs.length - 1] || {};
+    // если сервер знает о сообщении, которого ещё нет локально, показываем его
+    const pv = c.preview && (!last.at || String(c.preview.at) >= String(last.at)) ? c.preview : null;
+    const pvText = pv ? pv.text : last.text;
+    const pvAuthorId = pv ? pv.authorId : last.authorId;
+    const author = store.userById(pvAuthorId);
     const me = store.currentUser || {};
     const other = c.kind === 'direct'
       ? (c.memberIds || []).map((id) => store.userById(id)).find((u) => u.id !== me.id)
@@ -4056,8 +4113,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
             (c.kind === 'direct' ? '<span class="tag" style="margin-left:6px">личный</span>' : '') +
             '<span class="spacer"></span><span class="small muted">' + e(ui.relTime(c.lastAt)) + '</span></div>' +
           '<div class="small muted ellipsis" style="margin-top:2px">' +
-            (last.text
-              ? (last.authorId === me.id ? 'Ты: ' : (author.name ? author.name.split(' ')[0] + ': ' : '')) + e(last.text)
+            (pvText
+              ? (pvAuthorId === me.id ? 'Ты: ' : (author.name ? author.name.split(' ')[0] + ': ' : '')) + e(pvText)
               : 'Сообщений пока нет') + '</div>' +
         '</div>' +
         (c.unread ? '<span class="badge-count">' + c.unread + '</span>' : '') +
@@ -4136,6 +4193,66 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     );
   }
 
+  /* ── синхронизация чатов: опрос сервера, пока экран открыт ── */
+  let pollTimer = null;
+  let pollTarget = null;
+
+  function stopPolling() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    pollTarget = null;
+  }
+
+  function startPolling(target, every) {
+    if (pollTarget === target && pollTimer) return;
+    stopPolling();
+    pollTarget = target;
+    pollTimer = setInterval(pollTick, every);
+  }
+
+  function pollTick() {
+    if (document.hidden) return;
+    if (!store.isAuthed || !SH.api || !SH.api.enabled()) return;
+    const hash = location.hash || '#/explore';
+    if (pollTarget === 'list' && hash !== '#/chats') { stopPolling(); return; }
+    if (pollTarget !== 'list' && hash !== '#/chat/' + pollTarget) { stopPolling(); return; }
+    if (pollTarget === 'list') pollList(); else pollThread(pollTarget);
+  }
+
+  async function pollList() {
+    try {
+      const res = await SH.api.chats();
+      if (res && res.ok && store.mergeChatList(res.chats)) SH.app.render();
+    } catch (err) { /* следующий тик попробует снова */ }
+  }
+
+  async function pollThread(id) {
+    const c = store.chat(id);
+    if (!c) return;
+    const msgs = Array.isArray(c.messages) ? c.messages : [];
+    const lastAt = msgs.length ? msgs[msgs.length - 1].at : '';
+    try {
+      const res = await SH.api.chatMessages(id, lastAt);
+      if (!res || !res.ok) return;
+      const fresh = store.mergeMessages(id, res.messages);
+      if (!fresh.length) return;
+
+      // дописываем в DOM, не перерисовывая экран: введённый текст не теряется
+      const box = document.querySelector('.chat-scroll');
+      if (!box) return;
+      const empty = box.querySelector('.empty');
+      if (empty) empty.remove();
+      const me = store.currentUser || {};
+      const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 90;
+      box.insertAdjacentHTML('beforeend', fresh.map((m) => messageRow(c, m, me)).join(''));
+      if (nearBottom || fresh.some((m) => m.authorId !== me.id)) box.scrollTop = box.scrollHeight;
+      SH.api.push('POST', '/api/chats/' + id + '/read');
+    } catch (err) { /* тихо */ }
+  }
+
+  function mountList() {
+    startPolling('list', 8000);
+  }
+
   function mountThread(root, id) {
     const input = root.querySelector('#msg-input');
     if (!input) return;
@@ -4148,6 +4265,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     input.focus({ preventScroll: true });
     const scroller = root.querySelector('.chat-scroll');
     if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    startPolling(id, 4000);
   }
 
   const actions = {
@@ -4252,7 +4370,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   };
 
   SH.views = SH.views || {};
-  SH.views.chats = Object.assign({ html, thread, mountThread }, actions);
+  SH.views.chats = Object.assign({ html, thread, mountThread, mountList, stopPolling }, actions);
 })(window.SH = window.SH || {});
 
 /* Профиль, чужой профиль, настройки, вход/регистрация */
@@ -6852,7 +6970,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       case 'all': return { html: SH.views.explore.all(p1) };
       case 'community': return { html: SH.views.community.html() };
       case 'roadmap': return { html: SH.views.roadmap.html() };
-      case 'chats': return { html: SH.views.chats.html() };
+      case 'chats': return { html: SH.views.chats.html(), mount: () => SH.views.chats.mountList() };
       case 'chat': return { html: SH.views.chats.thread(p1), mount: (root) => SH.views.chats.mountThread(root, p1) };
       case 'profile': return { html: SH.views.profile.html() };
       case 'auth': return { html: SH.views.profile.auth(p1 === 'register' ? 'register' : 'login') };
