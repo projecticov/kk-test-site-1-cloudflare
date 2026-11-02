@@ -5048,6 +5048,10 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
               '<td style="text-align:right;white-space:nowrap">' +
                 '<button class="btn btn--soft btn--xs" onclick="SH.app.go(\'#/org/' + o.id + '\')">Кабинет</button> ' +
                 '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.orgStudentForm(\'' + o.id + '\')">+ ученик</button>' +
+                (isRoot()
+                  ? ' <button class="icon-btn icon-btn--plain" style="width:32px;height:32px" title="Удалить организацию" ' +
+                    'onclick="SH.views.admin.deleteOrg(\'' + o.id + '\', \'' + e(o.name).replace(/'/g, '') + '\')">' + icon('trash', 16) + '</button>'
+                  : '') +
               '</td>' +
             '</tr>'
           ).join('') +
@@ -5531,6 +5535,18 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
               .catch((err) => ui.toast('Ошибка: ' + err.message));
           });
         }
+      });
+    },
+
+    deleteOrg(id, name) {
+      ui.confirmSheet('Удалить организацию?', name + '. Ученики останутся в платформе, но без организации; задачи кабинета удалятся.', 'Удалить', () => {
+        SH.api.adminDeleteOrg(id)
+          .then(() => {
+            cache.loaded.orgs = false;
+            loadData(true).then(() => { if (section === 'orgs') SH.app.render(); });
+            ui.toast('Организация удалена');
+          })
+          .catch((err) => ui.toast('Ошибка: ' + err.message));
       });
     },
 
