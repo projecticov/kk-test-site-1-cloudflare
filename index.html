@@ -1722,12 +1722,17 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   /* технические ошибки браузера → понятный текст */
   function humanize(e) {
     const raw = String((e && e.message) || e || '');
-    if (/Failed to fetch|NetworkError|ERR_FAILED|aborted|abort/i.test(raw)) {
-      return 'воркер недоступен — проверь, что код задеплоен и адрес верный';
+    if (e && e.name === 'AbortError') {
+      return 'сервер отвечает слишком долго — попробуем ещё раз';
+    }
+    if (/Failed to fetch|NetworkError|ERR_FAILED|aborted|abort|Load failed/i.test(raw)) {
+      return 'нет связи с сервером — проверь интернет и попробуй ещё раз';
     }
     if (/CORS/i.test(raw)) return 'CORS: в воркере задай ALLOW_ORIGIN с адресом сайта';
     return raw;
   }
+
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   const api = {
     base: '',            // задаётся при сборке: SH.api.configure('https://...workers.dev')
@@ -1761,23 +1766,56 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       return h;
     },
 
-    async request(method, path, body, timeout) {
+    /**
+     * Запрос к воркеру.
+     * opts.timeout  — сколько ждём ответа (по умолчанию 20 с: на мобильной сети
+     *                 первый запрос после «холодного» старта бывает медленным);
+     * opts.attempts — повторы. По умолчанию только для GET: повтор POST может
+     *                 создать дубль, если первый запрос всё-таки дошёл.
+     */
+    async request(method, path, body, opts) {
       if (!this.base) throw new Error('API не настроен');
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), timeout || 8000);
-      try {
-        const res = await fetch(this.base + path, {
-          method,
-          headers: this.headers(),
-          body: body === undefined ? undefined : JSON.stringify(body),
-          signal: ctrl.signal
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
-        return data;
-      } finally {
-        clearTimeout(timer);
+      const conf = typeof opts === 'number' ? { timeout: opts } : (opts || {});
+      const timeout = conf.timeout || 20000;
+      const attempts = Math.max(1, conf.attempts || (method === 'GET' ? 2 : 1));
+      let lastErr;
+
+      for (let i = 0; i < attempts; i += 1) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), timeout);
+        try {
+          const res = await fetch(this.base + path, {
+            method,
+            headers: this.headers(),
+            body: body === undefined ? undefined : JSON.stringify(body),
+            signal: ctrl.signal,
+            cache: 'no-store'
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            const err = new Error(data.error || ('HTTP ' + res.status));
+            err.status = res.status;
+            throw err;
+          }
+          return data;
+        } catch (e) {
+          lastErr = e;
+          const status = e.status || 0;
+          const retryable = !status || status === 408 || status === 429 || status >= 500;
+          if (!retryable || i === attempts - 1) {
+            // сетевые ошибки браузера превращаем в понятный текст
+            if (!status && typeof e.message === 'string') {
+              e.raw = e.message;
+              e.message = humanize(e);
+            }
+            throw e;
+          }
+          await sleep(600 + i * 900);
+        } finally {
+          clearTimeout(timer);
+        }
       }
+      throw lastErr;
     },
 
     /* ── авторизация ── */
@@ -1888,8 +1926,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         return null;
       }
       try {
-        const pending = this.outbox().length;
-        if (pending) await this.flush();
+        // очередь досылаем в фоне: интерфейс не должен ждать 40 операций
+        if (this.outbox().length) this.flush().catch(() => {});
         const data = await this.request('GET', '/api/bootstrap');
         if (!data || !data.ok || !Array.isArray(data.users)) {
           throw new Error('воркер отвечает, но API не найден — проверь, что код задеплоен');
@@ -1938,18 +1976,28 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     async flush() {
       const list = this.outbox();
       if (!list.length || !this.enabled()) return 0;
+
+      const BATCH = 40;               // за один проход — не больше 40 операций
       const rest = [];
       let done = 0;
-      for (const op of list) {
+      let networkDown = false;
+
+      for (let i = 0; i < list.length; i += 1) {
+        const op = list[i];
+        if (networkDown || i >= BATCH) { rest.push(op); continue; }
         try {
           await this.request(op.method, op.path, op.body);
           done += 1;
         } catch (e) {
-          // 409/404 — операция уже неактуальна, не копим мёртвый груз
-          const fatal = /409|404|не найден/i.test(e.message || '');
-          if (!fatal) rest.push(op);
+          const msg = e.message || '';
+          const status = e.status || 0;
+          // 404/409 — операция уже неактуальна; 400/403 — повтор не поможет
+          if (/409|404|не найден/i.test(msg) || (status >= 400 && status < 500)) continue;
+          networkDown = true;          // сеть отвалилась — не долбим воркер
+          rest.push(op);
         }
       }
+
       try { localStorage.setItem(OUTBOX_KEY, JSON.stringify(rest)); } catch (e) {}
       return done;
     },
@@ -6914,7 +6962,25 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     '</nav>';
   }
 
+  /* Пересинхронизация с облаком без перезагрузки страницы:
+     после возврата связи и при возврате приложения на передний план. */
+  let lastResync = 0;
+
+  async function resync(minGap) {
+    if (!store.isAuthed || !SH.api || !SH.api.enabled()) return false;
+    const gap = typeof minGap === 'number' ? minGap : 15000;
+    if (Date.now() - lastResync < gap) return false;
+    lastResync = Date.now();
+    const snapshot = await SH.api.bootstrap();
+    if (snapshot) {
+      store.hydrate(snapshot);   // emit('hydrate') сам перерисует экран
+      return true;
+    }
+    return false;
+  }
+
   const app = {
+    resync,
     go(hash) {
       if (location.hash === hash) { render(); return; }
       location.hash = hash;
@@ -6952,9 +7018,17 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       });
     }
 
-    // индикатор офлайна
+    // связь: показываем состояние и сами подтягиваем данные, когда сеть вернулась
     window.addEventListener('offline', () => ui.toast('Нет интернета — работаем из кэша'));
-    window.addEventListener('online', () => ui.toast('Снова онлайн'));
+    window.addEventListener('online', () => {
+      ui.toast('Снова онлайн');
+      resync(3000);
+    });
+
+    // телефон вернулся в приложение из фона — обновляем данные, если давно не синхронизировались
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') resync(45000);
+    });
 
     if (!location.hash) setHash('#/explore');
     render();
