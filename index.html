@@ -912,6 +912,12 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 .chat-bubble--other { background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 6px; align-self: flex-start; }
 .chat-time { font-size: 10.5px; opacity: 0.62; margin-top: 4px; }
 
+/* состояние своего сообщения: пусто / ждёт отправки / не отправлено */
+.chat-flag { font-size: 10px; line-height: 1.2; letter-spacing: 0.2px; }
+.chat-flag:empty { display: none; }
+.chat-flag--wait { color: #9a6a00; }
+.chat-flag--fail { color: #b4231f; }
+
 .composer {
   position: sticky; bottom: 0;
   display: flex; gap: 8px; align-items: center;
@@ -1795,6 +1801,10 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           if (!res.ok) {
             const err = new Error(data.error || ('HTTP ' + res.status));
             err.status = res.status;
+            if (res.status === 401 && this.token()) {
+              this.authExpired = true;
+              if (typeof this.onAuthLost === 'function') this.onAuthLost();
+            }
             throw err;
           }
           return data;
@@ -1834,11 +1844,14 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
     async me() {
       if (!this.token()) return null;
+      this.authExpired = false;
       try {
         const data = await this.request('GET', '/api/auth/me');
         return data.user || null;
       } catch (e) {
-        if (/401|истекла|Нужен вход/i.test(e.message || '')) this.setToken('');
+        // 401 = сервер точно не признал токен. Сеть/таймаут — не повод разлогинивать:
+        // иначе при плохой связи человек вылетает из аккаунта.
+        if (e.status === 401) { this.authExpired = true; this.setToken(''); }
         return null;
       }
     },
@@ -1946,8 +1959,14 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         this.mode = 'local';
         this.status = 'offline';
         this.lastError = humanize(e);
+        if (e.status === 401) this.setToken('');   // токен мёртв — локальный режим без него
         return null;
       }
+    },
+
+    /** Сколько операций ждёт отправки (для индикатора в профиле). */
+    pending() {
+      try { return this.outbox().length; } catch (e) { return 0; }
     },
 
     /* ── запись: сразу или через очередь ── */
@@ -1979,6 +1998,14 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     },
 
     async flush() {
+      // Два flush одновременно (resync + bootstrap) затирали друг другу очередь:
+      // второй записывал устаревший список обратно, и операция возвращалась навсегда.
+      if (this._flushing) return this._flushing;
+      this._flushing = this._flushOnce().finally(() => { this._flushing = null; });
+      return this._flushing;
+    },
+
+    async _flushOnce() {
       const list = this.outbox();
       if (!list.length || !this.enabled()) return 0;
 
@@ -1993,16 +2020,31 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         try {
           await this.request(op.method, op.path, op.body);
           done += 1;
+          // сообщение реально доехало — снимаем пометку «ждёт отправки»
+          if (op.body && op.body.id && /\/messages$/.test(op.path) && SH.store && SH.store.markSent) {
+            SH.store.markSent(op.body.id);
+          }
         } catch (e) {
           const msg = e.message || '';
           const status = e.status || 0;
+          // 401 — сессия кончилась: очередь не наша проблема, сообщения не теряем
+          if (status === 401) { rest.push(op); networkDown = true; continue; }
           // 404/409 — операция уже неактуальна; 400/403 — повтор не поможет
-          if (/409|404|не найден/i.test(msg) || (status >= 400 && status < 500)) continue;
+          if (/409|404|не найден/i.test(msg) || (status >= 400 && status < 500)) {
+            if (op.body && op.body.id && /\/messages$/.test(op.path) && SH.store && SH.store.markFailed) {
+              SH.store.markFailed(op.body.id);
+            }
+            continue;
+          }
           networkDown = true;          // сеть отвалилась — не долбим воркер
           rest.push(op);
         }
+        // после каждой операции фиксируем остаток: доставленное не должно вернуться
+        try { localStorage.setItem(OUTBOX_KEY, JSON.stringify(rest.concat(list.slice(i + 1)))); } catch (e) {}
       }
 
+      // сохраняем остаток сразу после каждой операции: если вкладку закроют
+      // посреди отправки, уже доставленное не вернётся в очередь
       try { localStorage.setItem(OUTBOX_KEY, JSON.stringify(rest)); } catch (e) {}
       return done;
     },
@@ -2214,13 +2256,30 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     async restoreSession() {
       if (!SH.api || !SH.api.enabled() || !SH.api.token()) return false;
       const user = await SH.api.me();
-      if (!user) return false;
+      if (!user) {
+        // Токен был, и сервер прямо сказал 401 → сессии больше нет.
+        // Показывать локальную копию нельзя: приложение выглядело бы рабочим,
+        // а сообщения молча оседали бы на устройстве.
+        if (SH.api.authExpired && store.isAuthed) store.forceLogout('Сессия истекла — войди заново');
+        return false;
+      }
       const snapshot = await SH.api.bootstrap();
       if (snapshot) store.hydrate(snapshot);
       if (!state.users.some((u) => u.id === user.id)) state.users.push(user);
       state.session.userId = user.id;
       emit('restore');
       return true;
+    },
+
+    /** Выход по причине «сессия истекла»: показываем это на экране входа. */
+    forceLogout(reason) {
+      state.meta = Object.assign({}, state.meta, { authNotice: reason || 'Сессия истекла — войди заново' });
+      state.session.userId = null;
+      if (SH.api) SH.api.setToken('');
+      // уводим на экран входа, иначе останемся на «чатах» без сессии
+      if (SH.app && typeof SH.app.go === 'function') SH.app.go('#/auth');
+      else location.hash = '#/auth';
+      emit('auth');
     },
 
     async logout() {
@@ -2484,7 +2543,14 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       const fresh = [];
       list.forEach((m) => {
         if (!m || !m.id) return;
-        if (!c.messages.some((x) => x.id === m.id)) { c.messages.push(m); fresh.push(m); }
+        const ex = c.messages.find((x) => x.id === m.id);
+        if (!ex) { c.messages.push(m); fresh.push(m); return; }
+        // сообщение отредактировали на другом устройстве — подтягиваем текст
+        if ((m.text || '') !== (ex.text || '') || (m.editedAt || '') !== (ex.editedAt || '')) {
+          ex.text = m.text;
+          ex.editedAt = m.editedAt || '';
+          c.preview = null;
+        }
       });
       if (fresh.length) {
         c.messages.sort((a, b) => String(a.at).localeCompare(String(b.at)));
@@ -2499,7 +2565,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       const chat = store.chat(chatId);
       if (!u || !chat || !text.trim()) return Promise.resolve({ ok: false });
 
-      const msg = { id: uid('m'), authorId: u.id, text: text.trim(), at: iso(now()), own: true };
+      const msg = { id: uid('m'), authorId: u.id, text: text.trim(), at: iso(now()), own: true, pending: false };
       chat.messages.push(msg);
       chat.lastAt = msg.at;
       chat.unread = 0;
@@ -2511,10 +2577,34 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       return SH.api.request('POST', '/api/chats/' + chatId + '/messages', { id: msg.id, text: msg.text })
         .then((res) => ({ ok: true, message: msg, at: res && res.at }))
         .catch(() => {
+          // Сервер не принял сразу (нет связи / сессия). Сообщение остаётся в очереди,
+          // но в интерфейсе честно помечено — иначе «отправил» врёт.
           SH.api.push('POST', '/api/chats/' + chatId + '/messages', { id: msg.id, text: msg.text });
+          store.touchMessage(msg.id, { pending: true, failed: false });
           return { ok: true, message: msg, queued: true };
         });
     },
+
+    /** Найти сообщение по id во всех чатах и обновить его флаги (и подпись в DOM). */
+    touchMessage(id, patch) {
+      let msg = null;
+      (state.chats || []).forEach((c) => (c.messages || []).forEach((m) => {
+        if (m.id === id) { Object.assign(m, patch); msg = m; }
+      }));
+      if (!msg) return null;
+      persist();
+      const line = document.querySelector('[data-msg="' + id + '"]');
+      const flag = line && line.querySelector('.chat-flag');
+      if (flag) {
+        const state_ = msg.failed ? 'fail' : (msg.pending ? 'wait' : '');
+        flag.className = 'chat-flag' + (state_ ? ' chat-flag--' + state_ : '');
+        flag.textContent = msg.failed ? 'не отправлено' : (msg.pending ? 'ждёт отправки' : '');
+      }
+      return msg;
+    },
+
+    markSent(id) { return store.touchMessage(id, { pending: false, failed: false }); },
+    markFailed(id) { return store.touchMessage(id, { pending: false, failed: true }); },
     readChat(id) {
       const c = store.chat(id);
       if (c && c.unread) {
@@ -2591,11 +2681,35 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       emit('settings');
     },
     /** Применить снапшот из облака (D1) поверх локального состояния. */
-    hydrate(remote) {
+    hydrate(remote, quiet) {
+      if (state.meta && state.meta.authNotice) state.meta.authNotice = '';
       if (!remote || !Array.isArray(remote.users) || !remote.users.length) return false;
-      ['users', 'events', 'posts', 'teams', 'chats', 'goals', 'tasks', 'saved', 'orgs'].forEach((f) => {
+
+      // Сообщения, которые ещё не доехали до сервера, живут только на устройстве.
+      // Их нельзя стирать ответом сервера — иначе «отправил» превращается в «пропало».
+      const pending = {};
+      (state.chats || []).forEach((c) => {
+        const mine = (c.messages || []).filter((m) => m && m.pending && !m.failed);
+        if (mine.length) pending[c.id] = mine;
+      });
+      const fresh = ['users', 'events', 'posts', 'teams', 'goals', 'tasks', 'saved', 'orgs'];
+      fresh.forEach((f) => {
         if (Array.isArray(remote[f])) state[f] = remote[f];
       });
+
+      if (Array.isArray(remote.chats)) {
+        const known = new Set(remote.chats.map((c) => c.id));
+        const localOnly = (state.chats || []).filter((c) => !known.has(c.id) &&
+          (c.messages || []).some((m) => m && m.pending));
+        state.chats = remote.chats.map((c) => {
+          const add = pending[c.id];
+          if (!add) return c;
+          const msgs = (c.messages || []).slice();
+          add.forEach((m) => { if (!msgs.some((x) => x.id === m.id)) msgs.push(m); });
+          msgs.sort((a, b) => String(a.at).localeCompare(String(b.at)));
+          return Object.assign({}, c, { messages: msgs });
+        }).concat(localOnly);
+      }
       state.meta = Object.assign({}, state.meta, {
         cloud: true,
         aiEnabled: !!remote.aiEnabled,
@@ -2606,7 +2720,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       if (state.session.userId && !state.users.some((u) => u.id === state.session.userId)) {
         state.session.userId = null;
       }
-      emit('hydrate');
+      if (!quiet) emit('hydrate');
+      else persist();
       return true;
     },
 
@@ -4176,13 +4291,16 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     const author = store.userById(m.authorId);
 
     return (
-      '<div class="msg-line msg-line--' + (own ? 'own' : 'other') + '">' +
+      '<div class="msg-line msg-line--' + (own ? 'own' : 'other') + '" data-msg="' + m.id + '">' +
         (!own ? ui.avatar(author, 24) : '') +
         '<div class="msg-col">' +
           (!own ? '<div class="small muted" style="margin:0 0 3px 4px">' + e(author.name.split(' ')[0]) + '</div>' : '') +
-          '<div class="chat-bubble chat-bubble--' + (own ? 'own' : 'other') + '">' + e(m.text) +
+          '<div class="chat-bubble chat-bubble--' + (own ? 'own' : 'other') + '">' +
+            '<span class="chat-text">' + e(m.text) + '</span>' +
             '<div class="chat-time">' + e(ui.relTime(m.editedAt || m.at)) +
               (m.editedAt ? ' · изменено' : '') + '</div>' +
+            (own ? '<div class="chat-flag' + (m.failed ? ' chat-flag--fail' : (m.pending ? ' chat-flag--wait' : '')) + '">' +
+              (m.failed ? 'не отправлено' : (m.pending ? 'ждёт отправки' : '')) + '</div>' : '') +
           '</div>' +
         '</div>' +
         (own
@@ -4234,19 +4352,53 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       const res = await SH.api.chatMessages(id, lastAt);
       if (!res || !res.ok) return;
       const fresh = store.mergeMessages(id, res.messages);
-      if (!fresh.length) return;
+      if (!fresh.length && !Array.isArray(res.messages)) return;
 
-      // дописываем в DOM, не перерисовывая экран: введённый текст не теряется
-      const box = document.querySelector('.chat-scroll');
-      if (!box) return;
-      const empty = box.querySelector('.empty');
-      if (empty) empty.remove();
-      const me = store.currentUser || {};
-      const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 90;
-      box.insertAdjacentHTML('beforeend', fresh.map((m) => messageRow(c, m, me)).join(''));
-      if (nearBottom || fresh.some((m) => m.authorId !== me.id)) box.scrollTop = box.scrollHeight;
+      // дописываем/обновляем в DOM, не перерисовывая экран: введённый текст не теряется
+      syncOpen(id);
       SH.api.push('POST', '/api/chats/' + id + '/read');
     } catch (err) { /* тихо */ }
+  }
+
+  /* Дополнить открытый тред тем, что уже пришло в состояние, не трогая поле ввода.
+     Используется, когда синхронизация прошла «молча» (человек печатает). */
+  function syncOpen(id) {
+    const c = store.chat(id);
+    const box = document.querySelector('.chat-scroll');
+    if (!c || !box) return;
+    const me = store.currentUser || {};
+    const rows = Array.from(box.querySelectorAll('[data-msg]'));
+    const have = new Set(rows.map((el) => el.getAttribute('data-msg')));
+
+    // 1) обновляем подписи у уже показанных сообщений (ждёт отправки → пусто)
+    rows.forEach((el) => {
+      const id_ = el.getAttribute('data-msg');
+      const m = (c.messages || []).find((x) => x.id === id_);
+      if (!m) return;
+      const flag = el.querySelector('.chat-flag');
+      if (flag) {
+        const st = m.failed ? 'fail' : (m.pending ? 'wait' : '');
+        flag.className = 'chat-flag' + (st ? ' chat-flag--' + st : '');
+        flag.textContent = m.failed ? 'не отправлено' : (m.pending ? 'ждёт отправки' : '');
+      }
+      const textEl = el.querySelector('.chat-text');
+      if (textEl && textEl.textContent !== m.text) textEl.textContent = m.text;
+      const timeEl = el.querySelector('.chat-time');
+      if (timeEl) {
+        const want = ui.relTime(m.editedAt || m.at) + (m.editedAt ? ' · изменено' : '');
+        if (timeEl.textContent !== want) timeEl.textContent = want;
+      }
+    });
+
+    // 2) дописываем то, чего в DOM ещё нет
+    const add = (c.messages || []).filter((m) => m && !have.has(m.id));
+    if (!add.length) return;
+    add.sort((a, b) => String(a.at).localeCompare(String(b.at)));
+    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 90;
+    const empty = box.querySelector('.empty');
+    if (empty) empty.remove();
+    box.insertAdjacentHTML('beforeend', add.map((m) => messageRow(c, m, me)).join(''));
+    if (nearBottom || add.some((m) => m.authorId !== me.id)) box.scrollTop = box.scrollHeight;
   }
 
   function mountList() {
@@ -4272,8 +4424,11 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     send(id) {
       const input = document.getElementById('msg-input');
       if (!input || !input.value.trim()) return;
-      store.sendMessage(id, input.value.trim());
+      const sent = store.sendMessage(id, input.value.trim());
       SH.app.render();
+      if (sent && sent.then) {
+        sent.then((res) => { if (res && res.queued) ui.toast('Нет связи: сообщение уйдёт само, как только связь появится'); });
+      }
       const again = document.getElementById('msg-input');
       if (again) again.focus({ preventScroll: true });
       const scroller = document.querySelector('.chat-scroll');
@@ -4428,6 +4583,35 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
   /* ─────────────────────────── свой профиль ─────────────────────────── */
 
+  /* состояние связи с сервером: видно всегда, а не только когда всё сломалось */
+  function syncCard() {
+    if (!SH.api || !SH.api.enabled()) return '';
+    const st = SH.api.status;
+    const pending = SH.api.pending ? SH.api.pending() : 0;
+    const last = SH.api.lastSync ? ui.relTime(new Date(SH.api.lastSync).toISOString()) : '';
+    const label = st === 'online' ? 'Соединено' : (st === 'offline' ? 'Локальный режим' : 'Проверяю связь');
+    return '<div class="card" style="padding:14px;margin:18px 0">' +
+      '<div class="row"><span class="grow" style="font-weight:650;font-size:14px">Синхронизация</span>' +
+        '<span class="tag ' + (st === 'online' ? 'tag--mint' : 'tag--sun') + '">' + label + '</span></div>' +
+      '<div class="small muted" style="margin-top:6px;line-height:1.5">' +
+        (st === 'online'
+          ? 'Данные из базы' + (last ? ' · обновлено ' + last : '')
+          : 'Изменения копятся на этом устройстве и уедут, когда связь вернётся') +
+        (pending ? ' · в очереди: ' + pending : '') +
+        (st !== 'online' && SH.api.lastError ? '<br>' + e(SH.api.lastError) : '') +
+      '</div>' +
+      '<button class="btn btn--soft btn--sm" style="margin-top:10px" onclick="SH.views.profile.checkSync()">Проверить связь</button>' +
+    '</div>';
+  }
+
+  async function checkSync() {
+    ui.toast('Проверяю связь…');
+    const ok = await SH.app.resync(0);
+    ui.toast(ok ? 'Связь есть — данные обновлены'
+               : 'Нет связи: ' + ((SH.api && SH.api.lastError) || 'сервер не ответил'));
+    SH.app.render();
+  }
+
   function html() {
     if (!store.isAuthed) {
       return (
@@ -4486,6 +4670,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           '</div>' +
           '<button class="readiness__how" onclick="SH.views.profile.readinessInfo()">Как считается</button>' +
         '</div>' +
+
+        syncCard() +
 
         '<div class="section-head"><span class="h2">Навыки</span></div>' +
         chips(u.skills || [], 'skills') +
@@ -4822,6 +5008,9 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
               ui.field('auth-pass', 'Пароль', { type: 'password', placeholder: 'Минимум 6 символов', style: 'margin-top:12px' }) +
               ui.field('auth-grade', 'Класс', { placeholder: '10 класс', style: 'margin-top:12px' })) +
 
+          ((store.state.meta && store.state.meta.authNotice)
+            ? '<div class="alert alert--danger">' + e(store.state.meta.authNotice) + '</div>'
+            : '') +
           '<div id="auth-error"></div>' +
 
           '<button class="btn btn--brand btn--block mt-16" id="auth-submit" ' +
@@ -4883,7 +5072,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   }
 
   SH.views = SH.views || {};
-  SH.views.profile = Object.assign({ html, user, auth, submitAuth, readinessOf }, actions);
+  SH.views.profile = Object.assign({ html, user, auth, submitAuth, readinessOf, checkSync, syncCard }, actions);
 })(window.SH = window.SH || {});
 
 /* Админ-панель: два уровня доступа — root (владелец) и admin */
@@ -7094,19 +7283,27 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
   async function resync(minGap) {
     if (!store.isAuthed || !SH.api || !SH.api.enabled()) return false;
-    // не перерисовываем экран, пока пользователь печатает или открыт лист
-    const focused = document.activeElement;
-    if (focused && /^(INPUT|TEXTAREA)$/.test(focused.tagName)) return false;
-    if (document.querySelector('.sheet, .modal')) return false;
     const gap = typeof minGap === 'number' ? minGap : 15000;
     if (Date.now() - lastResync < gap) return false;
     lastResync = Date.now();
+
+    // Очередь досылаем ВСЕГДА и до всяких «занят ли пользователь»:
+    // печатающий человек не должен из-за этого терять исходящие сообщения.
+    if (SH.api.outbox && SH.api.outbox().length) SH.api.flush().catch(() => {});
+
+    // Перерисовку бережём: пока в фокусе поле ввода или открыт лист,
+    // данные обновляем молча, иначе введённый текст и позиция курсора умрут.
+    const focused = document.activeElement;
+    const busy = (focused && /^(INPUT|TEXTAREA)$/.test(focused.tagName)) || !!document.querySelector('.sheet, .modal');
+
     const snapshot = await SH.api.bootstrap();
-    if (snapshot) {
-      store.hydrate(snapshot);   // emit('hydrate') сам перерисует экран
-      return true;
+    if (!snapshot) return false;
+    store.hydrate(snapshot, busy);
+    // при «тихой» синхронизации DOM не перерисовываем, но открытый тред дополняем
+    if (busy && location.hash.indexOf('#/chat/') === 0 && SH.views.chats && SH.views.chats.syncOpen) {
+      SH.views.chats.syncOpen(location.hash.split('/')[2]);
     }
-    return false;
+    return true;
   }
 
   const app = {
@@ -7127,6 +7324,14 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   function boot() {
     store.init();
     install.init();
+
+    // сервер сказал 401 при живом токене → сессия истекла, честно уводим на вход
+    if (SH.api) {
+      SH.api.onAuthLost = () => {
+        if (!store.isAuthed) return;
+        store.forceLogout('Сессия истекла — войди заново');
+      };
+    }
 
     // приложению в отдельном окне нужен свой app-shell (см. styles.css)
     function markStandalone() {
