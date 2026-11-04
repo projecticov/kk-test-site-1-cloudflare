@@ -1,5 +1,5 @@
 /* Service worker: офлайн-режим и мгновенный запуск */
-const VERSION = 'v1.4.0';
+const VERSION = 'v1.5.0';
 const CACHE = 'studenthub-' + VERSION;
 
 const PRECACHE = [

@@ -1409,6 +1409,430 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   background-clip: padding-box;
 }
 
+/* ==========================================================================
+   Роадмап: макро-таймлайн (годы), «змейки» марафонов, неделя и день
+   ========================================================================== */
+
+.rm-switch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 0 0 16px;
+  background: var(--chip);
+  border-radius: 999px;
+}
+.rm-switch button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  padding: 8px 18px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.rm-switch button[aria-selected='true'] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── карточка «сейчас» ── */
+.rm-now {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow-sm);
+}
+.rm-now__top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.rm-now__pill {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.rm-next {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  cursor: pointer;
+  text-align: left;
+}
+.rm-next--empty { color: var(--muted); font-size: 13px; display: block; }
+.rm-next__ico {
+  width: 30px; height: 30px; flex: none;
+  display: grid; place-items: center;
+  border-radius: 9px;
+  background: var(--blush);
+  color: #7c2947;
+}
+.rm-next__title { display: block; font-size: 14px; font-weight: 650; line-height: 1.3; }
+.rm-next__sub { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.rm-next__go { color: var(--muted); display: flex; }
+.rm-live { margin-top: 10px; display: grid; gap: 6px; }
+.rm-live__row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--muted);
+  background: transparent; border: 0; padding: 0; cursor: pointer; width: 100%;
+}
+.rm-live__row b { color: var(--text); font-variant-numeric: tabular-nums; }
+.rm-dot { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+
+/* ── сетка годов ── */
+.rm-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 0 -20px 10px;
+  padding: 2px 20px 6px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.rm-scroll::-webkit-scrollbar { height: 6px; }
+.rm-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
+.rm-table { min-width: max-content; }
+
+.rm-head, .rm-year { display: grid; grid-template-columns: 78px auto; }
+.rm-head { position: sticky; top: 0; z-index: 3; background: var(--bg); }
+.rm-head__corner { background: var(--bg); }
+.rm-head__months { display: grid; grid-template-columns: repeat(12, var(--mw)); width: calc(12 * var(--mw)); }
+.rm-mon {
+  font-size: 10.5px;
+  text-transform: lowercase;
+  letter-spacing: 0.2px;
+  color: var(--muted);
+  text-align: center;
+  padding: 6px 0 8px;
+}
+.rm-mon--now { color: var(--primary); font-weight: 750; }
+
+.rm-year { border-top: 1px solid var(--border); }
+.rm-year--now { background: color-mix(in srgb, var(--primary) 4%, transparent); }
+.rm-year__label {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--bg);
+  padding: 10px 8px 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.rm-year--now .rm-year__label { background: color-mix(in srgb, var(--primary) 4%, var(--bg)); }
+.rm-year__label b { font-size: 13px; letter-spacing: -0.2px; }
+.rm-year__label span { font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rm-year__label i {
+  font-style: normal;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.rm-canvas { position: relative; width: calc(12 * var(--mw)); }
+.rm-cells { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(12, var(--mw)); }
+.rm-cell {
+  appearance: none;
+  border: 0;
+  border-left: 1px dashed var(--border);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.rm-cell:first-child { border-left: 0; }
+.rm-cell:hover { background: color-mix(in srgb, var(--primary) 5%, transparent); }
+.rm-cell--now { background: color-mix(in srgb, var(--primary) 7%, transparent); }
+
+.rm-today { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--primary); opacity: 0.55; pointer-events: none; }
+.rm-today i {
+  position: absolute; top: -3px; left: -3px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+/* вехи */
+.rm-marks { position: absolute; top: 4px; left: 0; right: 0; height: 32px; overflow: hidden; }
+.rm-ms {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transform: translateX(-50%);
+  max-width: 118px;
+  padding: 2px 7px 2px 4px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  font-size: 10.5px;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.rm-ms__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+.rm-ms__label { overflow: hidden; text-overflow: ellipsis; }
+.rm-ms--soon { background: var(--sun); }
+.rm-ms--soon .rm-ms__dot { background: #b57f00; }
+.rm-ms--done { opacity: 0.55; }
+.rm-ms--done .rm-ms__label { text-decoration: line-through; }
+.rm-ms--done .rm-ms__dot { background: var(--success); }
+
+/* змейки марафонов */
+.rm-lanes { position: absolute; left: 0; right: 0; }
+.rm-track {
+  position: absolute;
+  height: 24px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 8px;
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+}
+.rm-track__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--tc, var(--sky)), color-mix(in srgb, var(--tc, var(--sky)) 55%, white));
+}
+.rm-track__label {
+  position: relative;
+  z-index: 1;
+  font-size: 10.5px;
+  font-weight: 650;
+  color: #1d2b33;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 24px;
+  display: block;
+}
+.rm-track--sky { --tc: var(--sky); }
+.rm-track--mint { --tc: var(--mint); }
+.rm-track--sun { --tc: var(--sun); }
+.rm-track--lavender { --tc: var(--lavender); }
+.rm-track--blush { --tc: var(--blush); }
+.rm-track--done { opacity: 0.72; }
+
+.rm-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 11.5px; color: var(--muted); margin: 4px 0 8px; }
+.rm-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.rm-legend__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sun); }
+.rm-legend__bar { width: 18px; height: 8px; border-radius: 999px; background: linear-gradient(90deg, var(--sky) 55%, var(--border) 55%); }
+
+/* ── неделя ── */
+.rm-weekhead { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+.rm-weekhead__title {
+  border: 0; background: transparent; font: inherit; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; padding: 0;
+}
+.rm-weekhead__title { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
+.rm-weekhead__title span { font-size: 11.5px; font-weight: 500; color: var(--muted); margin-top: 1px; }
+
+.rm-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 16px; }
+.rm-strip__day {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 7px 0 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  cursor: pointer;
+  font: inherit;
+  color: var(--text);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.rm-strip__wd { font-size: 10px; color: var(--muted); text-transform: lowercase; }
+.rm-strip__num { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rm-strip__dots { display: flex; gap: 2px; height: 5px; align-items: center; }
+.rm-strip__dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--primary); opacity: 0.7; }
+.rm-strip__day.is-today { border-color: var(--primary); }
+.rm-strip__day.is-sel { background: var(--primary); border-color: var(--primary); color: #fff; }
+.rm-strip__day.is-sel .rm-strip__wd { color: rgba(255, 255, 255, 0.72); }
+.rm-strip__day.is-sel .rm-strip__dots i { background: #fff; }
+
+.rm-days { display: grid; gap: 14px; }
+.rm-day { display: none; }
+.rm-day[data-active='1'] { display: block; }
+.rm-day__head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.rm-day__wd { font-size: 13px; font-weight: 700; letter-spacing: -0.2px; }
+.rm-day__add {
+  width: 26px; height: 26px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+  display: grid; place-items: center; cursor: pointer;
+}
+.rm-day__body { display: grid; gap: 8px; }
+.rm-day__empty { font-size: 12.5px; color: var(--muted); padding: 6px 2px; }
+
+.rm-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.rm-chip--stone.is-soon { border-color: color-mix(in srgb, var(--warning) 45%, var(--border)); background: color-mix(in srgb, var(--sun) 26%, var(--surface)); }
+.rm-chip--stone.is-done { opacity: 0.6; }
+.rm-chip__ico { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--chip); color: var(--text); flex: none; }
+.rm-chip__title { display: block; font-size: 13.5px; font-weight: 640; line-height: 1.3; }
+.rm-chip__sub { display: block; font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+
+.rm-chip--track { flex-direction: column; align-items: stretch; gap: 7px; }
+.rm-snake { display: block; }
+.rm-snake__bar {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+  overflow: hidden;
+  flex: 1;
+}
+.rm-snake__bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--tc, var(--sky)), color-mix(in srgb, var(--tc, var(--sky)) 50%, white));
+}
+.rm-snake__meta { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; }
+.rm-snake__meta b { font-size: 13px; font-weight: 640; }
+.rm-snake__meta span { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.rm-snake--lg { display: grid; gap: 8px; }
+.rm-snake--lg .rm-snake__bar { height: 12px; }
+.rm-snake--lg .rm-snake__meta b { font-size: 14px; }
+
+.rm-task {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  padding: 6px 2px;
+  cursor: pointer;
+  text-align: left;
+}
+.rm-task__box {
+  width: 20px; height: 20px; flex: none;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  display: grid; place-items: center;
+  color: #fff;
+  background: var(--surface);
+  cursor: pointer;
+  padding: 0;
+}
+.rm-task.is-done .rm-task__box, .rm-task__box.is-on { background: var(--success); border-color: var(--success); }
+.rm-task__time { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); width: 42px; flex: none; }
+.rm-task__text { font-size: 14px; line-height: 1.35; }
+.rm-task.is-done .rm-task__text { text-decoration: line-through; color: var(--muted); }
+.rm-task__edit { margin-left: auto; color: var(--muted); opacity: 0.6; display: flex; padding: 4px; }
+
+/* ── шиты ── */
+.rm-pick { display: grid; gap: 8px; }
+.rm-pick__row {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; text-align: left;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 12px;
+  font: inherit; color: inherit; cursor: pointer;
+}
+.rm-pick__ico { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); flex: none; }
+.rm-pick__row b { display: block; font-size: 14px; font-weight: 650; }
+.rm-pick__row span span { display: block; font-size: 12px; color: var(--muted); margin-top: 1px; }
+.rm-color { width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
+.rm-color.is-sel { border-color: var(--text); }
+.rm-fact { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); background: var(--chip); border-radius: 12px; padding: 10px 12px; }
+.rm-x { border: 0; background: transparent; color: var(--muted); cursor: pointer; display: flex; padding: 4px; }
+
+/* ── цели и шаги ── */
+.rm-goals { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 14px; }
+.rm-goals__toggle { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: transparent; font: inherit; color: inherit; cursor: pointer; padding: 0; }
+.rm-goals__toggle b { font-size: 14px; }
+.rm-goals__chev { display: flex; color: var(--muted); transition: transform 0.18s ease; }
+.rm-goals__chev.is-open { transform: rotate(90deg); }
+.rm-goalchip {
+  display: flex; flex-direction: column; gap: 6px;
+  min-width: 150px; max-width: 190px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit; font-size: 12.5px; font-weight: 650;
+  color: var(--text); text-align: left; cursor: pointer;
+}
+.rm-goalchip.is-active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
+.rm-goalchip__p { display: block; height: 4px; border-radius: 999px; background: var(--chip); overflow: hidden; }
+.rm-goalchip__p i { display: block; height: 100%; background: var(--primary); }
+
+/* ── планшет и десктоп ── */
+@media (min-width: 720px) {
+  .rm-days { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; align-items: start; }
+  .rm-day { display: block; }
+  .rm-day[data-active='1'] { display: block; }
+  .rm-day__head { flex-wrap: wrap; gap: 4px; }
+  .rm-day__wd { font-size: 12px; }
+  .rm-day__body { min-height: 60px; }
+  .rm-chip { padding: 8px; gap: 8px; }
+  .rm-chip__title { font-size: 12.5px; }
+  .rm-task { flex-wrap: wrap; gap: 6px; }
+  .rm-task__time { width: auto; }
+  .rm-task__text { font-size: 13px; width: 100%; }
+}
+@media (min-width: 900px) {
+  .rm-scroll { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }
+  .rm-table { --mw: 74px !important; }
+  .rm-head__corner, .rm-year__label { background: transparent; }
+  .rm-year__label b { font-size: 14px; }
+}
+
+.rm-empty-year {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11.5px;
+  color: var(--muted);
+  opacity: 0.75;
+  pointer-events: none;
+}
+.rm-canvas--empty .rm-cell { cursor: pointer; }
+
+.rm-track:empty, .rm-track__label:empty { display: none; }
+.rm-ms { max-width: 100%; }
+
+/* подписи лет и шапка не должны «просвечивать» при горизонтальной прокрутке */
+.rm-year__label, .rm-head__corner { box-shadow: -22px 0 0 var(--bg); }
+.rm-scroll { scroll-padding-left: 84px; }
+
 </style>
 </head>
 <body>
@@ -1582,6 +2006,57 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         ] }
     ];
 
+    /* ── роадмап: вехи, марафоны и задачи дня ──
+       даты считаем от текущего момента, поэтому демо всегда «живое» */
+    const at = (dayOffset, hh, mm) => {
+      const d = new Date(t + dayOffset * DAY);
+      d.setHours(hh || 0, mm || 0, 0, 0);
+      return iso(d);
+    };
+
+    const plan = [
+      { id: 'p_sat', userId: 'u1', kind: 'track', title: 'Марафон подготовки к SAT',
+        note: 'Математика и Reading по будням, в субботу — полный пробник.',
+        startAt: at(-34), endAt: at(26), color: 'sun', done: 0,
+        checklist: [
+          { id: 'ch1', text: 'Неделя 1 · Math Grid-ins', done: 1 },
+          { id: 'ch2', text: 'Неделя 2 · Reading History Passages', done: 1 },
+          { id: 'ch3', text: 'Неделя 3 · Пробный тест 1400+', done: 0 },
+          { id: 'ch4', text: 'Неделя 4 · Разбор ошибок', done: 0 }
+        ] },
+      { id: 'p_ielts', userId: 'u1', kind: 'milestone', title: 'Сдача IELTS', note: 'Регистрация закрылась, место подтверждено.',
+        startAt: at(-50, 9, 0), endAt: '', color: 'sky', done: 1, eventId: '' },
+      { id: 'p_hack', userId: 'u1', kind: 'milestone', title: 'Дедлайн подачи на хакатон kk.', note: 'Загрузить проект и ссылку на репозиторий.',
+        startAt: at(17, 23, 59), endAt: '', color: 'blush', done: 0, eventId: '' },
+      { id: 'p_boot', userId: 'u1', kind: 'track', title: 'Олимпиадный буткемп', note: 'Выездная смена перед региональным этапом.',
+        startAt: at(28), endAt: at(38), color: 'lavender', done: 0, checklist: [] },
+      { id: 'p_zerde', userId: 'u1', kind: 'milestone', title: 'Дедлайн Zerde', note: 'Стипендия на обучение за рубежом.',
+        startAt: at(109, 23, 59), endAt: '', color: 'mint', done: 0, eventId: '' },
+      { id: 'p_intern', userId: 'u1', kind: 'track', title: 'Стажировка в стартапе', note: 'Летний трек по продукту, 3 месяца.',
+        startAt: at(210), endAt: at(300), color: 'mint', done: 0,
+        checklist: [{ id: 'ch1', text: 'Собрать портфолио', done: 0 }, { id: 'ch2', text: 'Пройти интервью', done: 0 }] },
+      { id: 'p_common', userId: 'u1', kind: 'milestone', title: 'Подача Common App', note: 'Эссе + рекомендации.',
+        startAt: at(400, 23, 59), endAt: '', color: 'sky', done: 0, eventId: '' },
+      { id: 'p_t1', userId: 'u1', kind: 'task', title: 'Урок физики', note: 'Кабинет 205',
+        startAt: at(0, 15, 0), endAt: '', color: 'sky', done: 0 },
+      { id: 'p_t2', userId: 'u1', kind: 'task', title: 'Созвон с командой kk.', note: 'Разобрать прототип роадмапа',
+        startAt: at(0, 18, 0), endAt: '', color: 'lavender', done: 0 },
+      { id: 'p_t3', userId: 'u1', kind: 'task', title: 'Дописать абстракт проекта', note: 'До 23:59 в форме',
+        startAt: at(0, 22, 30), endAt: '', color: 'blush', done: 0 },
+      { id: 'p_t4', userId: 'u1', kind: 'task', title: 'Разбор задач SAT Math', note: 'Блок grid-ins',
+        startAt: at(1, 10, 0), endAt: '', color: 'sun', done: 0 },
+      { id: 'p_t5', userId: 'u1', kind: 'task', title: 'Дописать мотивационное письмо', note: '',
+        startAt: at(3, 19, 0), endAt: '', color: 'mint', done: 0 },
+
+      { id: 'p_me1', userId: 'u_me', kind: 'track', title: 'Курс по веб-разработке', note: 'Модули 1–4, по 3 часа в неделю',
+        startAt: at(-20), endAt: at(25), color: 'sky', done: 0,
+        checklist: [{ id: 'ch1', text: 'Модуль 1 · HTML', done: 1 }, { id: 'ch2', text: 'Модуль 2 · CSS', done: 1 }, { id: 'ch3', text: 'Модуль 3 · JS', done: 0 }] },
+      { id: 'p_me2', userId: 'u_me', kind: 'milestone', title: 'Городская олимпиада', note: 'Отборочный этап',
+        startAt: at(8, 10, 0), endAt: '', color: 'mint', done: 0, eventId: '' },
+      { id: 'p_me3', userId: 'u_me', kind: 'task', title: 'Выступить с проектом на фестивале', note: 'Актовый зал, 15:00',
+        startAt: at(2, 15, 0), endAt: '', color: 'sun', done: 0 }
+    ];
+
     const goals = [
       { id: 'g1', userId: 'u_me', title: 'Поступить на IT-направление в вузы', createdAt: iso(t - 12 * DAY) }
     ];
@@ -1603,6 +2078,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       chats,
       goals,
       tasks,
+      plan,
       // стартовое состояние — гость. Вход только через экран авторизации
       // (в облаке — по токену из /api/auth/login, офлайн — по локальной проверке)
       session: { userId: null },
@@ -2670,6 +3146,72 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       SH.api && SH.api.push('PUT', '/api/goals/' + goalId + '/plan', { tasks: list });
     },
 
+    /* ── роадмап: вехи, марафоны, задачи дня ── */
+
+    plan() {
+      const u = store.currentUser;
+      if (!u) return [];
+      return (state.plan || [])
+        .filter((p) => p.userId === u.id)
+        .sort((a, b) => String(a.startAt).localeCompare(String(b.startAt)));
+    },
+    planItem(id) { return (state.plan || []).find((p) => p.id === id) || null; },
+
+    addPlanItem(item) {
+      const u = store.currentUser;
+      if (!u) return null;
+      const row = Object.assign({
+        id: uid('p'), userId: u.id, kind: 'task', title: '', note: '',
+        startAt: iso(now()), endAt: '', done: false, eventId: '', checklist: [], color: 'sky'
+      }, item, { userId: u.id });
+      if (!state.plan) state.plan = [];
+      state.plan.push(row);
+      emit('plan');
+      SH.api && SH.api.push('POST', '/api/plan/items', {
+        id: row.id, kind: row.kind, title: row.title, note: row.note,
+        startAt: row.startAt, endAt: row.endAt, checklist: row.checklist, color: row.color
+      });
+      return row;
+    },
+
+    updatePlanItem(id, patch) {
+      const row = store.planItem(id);
+      if (!row) return null;
+      Object.assign(row, patch);
+      emit('plan');
+      const body = {};
+      ['title', 'note', 'startAt', 'endAt', 'done', 'checklist', 'color'].forEach((k) => {
+        if (patch[k] !== undefined) body[k] = patch[k];
+      });
+      SH.api && SH.api.push('PATCH', '/api/plan/items/' + id, body);
+      return row;
+    },
+
+    deletePlanItem(id) {
+      state.plan = (state.plan || []).filter((p) => p.id !== id);
+      emit('plan');
+      SH.api && SH.api.push('DELETE', '/api/plan/items/' + id);
+    },
+
+    /* чек-лист внутри марафона */
+    addPlanCheck(itemId, text) {
+      const row = store.planItem(itemId);
+      if (!row || !String(text || '').trim()) return;
+      row.checklist = (row.checklist || []).concat({ id: uid('ch'), text: String(text).trim(), done: false });
+      store.updatePlanItem(itemId, { checklist: row.checklist });
+    },
+    togglePlanCheck(itemId, checkId) {
+      const row = store.planItem(itemId);
+      if (!row) return;
+      row.checklist = (row.checklist || []).map((c) => c.id === checkId ? Object.assign({}, c, { done: !c.done }) : c);
+      store.updatePlanItem(itemId, { checklist: row.checklist });
+    },
+    removePlanCheck(itemId, checkId) {
+      const row = store.planItem(itemId);
+      if (!row) return;
+      store.updatePlanItem(itemId, { checklist: (row.checklist || []).filter((c) => c.id !== checkId) });
+    },
+
     /* ── настройки ── */
     setTheme(theme) {
       state.settings.theme = theme;
@@ -2692,7 +3234,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         const mine = (c.messages || []).filter((m) => m && m.pending && !m.failed);
         if (mine.length) pending[c.id] = mine;
       });
-      const fresh = ['users', 'events', 'posts', 'teams', 'goals', 'tasks', 'saved', 'orgs'];
+      const fresh = ['users', 'events', 'posts', 'teams', 'goals', 'tasks', 'saved', 'orgs', 'plan'];
       fresh.forEach((f) => {
         if (Array.isArray(remote[f])) state[f] = remote[f];
       });
@@ -3496,12 +4038,9 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       if (box) box.textContent = text.trim().slice(0, 400);
     },
     addToRoadmap(id) {
-      const ev = store.event(id);
-      if (!store.isAuthed) { SH.app.go('#/auth'); return; }
-      let goal = store.goals()[0];
-      if (!goal) goal = store.addGoal('Мои цели');
-      store.addTask(goal.id, 'Участвовать: ' + ev.title, 'до ' + ui.shortDate(ev.deadlineDate));
-      ui.toast('Добавлено в роадмап');
+      // событие из агрегатора встаёт в роадмап вехой на дату дедлайна
+      // (и по желанию — марафоном подготовки до этой даты)
+      SH.views.roadmap.addEventToPlan(id);
     },
     share(id) {
       const url = location.origin + location.pathname + '#/event/' + id;
@@ -3538,6 +4077,16 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         out.push({ icon: 'calendar', tone: 'var(--sun)',
           title: days === 0 ? 'Дедлайн сегодня' : 'Дедлайн через ' + days + ' ' + ui.plural(days, 'день', 'дня', 'дней'),
           sub: ev.title, href: '#/event/' + ev.id });
+      }
+    });
+
+    // ближайшие вехи личного роадмапа — чтобы дедлайн не терялся в рутине
+    (store.plan ? store.plan() : []).filter((x) => x.kind === 'milestone' && !x.done).forEach((ms) => {
+      const days = Math.ceil((new Date(ms.startAt) - Date.now()) / 864e5);
+      if (days >= 0 && days <= 7) {
+        out.push({ icon: 'flag', tone: 'var(--blush)',
+          title: days === 0 ? 'Веха сегодня' : 'Веха через ' + days + ' ' + ui.plural(days, 'день', 'дня', 'дней'),
+          sub: ms.title, href: '#/roadmap/w/' + new Date(ms.startAt).toISOString().slice(0, 10) });
       }
     });
 
@@ -3933,142 +4482,816 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   SH.views.community.getTab = () => tab;
 })(window.SH = window.SH || {});
 
-/* Роадмап: цели и задачи */
+/* ==========================================================================
+   Роадмап — «навигатор поступающего» в трёх масштабах.
+
+   Макро   (#/roadmap)          — годы 9–12 класс: вехи и «змейки» марафонов.
+   Неделя  (#/roadmap/w/<дата>)  — календарь недели и расписание дня.
+   Плюс цели и шаги (ИИ-план) — свёрнутый блок внизу.
+
+   Данные: store.plan() → plan_items на сервере (веха / марафон / задача).
+   ========================================================================== */
 (function (SH) {
   'use strict';
   const { ui, store, ai, icon } = SH;
   const e = ui.esc;
 
+  const DAY = 864e5;
+  const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+    'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+  const MON = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+  const WD = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+  const COLORS = ['sky', 'mint', 'sun', 'lavender', 'blush'];
+
+  /* ─────────────────────────── календарные хелперы ─────────────────────────── */
+
+  const pad = (n) => (n < 10 ? '0' + n : '' + n);
+  const keyOf = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  function parseKey(s) {
+    const parts = String(s || '').split('-').map(Number);
+    if (parts.length === 3 && parts[0] > 1900) return new Date(parts[0], parts[1] - 1, parts[2]);
+    return midnight(new Date());
+  }
+  function midnight(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function shift(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+  function mondayOf(d) { const x = midnight(d); return shift(x, -((x.getDay() + 6) % 7)); }
+  const sameDay = (a, b) => keyOf(a) === keyOf(b);
+  const today = () => midnight(new Date());
+
+  function timeLabel(iso) {
+    const d = new Date(iso);
+    if (isNaN(d)) return '';
+    return pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function dayLabel(d) { return d.getDate() + ' ' + MONTHS[d.getMonth()]; }
+  function plural(n, one, few, many) {
+    const m10 = n % 10; const m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return one;
+    if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+    return many;
+  }
+
+  /* класс и учебный год: сентябрь — начало нового года */
+  function myGrade() {
+    const m = String((store.currentUser || {}).grade || '').match(/\d+/);
+    const g = m ? parseInt(m[0], 10) : 11;
+    return Math.min(12, Math.max(9, g));
+  }
+  function schoolYearStart(d) { return d.getMonth() >= 8 ? d.getFullYear() : d.getFullYear() - 1; }
+  function academicLabel(startYear) { return startYear + '/' + String(startYear + 1).slice(2); }
+
+  /* сколько дней прошло из марафона и сколько это процентов */
+  function trackStat(t) {
+    const start = new Date(t.startAt);
+    const end = t.endAt ? new Date(t.endAt) : new Date(t.startAt);
+    const totalDays = Math.max(1, Math.round((midnight(end) - midnight(start)) / DAY) + 1);
+    const raw = Math.round((today() - midnight(start)) / DAY) + 1;
+    const dayIndex = Math.min(totalDays, Math.max(0, raw));
+    const totalMs = Math.max(DAY, end - start);
+    const timePct = Math.min(100, Math.max(0, Math.round(((Date.now() - start) / totalMs) * 100)));
+    const list = t.checklist || [];
+    const doneCount = list.filter((c) => c.done).length;
+    const pct = list.length ? Math.round((doneCount / list.length) * 100) : timePct;
+    return {
+      totalDays, dayIndex, pct,
+      listDone: doneCount, listTotal: list.length,
+      live: dayIndex > 0 && dayIndex < totalDays,
+      finished: dayIndex >= totalDays
+    };
+  }
+
+  /* ближайшая незакрытая веха */
+  function nextMilestone() {
+    const now = Date.now();
+    return store.plan()
+      .filter((p) => p.kind === 'milestone' && !p.done && new Date(p.startAt).getTime() >= now - DAY)
+      .sort((a, b) => String(a.startAt).localeCompare(String(b.startAt)))[0] || null;
+  }
+
+  function daysTo(iso) {
+    return Math.round((midnight(new Date(iso)) - today()) / DAY);
+  }
+  function countdown(iso) {
+    const d = daysTo(iso);
+    if (d === 0) return 'сегодня';
+    if (d === 1) return 'завтра';
+    if (d === -1) return 'вчера';
+    if (d > 0) return 'через ' + d + ' ' + plural(d, 'день', 'дня', 'дней');
+    const n = -d;
+    return n + ' ' + plural(n, 'день', 'дня', 'дней') + ' назад';
+  }
+
+  /* ─────────────────────────── общий каркас ─────────────────────────── */
+
+  function head(title, sub, right) {
+    return '<div class="screen-head">' +
+      '<div class="grow"><h1 class="screen-title">' + e(title) + '</h1>' +
+      (sub ? '<p class="screen-sub">' + e(sub) + '</p>' : '') + '</div>' +
+      (right || '') +
+    '</div>';
+  }
+
+  function modeSwitch(active) {
+    return '<div class="rm-switch" role="tablist">' +
+      '<button role="tab" aria-selected="' + (active === 'macro') + '" onclick="SH.app.go(\'#/roadmap\')">Годы</button>' +
+      '<button role="tab" aria-selected="' + (active === 'micro') + '" onclick="SH.views.roadmap.goToday()">Неделя</button>' +
+    '</div>';
+  }
+
+  /* ─────────────────────────── МАКРО: годы и змейки ─────────────────────────── */
+
+  function macroScreen() {
+    const t = today();
+    const grade = myGrade();
+    const syStart = schoolYearStart(t);
+    const base = syStart + (9 - grade);         // учебный год, в котором был 9 класс
+
+    const items = store.plan();
+    const tracks = items.filter((p) => p.kind === 'track' && p.endAt);
+    const stones = items.filter((p) => p.kind === 'milestone');
+
+    const rows = [9, 10, 11, 12].map((g) => {
+      const startYear = base + (g - 9);
+      const y0 = new Date(startYear, 8, 1);
+      const y1 = new Date(startYear + 1, 8, 1);
+      const span = y1 - y0;
+
+      const rowTracks = tracks
+        .map((tr) => {
+          const a = new Date(tr.startAt).getTime();
+          const b = (tr.endAt ? new Date(tr.endAt).getTime() : a) + DAY;
+          if (b <= y0.getTime() || a >= y1.getTime()) return null;
+          const s = Math.max(a, y0.getTime());
+          const f = Math.min(b, y1.getTime());
+          return {
+            item: tr,
+            left: (s - y0) / span,
+            width: Math.max(0.012, (f - s) / span),
+            stat: trackStat(tr)
+          };
+        })
+        .filter(Boolean)
+        .sort((x, y) => x.left - y.left);
+
+      // раскладываем по «дорожкам», чтобы полосы не наезжали друг на друга
+      const lanes = [];
+      rowTracks.forEach((tr) => {
+        let lane = 0;
+        while (lane < lanes.length && lanes[lane] > tr.left + 0.001) lane += 1;
+        lanes[lane] = tr.left + tr.width;
+        tr.lane = lane;
+      });
+
+      const rowStones = stones
+        .map((ms) => {
+          const d = new Date(ms.startAt);
+          if (d < y0 || d >= y1) return null;
+          return { item: ms, left: (d - y0) / span };
+        })
+        .filter(Boolean)
+        .sort((x, y) => x.left - y.left);
+
+      // подписи вех не должны наезжать друг на друга: раскладываем по рядам,
+      // оценивая ширину плашки по длине названия
+      const W = 12 * 64;
+      const occupied = [];
+      rowStones.forEach((ms) => {
+        const x = ms.left * W;
+        const w = Math.min(170, ms.item.title.length * 5.6 + 30);
+        const left = Math.max(4, Math.min(W - w - 4, x - w / 2));
+        ms.w = Math.round(w);
+        ms.shift = left === 4 && x - w / 2 < 4 ? '0'
+          : (x + w / 2 > W - 4 ? '-100%' : '-50%');
+        let row = 0;
+        while (row < occupied.length && occupied[row] > left - 6) row += 1;
+        occupied[row] = left + w;
+        ms.row = row;
+      });
+      const stoneRows = Math.max(1, occupied.length);
+
+      return {
+        grade: g, startYear, current: g === grade,
+        tracks: rowTracks, lanes: Math.max(1, lanes.length), stones: rowStones,
+        stoneRows, y0, y1
+      };
+    });
+
+    const current = rows.find((r) => r.current);
+    const nowLeft = current ? ((t - current.y0) / (current.y1 - current.y0)) * 100 : 0;
+    const nowCol = (t.getMonth() - 8 + 12) % 12;      // столбец текущего месяца (сентябрь = 0)
+
+    // что происходит прямо сейчас
+    const live = tracks
+      .map((tr) => ({ item: tr, stat: trackStat(tr) }))
+      .filter((x) => x.stat.live)
+      .sort((a, b) => b.stat.pct - a.stat.pct);
+    const next = nextMilestone();
+
+    const nowCard =
+      '<div class="rm-now">' +
+        '<div class="rm-now__top">' +
+          '<span class="rm-now__pill">' + e(grade) + ' класс · ' + e(MONTHS[t.getMonth()]) + '</span>' +
+          '<span class="muted small">' + e(academicLabel(syStart)) + ' учебный год</span>' +
+        '</div>' +
+        (next
+          ? '<button class="rm-next" onclick="SH.views.roadmap.openItem(\'' + next.id + '\')">' +
+              '<span class="rm-next__ico">' + icon('flag', 16) + '</span>' +
+              '<span class="grow" style="min-width:0;text-align:left">' +
+                '<span class="rm-next__title">' + e(next.title) + '</span>' +
+                '<span class="rm-next__sub">' + e(dayLabel(new Date(next.startAt))) + ' · ' + e(countdown(next.startAt)) + '</span>' +
+              '</span>' +
+              '<span class="rm-next__go">' + icon('chevronRight', 18) + '</span>' +
+            '</button>'
+          : '<div class="rm-next rm-next--empty">Ближайших дедлайнов нет — самое время добавить</div>') +
+        (live.length
+          ? '<div class="rm-live">' + live.slice(0, 2).map((x) =>
+              '<button class="rm-live__row" onclick="SH.views.roadmap.openItem(\'' + x.item.id + '\')">' +
+                '<span class="rm-dot" style="background:var(--' + (x.item.color || 'sky') + ')"></span>' +
+                '<span class="grow ellipsis">' + e(x.item.title) + '</span>' +
+                '<b>' + x.stat.dayIndex + '/' + x.stat.totalDays + '</b>' +
+              '</button>').join('') + '</div>'
+          : '') +
+      '</div>';
+
+    function r_isNow(i) { return i === nowCol; }
+
+    const header = '<div class="rm-head">' +
+      '<div class="rm-head__corner"></div>' +
+      '<div class="rm-head__months">' +
+        Array.from({ length: 12 }, (_, i) => {
+          const m = (8 + i) % 12;
+          const isNow = r_isNow(i);
+          return '<span class="rm-mon' + (isNow ? ' rm-mon--now' : '') + '">' + MON[m] + '</span>';
+        }).join('') +
+      '</div>' +
+    '</div>';
+
+    const body = rows.map((r) => {
+      const laneH = 32;
+      const marksH = r.stones.length ? r.stoneRows * 19 + 8 : 8;
+      const empty = !r.tracks.length && !r.stones.length;
+      const height = empty ? 44 : marksH + r.lanes * laneH + 8;
+
+      const cells = Array.from({ length: 12 }, (_, i) => {
+        const m = (8 + i) % 12;
+        const y = r.startYear + (8 + i >= 12 ? 1 : 0);
+        const d = new Date(y, m, 1);
+        const isNow = r.current && m === t.getMonth();
+        return '<button class="rm-cell' + (isNow ? ' rm-cell--now' : '') + '" ' +
+          'onclick="SH.views.roadmap.zoomTo(\'' + keyOf(d) + '\')" ' +
+          'aria-label="' + e(MONTHS[m] + ' ' + y) + '"></button>';
+      }).join('');
+
+      const marks = r.stones.map((ms) => {
+        const isNext = next && next.id === ms.item.id;
+        const soon = !ms.item.done && daysTo(ms.item.startAt) >= 0 && daysTo(ms.item.startAt) <= 7;
+        const d = new Date(ms.item.startAt);
+        return '<button class="rm-ms' + (ms.item.done ? ' rm-ms--done' : '') +
+            (isNext || soon ? ' rm-ms--soon' : '') + '" ' +
+          'style="left:' + (ms.left * 100).toFixed(3) + '%;top:' + (ms.row * 19) + 'px;' +
+            'transform:translateX(' + ms.shift + ');max-width:' + ms.w + 'px" ' +
+          'onclick="SH.views.roadmap.openItem(\'' + ms.item.id + '\')" title="' + e(ms.item.title) + '">' +
+          '<span class="rm-ms__dot"></span>' +
+          '<span class="rm-ms__label">' + e(ms.item.title) + '</span>' +
+        '</button>';
+      }).join('');
+
+      const lanes = r.tracks.map((tr) => {
+        const st = tr.stat;
+        const px = tr.width * 12 * 64;
+        const label = px < 34 ? '' : (px < 120 ? st.pct + '%' : (tr.item.title + ' · ' + st.dayIndex + ' из ' + st.totalDays + ' · ' + st.pct + '%'));
+        return '<button class="rm-track rm-track--' + e(tr.item.color || 'sky') + (st.finished ? ' rm-track--done' : '') + '" ' +
+          'style="left:' + (tr.left * 100).toFixed(3) + '%;width:' + (tr.width * 100).toFixed(3) + '%;' +
+            'top:' + (tr.lane * laneH) + 'px" ' +
+          'onclick="SH.views.roadmap.openItem(\'' + tr.item.id + '\')" title="' + e(tr.item.title) + '">' +
+          '<span class="rm-track__fill" style="width:' + st.pct + '%"></span>' +
+          '<span class="rm-track__label">' + e(label) + '</span>' +
+        '</button>';
+      }).join('');
+
+      return '<div class="rm-year' + (r.current ? ' rm-year--now' : '') + '">' +
+        '<div class="rm-year__label">' +
+          '<b>' + r.grade + ' класс</b>' +
+          '<span>' + e(academicLabel(r.startYear)) + '</span>' +
+          (r.current ? '<i>сейчас</i>' : '') +
+        '</div>' +
+        '<div class="rm-canvas' + (empty ? ' rm-canvas--empty' : '') + '" style="height:' + height + 'px">' +
+          '<div class="rm-cells">' + cells + '</div>' +
+          (r.current ? '<div class="rm-today" style="left:' + nowLeft.toFixed(3) + '%"><i></i></div>' : '') +
+          (empty ? '<div class="rm-empty-year">ничего не запланировано</div>' : '<div class="rm-marks">' + marks + '</div>') +
+          '<div class="rm-lanes" style="top:' + marksH + 'px">' + lanes + '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    const legend = '<div class="rm-legend">' +
+      '<span><i class="rm-legend__dot"></i>веха или дедлайн</span>' +
+      '<span><i class="rm-legend__bar"></i>марафон: закрашено = прожито</span>' +
+    '</div>';
+
+    return '<div class="screen">' +
+      head('Роадмап', 'Навигатор поступающего', iconButton('plus', 'Добавить в роадмап', 'SH.views.roadmap.addItem()')) +
+      modeSwitch('macro') +
+      nowCard +
+      '<div class="rm-scroll">' +
+        '<div class="rm-table" style="--mw:64px">' + header + body + '</div>' +
+      '</div>' +
+      legend +
+      goalsSection() +
+    '</div>';
+  }
+
+  function iconButton(ico, label, onclick) {
+    return '<button class="icon-btn icon-btn--plain" onclick="' + onclick + '" aria-label="' + e(label) + '">' +
+      icon(ico, 22) + '</button>';
+  }
+
+  /* ─────────────────────────── МИКРО: неделя и день ─────────────────────────── */
+
+  function weekScreen(anyDay) {
+    const anchor = anyDay || today();
+    const monday = mondayOf(anchor);
+    const days = Array.from({ length: 7 }, (_, i) => shift(monday, i));
+    const selectedKey = keyOf(anchor);
+    const items = store.plan();
+
+    const byDay = days.map((d) => {
+      const k = keyOf(d);
+      const tasks = items.filter((p) => p.kind === 'task' && keyOf(new Date(p.startAt)) === k)
+        .sort((a, b) => String(a.startAt).localeCompare(String(b.startAt)));
+      const stones = items.filter((p) => p.kind === 'milestone' && keyOf(new Date(p.startAt)) === k);
+      const tracks = items.filter((p) => p.kind === 'track' && p.endAt &&
+        new Date(p.startAt) <= shift(d, 1) && new Date(p.endAt) >= d);
+      return { date: d, k, tasks, stones, tracks };
+    });
+
+    const total = byDay.reduce((s, x) => s + x.tasks.length + x.stones.length, 0);
+    const range = monday.getMonth() === days[6].getMonth()
+      ? dayLabel(monday) + ' — ' + days[6].getDate() + ' ' + MONTHS[days[6].getMonth()]
+      : dayLabel(monday) + ' — ' + dayLabel(days[6]);
+
+    const strip = '<div class="rm-strip">' +
+      days.map((d) => {
+        const info = byDay.find((x) => x.k === keyOf(d));
+        const count = info.tasks.length + info.stones.length;
+        const isToday = sameDay(d, today());
+        return '<button class="rm-strip__day' + (isToday ? ' is-today' : '') +
+          (keyOf(d) === selectedKey ? ' is-sel' : '') + '" data-day="' + keyOf(d) + '" ' +
+          'onclick="SH.views.roadmap.pickDay(\'' + keyOf(d) + '\')">' +
+          '<span class="rm-strip__wd">' + WD[(d.getDay() + 6) % 7] + '</span>' +
+          '<span class="rm-strip__num">' + d.getDate() + '</span>' +
+          '<span class="rm-strip__dots">' + (count ? '<i></i>'.repeat(Math.min(3, count)) : '') + '</span>' +
+        '</button>';
+      }).join('') +
+    '</div>';
+
+    const dayCards = byDay.map((info) => {
+      const active = info.k === selectedKey;
+      const isToday = sameDay(info.date, today());
+      const rows = [];
+
+      info.stones.forEach((ms) => {
+        const soon = !ms.done && daysTo(ms.startAt) >= 0 && daysTo(ms.startAt) <= 7;
+        rows.push('<button class="rm-chip rm-chip--stone' + (ms.done ? ' is-done' : '') + (soon ? ' is-soon' : '') + '" ' +
+          'onclick="SH.views.roadmap.openItem(\'' + ms.id + '\')">' +
+          '<span class="rm-chip__ico">' + icon('flag', 13) + '</span>' +
+          '<span class="grow"><span class="rm-chip__title">' + e(ms.title) + '</span>' +
+          '<span class="rm-chip__sub">' + e(timeLabel(ms.startAt)) + ' · дедлайн</span></span>' +
+        '</button>');
+      });
+
+      info.tracks.slice(0, 3).forEach((tr) => {
+        const st = trackStat(tr);
+        rows.push('<button class="rm-chip rm-chip--track rm-track--' + e(tr.color || 'sky') + '" ' +
+          'onclick="SH.views.roadmap.openItem(\'' + tr.id + '\')">' +
+          '<span class="rm-snake"><i style="width:' + st.pct + '%"></i></span>' +
+          '<span class="rm-snake__meta"><b>' + e(tr.title) + '</b><span>День ' + st.dayIndex + ' из ' + st.totalDays + ' · ' + st.pct + '%</span></span>' +
+        '</button>');
+      });
+
+      info.tasks.forEach((tk) => {
+        rows.push('<button class="rm-task' + (tk.done ? ' is-done' : '') + '" ' +
+          'onclick="SH.views.roadmap.toggleTask(\'' + tk.id + '\')">' +
+          '<span class="rm-task__box">' + (tk.done ? icon('check', 12) : '') + '</span>' +
+          '<span class="rm-task__time">' + e(timeLabel(tk.startAt)) + '</span>' +
+          '<span class="rm-task__text">' + e(tk.title) + '</span>' +
+          '<span class="rm-task__edit" onclick="event.stopPropagation();SH.views.roadmap.editItem(\'' + tk.id + '\')">' +
+            icon('edit', 14) + '</span>' +
+        '</button>');
+      });
+
+      if (!rows.length) {
+        rows.push('<div class="rm-day__empty">Свободно</div>');
+      }
+
+      return '<section class="rm-day" data-day="' + info.k + '" data-active="' + (active ? '1' : '0') + '">' +
+        '<div class="rm-day__head">' +
+          '<span class="rm-day__wd">' + WD[(info.date.getDay() + 6) % 7] + ', ' + info.date.getDate() + ' ' + MONTHS[info.date.getMonth()] + '</span>' +
+          (isToday ? '<span class="tag tag--lav">сегодня</span>' : '') +
+          '<span class="grow"></span>' +
+          '<button class="rm-day__add" onclick="SH.views.roadmap.addItem(\'' + info.k + '\')" aria-label="Добавить на день">' + icon('plus', 16) + '</button>' +
+        '</div>' +
+        '<div class="rm-day__body">' + rows.join('') + '</div>' +
+      '</section>';
+    }).join('');
+
+    return '<div class="screen">' +
+      head('Роадмап', 'Неделя и день', iconButton('plus', 'Добавить в роадмап', 'SH.views.roadmap.addItem(\'' + selectedKey + '\')')) +
+      modeSwitch('micro') +
+      '<div class="rm-weekhead">' +
+        '<button class="icon-btn icon-btn--plain" onclick="SH.views.roadmap.shiftWeek(-1)" aria-label="Прошлая неделя">' + icon('arrowLeft', 20) + '</button>' +
+        '<button class="grow rm-weekhead__title" onclick="SH.app.go(\'#/roadmap\')">' + e(range) +
+          '<span>' + (total ? total + ' ' + plural(total, 'пункт', 'пункта', 'пунктов') + ' на неделе' : 'пока пусто') + '</span>' +
+        '</button>' +
+        '<button class="icon-btn icon-btn--plain" onclick="SH.views.roadmap.shiftWeek(1)" aria-label="Следующая неделя">' + icon('arrowRight', 20) + '</button>' +
+        '<button class="btn btn--soft btn--xs" onclick="SH.views.roadmap.goToday()">Сегодня</button>' +
+      '</div>' +
+      strip +
+      '<div class="rm-days">' + dayCards + '</div>' +
+    '</div>';
+  }
+
+  /* ─────────────────────────── цели и шаги (ИИ-план) ─────────────────────────── */
+
+  let goalsOpen = false;
   let selectedGoalId = null;
 
-  function html() {
-    if (!store.isAuthed) {
-      return '<div class="screen">' +
-        '<div class="screen-head"><h1 class="screen-title">Роадмап</h1></div>' +
-        ui.empty('map', 'Личный план на экране', 'Войди, чтобы собрать цели, задачи и трекать прогресс.',
-          '<button class="btn btn--brand" onclick="SH.app.go(\'#/auth\')">Войти</button>') +
-        '</div>';
-    }
-
+  function goalsSection() {
     const goals = store.goals();
-    if (!selectedGoalId && goals.length) selectedGoalId = goals[0].id;
-    const goal = goals.find((g) => g.id === selectedGoalId) || goals[0] || null;
-    if (goal) selectedGoalId = goal.id;
+    if (!goals.length) {
+      return '<div class="rm-goals">' +
+        '<button class="rm-goals__toggle" onclick="SH.views.roadmap.toggleGoals()">' +
+          '<span class="grow" style="text-align:left"><b>Цели и шаги</b><span class="muted small"> зачем всё это</span></span>' +
+          icon(goalsOpen ? 'chevronRight' : 'chevronRight', 18) +
+        '</button>' +
+        '<div class="muted small" style="margin-top:6px">Пока целей нет — создай первую, и ИИ разложит её на шаги.</div>' +
+        '<button class="btn btn--soft btn--sm mt-16" onclick="SH.views.roadmap.addGoal()">Создать цель</button>' +
+      '</div>';
+    }
+    if (!selectedGoalId || !goals.some((g) => g.id === selectedGoalId)) selectedGoalId = goals[0].id;
+    const goal = goals.find((g) => g.id === selectedGoalId);
+    const tasks = store.tasks(goal.id);
+    const progress = store.goalProgress(goal.id);
 
-    const tasks = goal ? store.tasks(goal.id) : [];
-    const done = tasks.filter((t) => t.status === 'done').length;
-    const progress = goal ? store.goalProgress(goal.id) : 0;
-
-    return (
-      '<div class="screen">' +
-        '<div class="screen-head">' +
-          '<div class="grow">' +
-            '<h1 class="screen-title">Роадмап</h1>' +
-            '<p class="screen-sub">От цели — к конкретным шагам</p>' +
+    return '<div class="rm-goals">' +
+      '<button class="rm-goals__toggle" onclick="SH.views.roadmap.toggleGoals()">' +
+        '<span class="grow" style="text-align:left"><b>Цели и шаги</b><span class="muted small"> · ' + goals.length + ' ' + plural(goals.length, 'цель', 'цели', 'целей') + '</span></span>' +
+        '<span class="rm-goals__chev' + (goalsOpen ? ' is-open' : '') + '">' + icon('chevronRight', 18) + '</span>' +
+      '</button>' +
+      (goalsOpen
+        ? '<div class="hscroll" style="margin:14px 0">' +
+            goals.map((g) => {
+              const active = g.id === goal.id;
+              return '<button class="rm-goalchip' + (active ? ' is-active' : '') + '" onclick="SH.views.roadmap.selectGoal(\'' + g.id + '\')">' +
+                '<span class="ellipsis">' + e(g.title) + '</span>' +
+                '<span class="rm-goalchip__p"><i style="width:' + store.goalProgress(g.id) + '%"></i></span>' +
+              '</button>';
+            }).join('') +
+            '<button class="chip-add" style="min-width:88px" onclick="SH.views.roadmap.addGoal()">' + icon('plus', 15) + 'Цель</button>' +
           '</div>' +
-          '<button class="icon-btn icon-btn--plain" onclick="SH.views.roadmap.addGoal()" aria-label="Новая цель">' +
-            icon('plus', 22) +
-          '</button>' +
-        '</div>' +
-
-        (goals.length ? '<div class="hscroll" style="margin-bottom:18px">' +
-          goals.map((g) => goalChip(g)).join('') +
-          (goals.length
-            ? '<button class="chip-add" style="align-self:stretch;flex-direction:column;justify-content:center;min-width:92px" ' +
-                'onclick="SH.views.roadmap.addGoal()">' + icon('plus', 16) + 'Цель</button>'
-            : '') +
-        '</div>' : '') +
-
-        (goal
-          ? '' +
-            '<div class="card" style="background:var(--mint);border:0;color:#0f3d29;padding:18px">' +
-              '<div class="row" style="margin-bottom:4px">' +
-                '<span class="small" style="opacity:.7;font-weight:650">Активная цель</span>' +
-                '<span class="spacer"></span>' +
-                '<button onclick="SH.views.roadmap.deleteGoal(\'' + goal.id + '\')" aria-label="Удалить цель" style="opacity:.55">' +
-                  icon('trash', 17) + '</button>' +
-              '</div>' +
-              '<h2 style="margin:0 0 12px;font-size:18px;letter-spacing:-0.4px">' + e(goal.title) + '</h2>' +
-              '<div class="progress" style="background:rgba(255,255,255,.6)">' +
-                '<i style="width:' + progress + '%;background:#0f3d29"></i>' +
-              '</div>' +
-              '<div class="row small" style="margin-top:8px;opacity:.75">' +
-                '<span>' + done + ' из ' + tasks.length + ' шагов</span><span class="spacer"></span>' +
-                '<span>' + progress + '%</span>' +
-              '</div>' +
-              '<button class="btn btn--primary btn--block mt-16" onclick="SH.views.roadmap.generate()">' +
-                icon('sparkles', 18) + 'Собрать план с ИИ' +
-              '</button>' +
-            '</div>' +
-
-            '<div class="section-head"><span class="h2 grow">Шаги</span>' +
-              '<button class="section-link" onclick="SH.views.roadmap.addTask()">+ Добавить</button></div>' +
-
-            (tasks.length
-              ? '<div class="list">' + tasks.map(taskRow).join('') + '</div>'
-              : ui.empty('checkCircle', 'Пока нет шагов',
-                  'Нажми «Собрать план с ИИ» — он разобьёт цель на измеримые действия.',
-                  '<button class="btn btn--soft" onclick="SH.views.roadmap.generate()">Собрать план</button>')) 
-          : ui.empty('map', 'Целей пока нет', 'Опиши, чего хочешь достичь — ИИ разложит это на шаги.',
-              '<button class="btn btn--brand" onclick="SH.views.roadmap.addGoal()">Создать цель</button>')) +
-
-        '<div class="section-head"><span class="h2">Добавить из Explore</span></div>' +
-        '<div class="list">' +
-          store.events().slice(0, 3).map((ev) =>
-            '<div class="item">' +
-              '<span class="rank-badge" style="width:34px;height:34px;border-radius:11px;background:var(--primary-soft);color:var(--primary)">' +
-                icon(store.CATEGORIES[ev.category].glyph, 17) + '</span>' +
-              '<div class="grow" style="min-width:0"><div class="ellipsis" style="font-weight:650;font-size:13.5px">' + e(ev.title) + '</div>' +
-              '<div class="small muted">' + e(ui.deadlineInfo(ev.deadlineDate).label) + '</div></div>' +
-              '<button class="btn btn--soft btn--xs" onclick="SH.views.roadmap.addFromEvent(\'' + ev.id + '\')">+ В план</button>' +
-            '</div>'
-          ).join('') +
-        '</div>' +
-      '</div>'
-    );
+          '<div class="row" style="margin-bottom:10px">' +
+            '<span class="small muted grow">' + progress + '% · ' + tasks.filter((x) => x.status === 'done').length + ' из ' + tasks.length + ' шагов</span>' +
+            '<button class="section-link" onclick="SH.views.roadmap.deleteGoal(\'' + goal.id + '\')">Удалить цель</button>' +
+          '</div>' +
+          (tasks.length
+            ? '<div class="list">' + tasks.map(goalTaskRow).join('') + '</div>'
+            : '<div class="muted small">Шагов пока нет.</div>') +
+          '<div class="row mt-16" style="gap:10px">' +
+            '<button class="btn btn--soft grow btn--sm" onclick="SH.views.roadmap.addGoalTask()">+ Шаг</button>' +
+            '<button class="btn btn--brand grow btn--sm" onclick="SH.views.roadmap.generate()">' + icon('sparkles', 16) + 'План с ИИ</button>' +
+          '</div>'
+        : '') +
+    '</div>';
   }
 
-  function goalChip(g) {
-    const active = g.id === selectedGoalId;
-    const p = store.goalProgress(g.id);
-    return (
-      '<button class="card" style="width:168px;text-align:left;padding:12px;border:1px solid ' +
-        (active ? 'var(--primary)' : 'var(--border)') + ';background:' + (active ? 'var(--primary)' : 'var(--surface)') + ';' +
-        'color:' + (active ? '#fff' : 'var(--text)') + '" onclick="SH.views.roadmap.selectGoal(\'' + g.id + '\')">' +
-        '<div style="font-size:13px;font-weight:750;line-height:1.3;height:34px;overflow:hidden">' + e(g.title) + '</div>' +
-        '<div class="progress" style="margin-top:8px;background:' + (active ? 'rgba(255,255,255,.28)' : 'var(--chip)') + '">' +
-          '<i style="width:' + p + '%;background:' + (active ? '#fff' : 'var(--primary)') + '"></i>' +
-        '</div>' +
-      '</button>'
-    );
-  }
-
-  function taskRow(t) {
+  function goalTaskRow(t) {
     const done = t.status === 'done';
-    const current = t.status === 'current';
-    return (
-      '<div class="item card--tap" onclick="SH.views.roadmap.toggle(\'' + t.id + '\')" style="cursor:pointer;align-items:flex-start">' +
-        '<span style="margin-top:1px;color:' + (done ? 'var(--success)' : current ? 'var(--primary)' : 'var(--muted)') + '">' +
-          icon(done ? 'checkCircle' : 'circle', 21) + '</span>' +
-        '<div class="grow" style="min-width:0">' +
-          '<div style="font-size:14px;font-weight:600;' + (done ? 'text-decoration:line-through;color:var(--muted)' : '') + '">' +
-            e(t.title) + '</div>' +
-          '<div class="small muted" style="margin-top:2px">' + e(t.dateLabel || store.TASK_STATUS[t.status]) + '</div>' +
-        '</div>' +
-        (current ? '<span class="tag tag--lav">сейчас</span>' : '') +
-      '</div>'
-    );
+    return '<div class="item card--tap" onclick="SH.views.roadmap.toggleGoalTask(\'' + t.id + '\')" style="cursor:pointer">' +
+      '<span style="color:' + (done ? 'var(--success)' : 'var(--muted)') + '">' + icon(done ? 'checkCircle' : 'circle', 20) + '</span>' +
+      '<div class="grow" style="min-width:0"><div style="font-size:14px;' + (done ? 'text-decoration:line-through;color:var(--muted)' : '') + '">' +
+        e(t.title) + '</div>' +
+        (t.dateLabel ? '<div class="small muted">' + e(t.dateLabel) + '</div>' : '') +
+      '</div></div>';
   }
+
+  /* ─────────────────────────── шиты ─────────────────────────── */
+
+  function addItemSheet(presetKey) {
+    const date = presetKey && /^\d{4}-\d{2}-\d{2}$/.test(presetKey) ? presetKey : keyOf(today());
+    ui.sheet({
+      title: 'Что добавить',
+      subtitle: 'Три масштаба: дедлайн, марафон или дело на день',
+      body:
+        '<div class="rm-pick">' +
+          option('milestone', 'flag', 'Веха или дедлайн', 'Точная дата: экзамен, подача заявки, сдача проекта', date) +
+          option('track', 'refresh', 'Марафон', 'Растянуто на недели: подготовка, стажировка, буткемп', date) +
+          option('task', 'clock', 'Дело на день', 'Урок, созвон, задача на конкретное время', date) +
+        '</div>'
+    });
+  }
+
+  function option(kind, ico, title, sub, date) {
+    return '<button class="rm-pick__row" onclick="SH.views.roadmap.formItem(\'' + kind + '\',\'' + date + '\')">' +
+      '<span class="rm-pick__ico">' + icon(ico, 20) + '</span>' +
+      '<span class="grow" style="text-align:left"><b>' + e(title) + '</b><span>' + e(sub) + '</span></span>' +
+      icon('chevronRight', 18) +
+    '</button>';
+  }
+
+  function itemForm(kind, item, dateKey) {
+    const isTrack = kind === 'track';
+    const base = item ? new Date(item.startAt) : (dateKey ? parseKey(dateKey) : new Date());
+    const dateValue = keyOf(base);
+    const timeValue = item && kind !== 'track' ? timeLabel(item.startAt) : (kind === 'task' ? '10:00' : '');
+    const endValue = item && item.endAt ? keyOf(new Date(item.endAt)) : keyOf(shift(base, isTrack ? 21 : 0));
+
+    return '' +
+      ui.field('rm-title', isTrack ? 'Название марафона' : (kind === 'milestone' ? 'Что случится' : 'Что нужно сделать'),
+        { value: item ? item.title : '', placeholder: isTrack ? 'Марафон подготовки к SAT' : (kind === 'milestone' ? 'Дедлайн подачи заявки' : 'Созвон с командой') }) +
+      '<div class="row" style="gap:10px;margin-top:12px">' +
+        '<div class="grow">' + ui.field('rm-date', isTrack ? 'Начало' : 'Дата', { type: 'date', value: dateValue }) + '</div>' +
+        (kind !== 'track'
+          ? '<div style="width:120px">' + ui.field('rm-time', 'Время', { type: 'time', value: timeValue }) + '</div>'
+          : '<div class="grow">' + ui.field('rm-end', 'Конец', { type: 'date', value: endValue }) + '</div>') +
+      '</div>' +
+      ui.field('rm-note', 'Заметка', { textarea: true, value: item ? item.note || '' : '', placeholder: 'Ссылка, кабинет или что не забыть', style: 'margin-top:12px' }) +
+      '<div class="wrap" style="margin-top:14px">' +
+        COLORS.map((c, i) => '<button class="rm-color' + ((item ? item.color : COLORS[i % COLORS.length]) === c ? ' is-sel' : '') +
+          '" data-color="' + c + '" style="background:var(--' + c + ')" onclick="SH.views.roadmap.pickColor(this)" aria-label="' + c + '"></button>').join('') +
+      '</div>';
+  }
+
+  function formItem(kind, dateKey, itemId) {
+    const item = itemId ? store.planItem(itemId) : null;
+    ui.sheet({
+      title: item ? 'Изменить' : (kind === 'track' ? 'Новый марафон' : (kind === 'milestone' ? 'Новая веха' : 'Дело на день')),
+      subtitle: kind === 'track' ? 'Полоса протянется через дни и месяцы' : '',
+      body:
+        itemForm(kind, item, dateKey) +
+        '<button class="btn btn--brand btn--block mt-16" id="rm-save" onclick="SH.views.roadmap.saveItem(\'' +
+          kind + '\',\'' + (item ? item.id : '') + '\')">' + (item ? 'Сохранить' : 'Добавить') + '</button>' +
+        (item ? '<button class="btn btn--danger btn--block" style="margin-top:8px" onclick="SH.views.roadmap.removeItem(\'' + item.id + '\')">Удалить</button>' : ''),
+      onMount(el) {
+        el.querySelectorAll('.rm-color').forEach((b) => b.addEventListener('click', () => {
+          el.querySelectorAll('.rm-color').forEach((x) => x.classList.remove('is-sel'));
+          b.classList.add('is-sel');
+        }));
+        setTimeout(() => { const i = el.querySelector('#rm-title'); if (i) i.focus(); }, 140);
+      }
+    });
+  }
+
+  function stoneSheet(item) {
+    const d = new Date(item.startAt);
+    const left = daysTo(item.startAt);
+    ui.sheet({
+      title: item.title,
+      subtitle: dayLabel(d) + ' · ' + timeLabel(item.startAt) + ' · ' + countdown(item.startAt),
+      body:
+        (item.note ? '<p class="body" style="margin:0 0 16px;line-height:1.6">' + e(item.note) + '</p>' : '') +
+        '<div class="rm-fact">' + icon('calendar', 16) + '<span>' +
+          (item.done ? 'Отмечено как выполненное' : (left < 0 ? 'Дедлайн прошёл' : 'До дедлайна ' + left + ' ' + plural(left, 'день', 'дня', 'дней'))) +
+        '</span></div>' +
+        '<button class="btn ' + (item.done ? 'btn--soft' : 'btn--brand') + ' btn--block mt-16" onclick="SH.views.roadmap.toggleDone(\'' + item.id + '\')">' +
+          icon('check', 17) + (item.done ? 'Вернуть в план' : 'Отметить готовым') + '</button>' +
+        '<div class="row mt-16" style="gap:10px">' +
+          '<button class="btn btn--soft grow" onclick="SH.views.roadmap.editItem(\'' + item.id + '\')">Изменить</button>' +
+          '<button class="btn btn--danger grow" onclick="SH.views.roadmap.removeItem(\'' + item.id + '\')">Удалить</button>' +
+        '</div>'
+    });
+  }
+
+  function trackSheet(item) {
+    const st = trackStat(item);
+    const list = item.checklist || [];
+    ui.sheet({
+      title: item.title,
+      subtitle: dayLabel(new Date(item.startAt)) + ' — ' + (item.endAt ? dayLabel(new Date(item.endAt)) : ''),
+      body:
+        '<div class="rm-snake rm-snake--lg rm-track--' + e(item.color || 'sky') + '">' +
+          '<span class="rm-snake__bar"><i style="width:' + st.pct + '%"></i></span>' +
+          '<span class="rm-snake__meta"><b>День ' + st.dayIndex + ' из ' + st.totalDays + '</b><span>' + st.pct + '% прохождения</span></span>' +
+        '</div>' +
+        (item.note ? '<p class="body" style="margin:14px 0 0;line-height:1.6">' + e(item.note) + '</p>' : '') +
+        '<div class="section-head" style="margin-top:18px"><span class="h2" style="font-size:15px">Чек-лист по неделям</span></div>' +
+        (list.length
+          ? '<div class="list">' + list.map((c) =>
+              '<div class="item" style="padding:10px 12px">' +
+                '<button class="rm-task__box' + (c.done ? ' is-on' : '') + '" onclick="SH.views.roadmap.toggleCheck(\'' + item.id + '\',\'' + c.id + '\')" aria-label="Отметить">' +
+                  (c.done ? icon('check', 12) : '') + '</button>' +
+                '<span class="grow" style="font-size:14px;' + (c.done ? 'text-decoration:line-through;color:var(--muted)' : '') + '">' + e(c.text) + '</span>' +
+                '<button class="rm-x" onclick="SH.views.roadmap.removeCheck(\'' + item.id + '\',\'' + c.id + '\')" aria-label="Удалить">' + icon('close', 15) + '</button>' +
+              '</div>').join('') + '</div>'
+          : '<div class="muted small">Разбей марафон на недели — прогресс станет точнее.</div>') +
+        '<div class="row" style="gap:8px;margin-top:12px">' +
+          '<div class="field grow"><input id="rm-check" placeholder="Например: Неделя 3 · пробный тест"></div>' +
+          '<button class="btn btn--soft" id="rm-check-add" onclick="SH.views.roadmap.addCheck(\'' + item.id + '\')">' + icon('plus', 17) + '</button>' +
+        '</div>' +
+        '<div class="row mt-16" style="gap:10px">' +
+          '<button class="btn btn--soft grow" onclick="SH.views.roadmap.editItem(\'' + item.id + '\')">Изменить</button>' +
+          '<button class="btn btn--danger grow" onclick="SH.views.roadmap.removeItem(\'' + item.id + '\')">Удалить</button>' +
+        '</div>'
+    });
+  }
+
+  /* ─────────────────────────── действия ─────────────────────────── */
 
   const actions = {
+    /* навигация между масштабами */
+    zoomTo(dateKey) { SH.app.go('#/roadmap/w/' + dateKey); },
+    shiftWeek(delta) {
+      const cur = (location.hash.split('/')[3]) || keyOf(today());
+      SH.app.go('#/roadmap/w/' + keyOf(shift(parseKey(cur), delta * 7)));
+    },
+    goToday() { SH.app.go('#/roadmap/w/' + keyOf(today())); },
+    pickDay(dateKey) { SH.app.go('#/roadmap/w/' + dateKey); },
+
+    /* создание и правка */
+    addItem(presetKey) { addItemSheet(presetKey); },
+    formItem,
+    editItem(id) { const it = store.planItem(id); if (it) formItem(it.kind, null, id); },
+
+    pickColor(btn) {
+      btn.parentNode.querySelectorAll('.rm-color').forEach((b) => b.classList.remove('is-sel'));
+      btn.classList.add('is-sel');
+    },
+
+    saveItem(kind, id) {
+      // защита от двойного тапа: второй клик по кнопке не создаёт дубль
+      const btn = document.getElementById('rm-save');
+      if (btn && btn.disabled) return;
+      if (btn) { btn.disabled = true; btn.textContent = 'Сохраняю…'; }
+      const val = (k) => { const el = document.getElementById(k); return el ? el.value : ''; };
+      const title = val('rm-title').trim();
+      if (!title) {
+        if (btn) { btn.disabled = false; btn.textContent = id ? 'Сохранить' : 'Добавить'; }
+        ui.toast('Дай название');
+        return;
+      }
+      const dateStr = val('rm-date') || keyOf(today());
+      const timeStr = kind === 'track' ? '00:00' : (val('rm-time') || '09:00');
+      const base = parseKey(dateStr);
+      const hhmm = timeStr.split(':').map(Number);
+      base.setHours(hhmm[0] || 0, hhmm[1] || 0, 0, 0);
+      const endRaw = val('rm-end') || dateStr;
+      const end = parseKey(endRaw);
+      end.setHours(23, 59, 0, 0);
+      const colorEl = document.querySelector('.rm-color.is-sel');
+      const color = colorEl ? colorEl.getAttribute('data-color') : 'sky';
+
+      const patch = {
+        kind, title, note: val('rm-note').trim(),
+        startAt: base.toISOString(),
+        endAt: kind === 'track' ? end.toISOString() : '',
+        color
+      };
+      if (kind === 'track' && end < base) {
+        if (btn) { btn.disabled = false; btn.textContent = id ? 'Сохранить' : 'Добавить'; }
+        ui.toast('Конец раньше начала');
+        return;
+      }
+
+      if (id) store.updatePlanItem(id, patch);
+      else store.addPlanItem(patch);
+
+      ui.closeSheet();
+      ui.toast(id ? 'Сохранено' : 'Добавлено в роадмап');
+      SH.app.render();
+    },
+
+    removeItem(id) {
+      ui.confirmSheet('Удалить из роадмапа?', 'Пункт исчезнет со всех дней и из обоих режимов.', 'Удалить', () => {
+        store.deletePlanItem(id);
+        ui.toast('Удалено');
+        SH.app.render();
+      });
+    },
+
+    openItem(id) {
+      const item = store.planItem(id);
+      if (!item) return;
+      if (item.kind === 'track') trackSheet(item);
+      else if (item.kind === 'milestone') stoneSheet(item);
+      else formItem('task', null, id);
+    },
+
+    toggleTask(id) {
+      const item = store.planItem(id);
+      if (!item) return;
+      store.updatePlanItem(id, { done: !item.done });
+      SH.app.render();
+    },
+
+    toggleDone(id) {
+      const item = store.planItem(id);
+      if (!item) return;
+      store.updatePlanItem(id, { done: !item.done });
+      ui.closeSheet();
+      ui.toast(item.done ? 'Вернули в план' : 'Отмечено готовым');
+      SH.app.render();
+    },
+
+    addCheck(id) {
+      const el = document.getElementById('rm-check');
+      if (!el || !el.value.trim()) { ui.toast('Напиши пункт'); return; }
+      store.addPlanCheck(id, el.value);
+      el.value = '';
+      actions.openItem(id);
+      SH.app.render();
+    },
+    toggleCheck(itemId, checkId) {
+      store.togglePlanCheck(itemId, checkId);
+      actions.openItem(itemId);
+      SH.app.render();
+    },
+    removeCheck(itemId, checkId) {
+      store.removePlanCheck(itemId, checkId);
+      actions.openItem(itemId);
+      SH.app.render();
+    },
+
+    /* «добавить из агрегатора» — вызывается с карточки события */
+    addEventToPlan(eventId) {
+      const ev = store.event(eventId);
+      if (!ev || !store.isAuthed) { if (!store.isAuthed) SH.app.go('#/auth'); return; }
+      const already = store.plan().some((p) => p.eventId === ev.id && p.kind === 'milestone');
+      const deadline = new Date(ev.deadlineDate);
+      if (isNaN(deadline)) { ui.toast('У события нет даты'); return; }
+      deadline.setHours(23, 59, 0, 0);
+
+      if (already) {
+        ui.sheet({
+          title: 'Уже в роадмапе',
+          subtitle: ev.title,
+          body: '<p class="body muted" style="margin:0 0 18px">Дедлайн этой возможности уже стоит в плане.</p>' +
+            '<button class="btn btn--brand btn--block" onclick="SH.ui.closeSheet();SH.app.go(\'#/roadmap/w/' + keyOf(deadline) + '\')">Открыть день</button>'
+        });
+        return;
+      }
+
+      ui.sheet({
+        title: 'Добавить в роадмап',
+        subtitle: ev.title,
+        body:
+          '<div class="rm-fact">' + icon('calendar', 16) + '<span>Дедлайн: ' + e(dayLabel(deadline)) + '</span></div>' +
+          '<div class="rm-pick" style="margin-top:14px">' +
+            '<button class="rm-pick__row" onclick="SH.views.roadmap.planFromEvent(\'' + ev.id + '\',\'stone\')">' +
+              '<span class="rm-pick__ico">' + icon('flag', 20) + '</span>' +
+              '<span class="grow" style="text-align:left"><b>Только дедлайн</b><span>Веха ' + e(dayLabel(deadline)) + '</span></span>' +
+              icon('chevronRight', 18) +
+            '</button>' +
+            '<button class="rm-pick__row" onclick="SH.views.roadmap.planFromEvent(\'' + ev.id + '\',\'both\')">' +
+              '<span class="rm-pick__ico">' + icon('refresh', 20) + '</span>' +
+              '<span class="grow" style="text-align:left"><b>Дедлайн и подготовка</b><span>Марафон «Подготовка» до самой даты</span></span>' +
+              icon('chevronRight', 18) +
+            '</button>' +
+          '</div>'
+      });
+    },
+
+    planFromEvent(eventId, mode) {
+      const ev = store.event(eventId);
+      if (!ev) return;
+      const deadline = new Date(ev.deadlineDate);
+      deadline.setHours(23, 59, 0, 0);
+      const start = today();
+      const color = COLORS[store.plan().length % COLORS.length];
+
+      store.addPlanItem({
+        kind: 'milestone', title: ev.title, note: ev.organizer || '',
+        startAt: deadline.toISOString(), endAt: '', color, eventId: ev.id
+      });
+
+      if (mode === 'both') {
+        const prepStart = shift(deadline, -21);
+        const from = prepStart > start ? prepStart : start;
+        if (from < deadline) {
+          store.addPlanItem({
+            kind: 'track', title: 'Подготовка: ' + ev.title, note: 'Марафон к дедлайну',
+            startAt: from.toISOString(), endAt: deadline.toISOString(), color, eventId: ev.id,
+            checklist: [
+              { id: 'c1', text: 'Изучить требования', done: false },
+              { id: 'c2', text: 'Собрать материалы', done: false },
+              { id: 'c3', text: 'Отправить заявку', done: false }
+            ]
+          });
+        }
+      }
+      ui.closeSheet();
+      ui.toast('В роадмапе · ' + dayLabel(deadline));
+      SH.app.go('#/roadmap/w/' + keyOf(deadline));
+    },
+
+    /* ── цели и шаги ── */
+    toggleGoals() { goalsOpen = !goalsOpen; SH.app.render(); },
     selectGoal(id) { selectedGoalId = id; SH.app.render(); },
+    toggleGoalTask(id) { store.toggleTask(id); SH.app.render(); },
 
     addGoal() {
       ui.sheet({
         title: 'Новая цель',
         subtitle: 'Чем конкретнее — тем полезнее план',
-        body:
-          ui.field('goal-title', '', { placeholder: 'Например: поступить на IT-направление' }) +
+        body: ui.field('goal-title', '', { placeholder: 'Например: поступить на IT-направление' }) +
           '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.roadmap.createGoal()">Создать</button>',
         onMount(el) { setTimeout(() => { const i = el.querySelector('#goal-title'); if (i) i.focus(); }, 120); }
       });
@@ -4080,13 +5303,14 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       if (!title) { ui.toast('Опиши цель'); return; }
       const g = store.addGoal(title);
       selectedGoalId = g.id;
+      goalsOpen = true;
       ui.closeSheet();
       ui.toast('Цель создана');
       SH.app.render();
     },
 
     deleteGoal(id) {
-      ui.confirmSheet('Удалить цель?', 'Вместе с ней удалятся все шаги. Это необратимо.', 'Удалить', () => {
+      ui.confirmSheet('Удалить цель?', 'Вместе с ней удалятся все шаги. Пункты роадмапа останутся.', 'Удалить', () => {
         store.deleteGoal(id);
         selectedGoalId = null;
         ui.toast('Цель удалена');
@@ -4094,20 +5318,17 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       });
     },
 
-    toggle(id) { store.toggleTask(id); SH.app.render(); },
-
-    addTask() {
+    addGoalTask() {
       if (!selectedGoalId) { actions.addGoal(); return; }
       ui.sheet({
         title: 'Новый шаг',
-        body:
-          ui.field('task-title', 'Что нужно сделать', { placeholder: 'Например: разобрать 10 задач' }) +
+        body: ui.field('task-title', 'Что нужно сделать', { placeholder: 'Например: разобрать 10 задач' }) +
           ui.field('task-date', 'Когда', { placeholder: 'до 20 ноября', style: 'margin-top:12px' }) +
-          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.roadmap.createTask()">Добавить</button>'
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.roadmap.createGoalTask()">Добавить</button>'
       });
     },
 
-    createTask() {
+    createGoalTask() {
       const v = (id) => (document.getElementById(id) || {}).value || '';
       if (!v('task-title').trim()) { ui.toast('Опиши шаг'); return; }
       store.addTask(selectedGoalId, v('task-title').trim(), v('task-date').trim());
@@ -4127,7 +5348,6 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       });
 
       const me = store.currentUser || {};
-      // сначала — модель (промт редактируется в админке), потом локальный план
       let plan = null;
       const text = await ai.complete({
         promptKey: 'plan',
@@ -4152,18 +5372,21 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       ui.closeSheet();
       ui.toast(usedModel ? 'План от ИИ: ' + plan.length + ' шагов' : 'План из ' + plan.length + ' шагов готов');
       SH.app.render();
-    },
-
-    addFromEvent(id) {
-      const ev = store.event(id);
-      let goal = store.goals().find((g) => g.id === selectedGoalId) || store.goals()[0];
-      if (!goal) goal = store.addGoal('Мои цели');
-      store.addTask(goal.id, 'Участвовать: ' + ev.title, 'до ' + ui.shortDate(ev.deadlineDate));
-      selectedGoalId = goal.id;
-      ui.toast('Добавлено в план');
-      SH.app.render();
     }
   };
+
+  function html(p1, p2) {
+    if (!store.isAuthed) {
+      return '<div class="screen">' +
+        head('Роадмап', 'Навигатор поступающего') +
+        ui.empty('map', 'Личный план на экране',
+          'Войди, чтобы увидеть годы, марафоны и расписание дня.',
+          '<button class="btn btn--brand" onclick="SH.app.go(\'#/auth\')">Войти</button>') +
+      '</div>';
+    }
+    if (p1 === 'w') return weekScreen(parseKey(p2));
+    return macroScreen();
+  }
 
   SH.views = SH.views || {};
   SH.views.roadmap = Object.assign({ html }, actions);
@@ -7158,7 +8381,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       case 'event': return { html: SH.views.explore.detail(p1), mount: (root) => SH.views.explore.mountDetail(root, p1) };
       case 'all': return { html: SH.views.explore.all(p1) };
       case 'community': return { html: SH.views.community.html() };
-      case 'roadmap': return { html: SH.views.roadmap.html() };
+      case 'roadmap': return { html: SH.views.roadmap.html(p1, p2) };
       case 'chats': return { html: SH.views.chats.html(), mount: () => SH.views.chats.mountList() };
       case 'chat': return { html: SH.views.chats.thread(p1), mount: (root) => SH.views.chats.mountThread(root, p1) };
       case 'profile': return { html: SH.views.profile.html() };
