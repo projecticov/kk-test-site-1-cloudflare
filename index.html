@@ -1495,8 +1495,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 .rm-scroll {
   overflow-x: auto;
   overflow-y: hidden;
-  margin: 0 -20px 10px;
-  padding: 2px 20px 6px;
+  padding-bottom: 6px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
@@ -1504,43 +1503,26 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 .rm-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
 .rm-table { min-width: max-content; }
 
-.rm-head, .rm-year { display: grid; grid-template-columns: 78px auto; }
-.rm-head { position: sticky; top: 0; z-index: 3; background: var(--bg); }
-.rm-head__corner { background: var(--bg); }
-.rm-head__months { display: grid; grid-template-columns: repeat(12, var(--mw)); width: calc(12 * var(--mw)); }
-.rm-mon {
-  font-size: 10.5px;
-  text-transform: lowercase;
-  letter-spacing: 0.2px;
-  color: var(--muted);
-  text-align: center;
-  padding: 6px 0 8px;
-}
-.rm-mon--now { color: var(--primary); font-weight: 750; }
-
-.rm-year { border-top: 1px solid var(--border); }
-.rm-year--now { background: color-mix(in srgb, var(--primary) 4%, transparent); }
-.rm-year__label {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  background: var(--bg);
-  padding: 10px 8px 10px 0;
+.rm-gantt { display: flex; gap: 0; margin: 0 -20px 10px; }
+.rm-side { flex: 0 0 78px; background: var(--bg); position: relative; z-index: 2; }
+.rm-side__head { height: 28px; }
+.rm-side__year {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 1px;
+  padding: 0 8px 0 20px;
+  border-top: 1px solid var(--border);
 }
-.rm-year--now .rm-year__label { background: color-mix(in srgb, var(--primary) 4%, var(--bg)); }
-.rm-year__label b { font-size: 13px; letter-spacing: -0.2px; }
-.rm-year__label span { font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.rm-year__label i {
-  font-style: normal;
-  font-size: 9.5px;
-  font-weight: 700;
-  color: var(--primary);
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
+.rm-side__year b { font-size: 13px; letter-spacing: -0.2px; }
+.rm-side__year span { font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rm-side__year i {
+  font-style: normal; font-size: 9.5px; font-weight: 700;
+  color: var(--primary); text-transform: uppercase; letter-spacing: 0.4px;
 }
+.rm-side__year.is-now { background: color-mix(in srgb, var(--primary) 4%, var(--bg)); }
+.rm-months { display: grid; grid-template-columns: repeat(12, var(--mw)); width: calc(12 * var(--mw)); }
+.rm-scroll { flex: 1 1 auto; min-width: 0; }
 
 .rm-canvas { position: relative; width: calc(12 * var(--mw)); }
 .rm-cells { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(12, var(--mw)); }
@@ -1556,8 +1538,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 .rm-cell:hover { background: color-mix(in srgb, var(--primary) 5%, transparent); }
 .rm-cell--now { background: color-mix(in srgb, var(--primary) 7%, transparent); }
 
-.rm-today { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--primary); opacity: 0.55; pointer-events: none; }
-.rm-today i {
+.rm-nowline { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--primary); opacity: 0.55; pointer-events: none; }
+.rm-nowline i {
   position: absolute; top: -3px; left: -3px;
   width: 8px; height: 8px; border-radius: 50%;
   background: var(--primary);
@@ -1810,8 +1792,9 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 @media (min-width: 900px) {
   .rm-scroll { margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0; }
   .rm-table { --mw: 74px !important; }
-  .rm-head__corner, .rm-year__label { background: transparent; }
-  .rm-year__label b { font-size: 14px; }
+  .rm-side { flex-basis: 92px; }
+  .rm-side__year b { font-size: 14px; }
+  .rm-side__year { padding-left: 0; }
 }
 
 .rm-empty-year {
@@ -1829,9 +1812,86 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 .rm-track:empty, .rm-track__label:empty { display: none; }
 .rm-ms { max-width: 100%; }
 
-/* подписи лет и шапка не должны «просвечивать» при горизонтальной прокрутке */
-.rm-year__label, .rm-head__corner { box-shadow: -22px 0 0 var(--bg); }
-.rm-scroll { scroll-padding-left: 84px; }
+/* точки «дел на день» в общем виде роадмапа */
+.rm-dots { position: absolute; left: 0; right: 0; height: 14px; pointer-events: none; }
+.rm-tdot {
+  position: absolute;
+  top: 3px;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--muted);
+  opacity: 0.55;
+  cursor: pointer;
+  pointer-events: auto;
+}
+/* увеличиваем зону нажатия, не увеличивая точку */
+.rm-tdot::after { content: ''; position: absolute; inset: -6px; }
+.rm-tdot:hover { opacity: 1; }
+.rm-tdot.is-done { background: var(--success); opacity: 0.9; }
+.rm-tdot.is-today { background: var(--primary); opacity: 1; box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+
+/* свёрнутые прошлые годы */
+.rm-note {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin: 0 0 8px;
+  opacity: 0.85;
+}
+
+/* «сегодня N дел» в карточке */
+.rm-todaycard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.rm-today__ico {
+  width: 28px; height: 28px; flex: none;
+  display: grid; place-items: center;
+  border-radius: 9px;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.rm-today__title { display: block; font-size: 13.5px; font-weight: 650; }
+.rm-today__sub { display: block; font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+
+/* шапка месяцев и подписи классов должны стоять на одной линии */
+.rm-months { height: 28px; }
+.rm-mon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10.5px;
+  text-transform: lowercase;
+  letter-spacing: 0.2px;
+  color: var(--muted);
+  padding: 0;
+}
+.rm-mon--now { color: var(--primary); font-weight: 750; }
+
+.rm-side__year b { white-space: nowrap; font-size: 12.5px; }
+@media (max-width: 420px) {
+  .rm-side { flex-basis: 72px; }
+  .rm-side__year { padding-left: 20px; padding-right: 4px; }
+}
+
+.rm-legend__tdot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); opacity: 0.65; }
+/* точки дел заметнее: это единственное, что видно от дел в общем виде */
+.rm-tdot { width: 8px; height: 8px; margin-left: -4px; opacity: 0.7; }
+.rm-ms { padding-left: 7px; }
 
 </style>
 </head>
@@ -3169,7 +3229,8 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       emit('plan');
       SH.api && SH.api.push('POST', '/api/plan/items', {
         id: row.id, kind: row.kind, title: row.title, note: row.note,
-        startAt: row.startAt, endAt: row.endAt, checklist: row.checklist, color: row.color
+        startAt: row.startAt, endAt: row.endAt, checklist: row.checklist, color: row.color,
+        eventId: row.eventId || '', done: !!row.done
       });
       return row;
     },
@@ -4609,6 +4670,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     const items = store.plan();
     const tracks = items.filter((p) => p.kind === 'track' && p.endAt);
     const stones = items.filter((p) => p.kind === 'milestone');
+    const dailies = items.filter((p) => p.kind === 'task');
 
     const rows = [9, 10, 11, 12].map((g) => {
       const startYear = base + (g - 9);
@@ -4658,10 +4720,11 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       rowStones.forEach((ms) => {
         const x = ms.left * W;
         const w = Math.min(170, ms.item.title.length * 5.6 + 30);
-        const left = Math.max(4, Math.min(W - w - 4, x - w / 2));
+        // плашку не центруем: она растёт вправо от даты — так её не срезает край прокрутки
+        const right = x + 6 + w > W - 4;
+        const left = right ? W - 4 - w : x + 6;
         ms.w = Math.round(w);
-        ms.shift = left === 4 && x - w / 2 < 4 ? '0'
-          : (x + w / 2 > W - 4 ? '-100%' : '-50%');
+        ms.shift = right ? '-100%' : '0';
         let row = 0;
         while (row < occupied.length && occupied[row] > left - 6) row += 1;
         occupied[row] = left + w;
@@ -4669,12 +4732,27 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       });
       const stoneRows = Math.max(1, occupied.length);
 
+      // дела на день — по одной точке на день: несколько задач одного дня не сливаются
+      const byDay = {};
+      dailies.forEach((tk) => {
+        const d = new Date(tk.startAt);
+        if (d < y0 || d >= y1) return;
+        const k = keyOf(d);
+        if (!byDay[k]) byDay[k] = { left: (d - y0) / span, date: d, items: [] };
+        byDay[k].items.push(tk);
+      });
+      const rowTasks = Object.keys(byDay).map((k) => byDay[k]).sort((x, y) => x.left - y.left);
+
       return {
         grade: g, startYear, current: g === grade,
         tracks: rowTracks, lanes: Math.max(1, lanes.length), stones: rowStones,
-        stoneRows, y0, y1
+        tasks: rowTasks, stoneRows, y0, y1
       };
     });
+
+    const hasAnything = (r) => !!(r.tracks.length || r.stones.length || r.tasks.length);
+    const hiddenPast = rows.filter((r) => r.grade < grade && !hasAnything(r));
+    const shown = rows.filter((r) => !hiddenPast.includes(r));
 
     const current = rows.find((r) => r.current);
     const nowLeft = current ? ((t - current.y0) / (current.y1 - current.y0)) * 100 : 0;
@@ -4686,6 +4764,11 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       .filter((x) => x.stat.live)
       .sort((a, b) => b.stat.pct - a.stat.pct);
     const next = nextMilestone();
+    const todayKey = keyOf(t);
+    const todayTasks = dailies
+      .filter((p) => keyOf(new Date(p.startAt)) === todayKey)
+      .sort((a, b) => String(a.startAt).localeCompare(String(b.startAt)));
+    const yearItems = current ? current.tracks.length + current.stones.length + current.tasks.length : 0;
 
     const nowCard =
       '<div class="rm-now">' +
@@ -4702,7 +4785,22 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
               '</span>' +
               '<span class="rm-next__go">' + icon('chevronRight', 18) + '</span>' +
             '</button>'
-          : '<div class="rm-next rm-next--empty">Ближайших дедлайнов нет — самое время добавить</div>') +
+          : (yearItems === 0
+              ? '<div class="rm-next rm-next--empty">В этом году пока пусто: добавь дедлайн или дело на день — появится здесь.</div>'
+              : '<div class="rm-next rm-next--empty">Ближайших дедлайнов нет — самое время добавить</div>')) +
+        (todayTasks.length
+          ? '<button class="rm-todaycard" onclick="SH.views.roadmap.goToday()">' +
+              '<span class="rm-today__ico">' + icon('clock', 16) + '</span>' +
+              '<span class="grow" style="min-width:0;text-align:left">' +
+                '<span class="rm-today__title">Сегодня ' + todayTasks.length + ' ' +
+                  plural(todayTasks.length, 'дело', 'дела', 'дел') + '</span>' +
+                '<span class="rm-today__sub ellipsis">' +
+                  e(todayTasks.slice(0, 2).map((x) => timeLabel(x.startAt) + ' ' + x.title).join(' · ')) +
+                '</span>' +
+              '</span>' +
+              '<span class="rm-next__go">' + icon('chevronRight', 18) + '</span>' +
+            '</button>'
+          : '') +
         (live.length
           ? '<div class="rm-live">' + live.slice(0, 2).map((x) =>
               '<button class="rm-live__row" onclick="SH.views.roadmap.openItem(\'' + x.item.id + '\')">' +
@@ -4713,28 +4811,39 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
           : '') +
       '</div>';
 
-    function r_isNow(i) { return i === nowCol; }
-
-    const header = '<div class="rm-head">' +
-      '<div class="rm-head__corner"></div>' +
-      '<div class="rm-head__months">' +
-        Array.from({ length: 12 }, (_, i) => {
-          const m = (8 + i) % 12;
-          const isNow = r_isNow(i);
-          return '<span class="rm-mon' + (isNow ? ' rm-mon--now' : '') + '">' + MON[m] + '</span>';
-        }).join('') +
-      '</div>' +
+    const monthsHead = '<div class="rm-months">' +
+      Array.from({ length: 12 }, (_, i) => {
+        const m = (8 + i) % 12;
+        return '<span class="rm-mon' + (i === nowCol ? ' rm-mon--now' : '') + '">' + MON[m] + '</span>';
+      }).join('') +
     '</div>';
 
-    const body = rows.map((r) => {
-      const laneH = 32;
+    const laneH = 32;
+    const sizes = shown.map((r) => {
       const marksH = r.stones.length ? r.stoneRows * 19 + 8 : 8;
-      const empty = !r.tracks.length && !r.stones.length;
-      const height = empty ? 44 : marksH + r.lanes * laneH + 8;
+      const dotsH = r.tasks.length ? 12 : 0;
+      const empty = !r.tracks.length && !r.stones.length && !r.tasks.length;
+      return { marksH, dotsH, empty, height: empty ? 40 : marksH + r.lanes * laneH + dotsH + 8 };
+    });
 
-      const cells = Array.from({ length: 12 }, (_, i) => {
-        const m = (8 + i) % 12;
-        const y = r.startYear + (8 + i >= 12 ? 1 : 0);
+    /* левая колонка: классы и учебные годы — не прокручивается вбок */
+    const side = '<div class="rm-side">' +
+      '<div class="rm-side__head"></div>' +
+      shown.map((r, i) => '<div class="rm-side__year' + (r.current ? ' is-now' : '') +
+        '" style="height:' + sizes[i].height + 'px">' +
+        '<b>' + r.grade + ' класс</b>' +
+        '<span>' + e(academicLabel(r.startYear)) + '</span>' +
+        (r.current ? '<i>сейчас</i>' : '') +
+      '</div>').join('') +
+    '</div>';
+
+    /* правая часть: месяцев, вехи, змейки, точки дел — прокручивается вбок */
+    const body = shown.map((r, i) => {
+      const size = sizes[i];
+
+      const cells = Array.from({ length: 12 }, (_, k) => {
+        const m = (8 + k) % 12;
+        const y = r.startYear + (8 + k >= 12 ? 1 : 0);
         const d = new Date(y, m, 1);
         const isNow = r.current && m === t.getMonth();
         return '<button class="rm-cell' + (isNow ? ' rm-cell--now' : '') + '" ' +
@@ -4745,7 +4854,6 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       const marks = r.stones.map((ms) => {
         const isNext = next && next.id === ms.item.id;
         const soon = !ms.item.done && daysTo(ms.item.startAt) >= 0 && daysTo(ms.item.startAt) <= 7;
-        const d = new Date(ms.item.startAt);
         return '<button class="rm-ms' + (ms.item.done ? ' rm-ms--done' : '') +
             (isNext || soon ? ' rm-ms--soon' : '') + '" ' +
           'style="left:' + (ms.left * 100).toFixed(3) + '%;top:' + (ms.row * 19) + 'px;' +
@@ -4769,32 +4877,44 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
         '</button>';
       }).join('');
 
-      return '<div class="rm-year' + (r.current ? ' rm-year--now' : '') + '">' +
-        '<div class="rm-year__label">' +
-          '<b>' + r.grade + ' класс</b>' +
-          '<span>' + e(academicLabel(r.startYear)) + '</span>' +
-          (r.current ? '<i>сейчас</i>' : '') +
-        '</div>' +
-        '<div class="rm-canvas' + (empty ? ' rm-canvas--empty' : '') + '" style="height:' + height + 'px">' +
-          '<div class="rm-cells">' + cells + '</div>' +
-          (r.current ? '<div class="rm-today" style="left:' + nowLeft.toFixed(3) + '%"><i></i></div>' : '') +
-          (empty ? '<div class="rm-empty-year">ничего не запланировано</div>' : '<div class="rm-marks">' + marks + '</div>') +
-          '<div class="rm-lanes" style="top:' + marksH + 'px">' + lanes + '</div>' +
-        '</div>' +
+      const dots = r.tasks.map((day) => {
+        const isToday = sameDay(day.date, today());
+        const left = day.items.filter((x) => !x.done).length;
+        const title = day.items.map((x) => timeLabel(x.startAt) + ' ' + x.title).join(' · ');
+        return '<button class="rm-tdot' + (left === 0 ? ' is-done' : '') + (isToday ? ' is-today' : '') + '" ' +
+          'style="left:' + (day.left * 100).toFixed(3) + '%" ' +
+          'onclick="SH.views.roadmap.zoomTo(\'' + keyOf(day.date) + '\')" ' +
+          'title="' + e(title) + '" aria-label="' + e(title) + '"></button>';
+      }).join('');
+
+      return '<div class="rm-canvas' + (size.empty ? ' rm-canvas--empty' : '') +
+          (r.current ? ' rm-canvas--now' : '') + '" style="height:' + size.height + 'px">' +
+        '<div class="rm-cells">' + cells + '</div>' +
+        (r.current ? '<div class="rm-nowline" style="left:' + nowLeft.toFixed(3) + '%"><i></i></div>' : '') +
+        (size.empty ? '<div class="rm-empty-year">пока пусто</div>' : '<div class="rm-marks">' + marks + '</div>') +
+        '<div class="rm-lanes" style="top:' + size.marksH + 'px">' + lanes + '</div>' +
+        '<div class="rm-dots" style="top:' + (size.marksH + r.lanes * laneH + 2) + 'px">' + dots + '</div>' +
       '</div>';
     }).join('');
 
     const legend = '<div class="rm-legend">' +
       '<span><i class="rm-legend__dot"></i>веха или дедлайн</span>' +
       '<span><i class="rm-legend__bar"></i>марафон: закрашено = прожито</span>' +
+      '<span><i class="rm-legend__tdot"></i>дела по дням</span>' +
     '</div>';
 
     return '<div class="screen">' +
       head('Роадмап', 'Навигатор поступающего', iconButton('plus', 'Добавить в роадмап', 'SH.views.roadmap.addItem()')) +
       modeSwitch('macro') +
       nowCard +
-      '<div class="rm-scroll">' +
-        '<div class="rm-table" style="--mw:64px">' + header + body + '</div>' +
+      (hiddenPast.length
+        ? '<div class="rm-note">' + hiddenPast.map((r) => r.grade + ' класс').join(' и ') +
+          ' — записей нет, поэтому не показываю</div>'
+        : '') +
+      '<div class="rm-gantt">' + side +
+        '<div class="rm-scroll">' +
+          '<div class="rm-table" style="--mw:64px">' + monthsHead + body + '</div>' +
+        '</div>' +
       '</div>' +
       legend +
       goalsSection() +
@@ -5094,6 +5214,32 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
     });
   }
 
+  /* ─────────────────────────── монтирование ─────────────────────────── */
+
+  let savedScroll = null;
+  let mountHash = null;
+
+  function mount(root) {
+    const sc = root.querySelector('.rm-scroll');
+    if (!sc) return;
+
+    // пришли на экран заново — показываем «сейчас», а не сентябрь
+    if (mountHash !== location.hash) { savedScroll = null; mountHash = location.hash; }
+
+    if (savedScroll === null) {
+      const table = sc.querySelector('.rm-table');
+      const mw = parseFloat(getComputedStyle(table).getPropertyValue('--mw')) || 64;
+      const col = (today().getMonth() - 8 + 12) % 12;   // сентябрь = 0
+      savedScroll = Math.max(0, col * mw - 26);
+    }
+    sc.scrollLeft = savedScroll;
+
+    if (!sc.dataset.bound) {
+      sc.dataset.bound = '1';
+      sc.addEventListener('scroll', () => { savedScroll = sc.scrollLeft; }, { passive: true });
+    }
+  }
+
   /* ─────────────────────────── действия ─────────────────────────── */
 
   const actions = {
@@ -5389,7 +5535,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   }
 
   SH.views = SH.views || {};
-  SH.views.roadmap = Object.assign({ html }, actions);
+  SH.views.roadmap = Object.assign({ html, mount }, actions);
 })(window.SH = window.SH || {});
 
 /* Чаты: переписки, команды, редактирование сообщений */
@@ -8381,7 +8527,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
       case 'event': return { html: SH.views.explore.detail(p1), mount: (root) => SH.views.explore.mountDetail(root, p1) };
       case 'all': return { html: SH.views.explore.all(p1) };
       case 'community': return { html: SH.views.community.html() };
-      case 'roadmap': return { html: SH.views.roadmap.html(p1, p2) };
+      case 'roadmap': return { html: SH.views.roadmap.html(p1, p2), mount: (root) => SH.views.roadmap.mount(root) };
       case 'chats': return { html: SH.views.chats.html(), mount: () => SH.views.chats.mountList() };
       case 'chat': return { html: SH.views.chats.thread(p1), mount: (root) => SH.views.chats.mountThread(root, p1) };
       case 'profile': return { html: SH.views.profile.html() };
