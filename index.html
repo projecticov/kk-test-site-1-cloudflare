@@ -1884,8 +1884,11 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
 .rm-side__year b { white-space: nowrap; font-size: 12.5px; }
 @media (max-width: 420px) {
-  .rm-side { flex-basis: 72px; }
-  .rm-side__year { padding-left: 20px; padding-right: 4px; }
+  /* слева подпись класса должна целиком влезать: «11 класс», а не «11 клас» */
+  .rm-side { flex-basis: 86px; }
+  .rm-side__year { padding-left: 20px; padding-right: 2px; }
+  .rm-side__year b { font-size: 12px; }
+  .rm-side__year span { font-size: 10px; }
 }
 
 .rm-legend__tdot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); opacity: 0.65; }
