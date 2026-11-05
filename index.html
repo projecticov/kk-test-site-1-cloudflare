@@ -1957,9 +1957,16 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 .rcy-track--blush { --tc: #f5a9c4; }
 
 /* вехи и дни */
-.rcy-stone { fill: var(--surface); stroke: var(--muted); stroke-width: 2; cursor: pointer; }
-.rcy-stone.is-soon { fill: var(--sun); stroke: #b57f00; }
-.rcy-stone.is-done { fill: var(--success); stroke: var(--success); opacity: 0.7; }
+.rcy-stone {
+  fill: color-mix(in srgb, var(--sun) 72%, var(--surface));
+  stroke: #b57f00;
+  stroke-width: 1.6;
+  cursor: pointer;
+  transition: fill 0.15s ease;
+}
+.rcy-stone:hover { fill: var(--sun); stroke-width: 2.2; }
+.rcy-stone.is-soon { fill: var(--sun); stroke: #b57f00; stroke-width: 2; }
+.rcy-stone.is-done { fill: var(--success); stroke: var(--surface); stroke-width: 2; }
 .rcy-tick { fill: var(--muted); opacity: 0.55; cursor: pointer; }
 .rcy-tick.is-done { fill: var(--success); opacity: 0.8; }
 
@@ -1999,7 +2006,9 @@ html[data-theme='dark'] .rcy-month.is-now .rcy-month__label { fill: #fff; opacit
 html[data-theme='dark'] .rcy-season__label { fill: var(--text); }
 html[data-theme='dark'] .rcy-season { stroke: var(--surface); }
 html[data-theme='dark'] .rcy-track__base { stroke: color-mix(in srgb, var(--muted) 32%, transparent); }
-html[data-theme='dark'] .rcy-stone { fill: var(--bg); stroke: var(--muted); }
+html[data-theme='dark'] .rcy-stone { fill: color-mix(in srgb, var(--sun) 42%, var(--surface)); stroke: #d9a017; }
+html[data-theme='dark'] .rcy-stone.is-soon { fill: var(--sun); stroke: #f3c33f; }
+html[data-theme='dark'] .rcy-stone.is-done { fill: var(--success); stroke: var(--surface); }
 html[data-theme='dark'] .rcy-tick { fill: var(--muted); }
 
 </style>
