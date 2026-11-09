@@ -1929,7 +1929,7 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   pointer-events: none;
 }
 
-/* ── вкладки: Круг / 4 года / Календарь ── */
+/* ── вкладки: Круг / Календарь ── */
 .rm-switch {
   display: flex;
   width: 100%;
@@ -2239,134 +2239,6 @@ html[data-theme='dark'] .rcy-nowdot { fill: var(--primary); stroke: var(--surfac
 html[data-theme='dark'] .rcal__head { background: color-mix(in srgb, var(--season) 26%, var(--surface)); color: var(--text); }
 html[data-theme='dark'] .rcal__m { background: var(--surface); }
 html[data-theme='dark'] .rcal__d.is-today { background: var(--primary); color: #fff; }
-
-/* ==========================================================================
-   4 года: кольца 9 → 12 класс
-   ========================================================================== */
-
-.rcy-ring__base {
-  fill: none;
-  stroke: var(--chip);
-  stroke-width: 14;
-}
-.rcy-ring__hit {
-  fill: none;
-  stroke: transparent;
-  stroke-width: 20;
-  cursor: pointer;
-}
-.rcy-ring__hit:hover { stroke: color-mix(in srgb, var(--primary) 8%, transparent); }
-.rcy-ring.is-now .rcy-ring__base { stroke: color-mix(in srgb, var(--primary) 16%, var(--chip)); }
-
-.rcy-arc {
-  fill: none;
-  stroke-width: 14;
-  stroke-linecap: round;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-.rcy-arc:hover { opacity: 0.78; }
-
-.rcy-ringdot {
-  fill: var(--surface);
-  stroke: var(--muted);
-  stroke-width: 2;
-  cursor: pointer;
-  transition: fill 0.15s ease;
-}
-.rcy-ringdot:hover { fill: color-mix(in srgb, var(--primary) 16%, var(--surface)); stroke: var(--primary); }
-.rcy-ringdot.is-done { stroke: var(--success); fill: color-mix(in srgb, var(--success) 14%, var(--surface)); }
-
-.rcy-ringnum__bg {
-  fill: var(--surface);
-  stroke: var(--border);
-  stroke-width: 1;
-}
-.rcy-ringnum {
-  font-size: 10.5px;
-  font-weight: 800;
-  fill: var(--text);
-  opacity: 0.55;
-  paint-order: stroke;
-  stroke: none;
-  pointer-events: none;
-}
-
-/* подпись и подсказка под кольцами */
-.rcap {
-  margin: 14px 0 8px;
-  text-align: center;
-  font-size: 10.5px;
-  font-weight: 750;
-  letter-spacing: 0.9px;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.rcap__card {
-  max-width: 460px;
-  margin: 0 auto 14px;
-  padding: 13px 15px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-card);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 12.5px;
-  line-height: 1.5;
-}
-.rcal-pills {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  max-width: 460px;
-  margin: 0 auto 16px;
-}
-.rcal-pills .pill {
-  justify-content: center;
-  width: 100%;
-  padding: 10px 4px;
-  font-size: 12.5px;
-}
-
-/* свёрнутая лента по месяцам */
-.rm-lenta {
-  margin: 4px 0 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-card);
-  background: var(--surface);
-  overflow: hidden;
-}
-.rm-lenta > summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 13px 15px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-  cursor: pointer;
-  list-style: none;
-}
-.rm-lenta > summary::-webkit-details-marker { display: none; }
-.rm-lenta > summary::after {
-  content: '';
-  width: 8px;
-  height: 8px;
-  margin-left: auto;
-  border-right: 2px solid var(--muted);
-  border-bottom: 2px solid var(--muted);
-  transform: rotate(45deg);
-  transition: transform 0.18s ease;
-}
-.rm-lenta[open] > summary::after { transform: rotate(-135deg); }
-.rm-lenta__body { padding: 0 12px 14px; }
-
-/* тёмная тема */
-html[data-theme='dark'] .rcy-ring__base { stroke: color-mix(in srgb, var(--muted) 26%, var(--surface)); }
-html[data-theme='dark'] .rcy-ring.is-now .rcy-ring__base { stroke: color-mix(in srgb, var(--primary) 34%, var(--surface)); }
-html[data-theme='dark'] .rcy-ringdot { fill: var(--bg); stroke: var(--muted); }
-html[data-theme='dark'] .rcy-ringdot.is-done { fill: color-mix(in srgb, var(--success) 18%, var(--bg)); }
-html[data-theme='dark'] .rcy-ringnum__bg { fill: var(--bg); stroke: var(--border); }
-html[data-theme='dark'] .rcap__card { background: var(--surface); }
 
 </style>
 </head>
@@ -5132,389 +5004,16 @@ html[data-theme='dark'] .rcap__card { background: var(--surface); }
     const gg = [9, 10, 11, 12].indexOf(g) >= 0 ? '/' + g : '';
     return '<div class="rm-switch" role="tablist">' +
       '<button role="tab" aria-selected="' + (active === 'circle') + '" onclick="SH.app.go(\'#/roadmap/c' + gg + '\')">Круг</button>' +
-      '<button role="tab" aria-selected="' + (active === 'macro') + '" onclick="SH.app.go(\'#/roadmap/y\')">4 года</button>' +
       '<button role="tab" aria-selected="' + (active === 'calendar') + '" onclick="SH.app.go(\'#/roadmap/cal' + gg + '\')">Календарь</button>' +
     '</div>';
   }
 
   /* ─────────────────────────── МАКРО: годы и змейки ─────────────────────────── */
 
-  function ganttBody() {
-    const t = today();
-    const grade = myGrade();
-    const syStart = schoolYearStart(t);
-    const base = syStart + (9 - grade);         // учебный год, в котором был 9 класс
-
-    const items = store.plan();
-    const tracks = items.filter((p) => p.kind === 'track' && p.endAt);
-    const stones = items.filter((p) => p.kind === 'milestone');
-    const dailies = items.filter((p) => p.kind === 'task');
-
-    const rows = [9, 10, 11, 12].map((g) => {
-      const startYear = base + (g - 9);
-      const y0 = new Date(startYear, 8, 1);
-      const y1 = new Date(startYear + 1, 8, 1);
-      const span = y1 - y0;
-
-      const rowTracks = tracks
-        .map((tr) => {
-          const a = new Date(tr.startAt).getTime();
-          const b = (tr.endAt ? new Date(tr.endAt).getTime() : a) + DAY;
-          if (b <= y0.getTime() || a >= y1.getTime()) return null;
-          const s = Math.max(a, y0.getTime());
-          const f = Math.min(b, y1.getTime());
-          return {
-            item: tr,
-            left: (s - y0) / span,
-            width: Math.max(0.012, (f - s) / span),
-            stat: trackStat(tr)
-          };
-        })
-        .filter(Boolean)
-        .sort((x, y) => x.left - y.left);
-
-      // раскладываем по «дорожкам», чтобы полосы не наезжали друг на друга
-      const lanes = [];
-      rowTracks.forEach((tr) => {
-        let lane = 0;
-        while (lane < lanes.length && lanes[lane] > tr.left + 0.001) lane += 1;
-        lanes[lane] = tr.left + tr.width;
-        tr.lane = lane;
-      });
-
-      const rowStones = stones
-        .map((ms) => {
-          const d = new Date(ms.startAt);
-          if (d < y0 || d >= y1) return null;
-          return { item: ms, left: (d - y0) / span };
-        })
-        .filter(Boolean)
-        .sort((x, y) => x.left - y.left);
-
-      // подписи вех не должны наезжать друг на друга: раскладываем по рядам,
-      // оценивая ширину плашки по длине названия
-      const W = 12 * 64;
-      const occupied = [];
-      rowStones.forEach((ms) => {
-        const x = ms.left * W;
-        const w = Math.min(170, ms.item.title.length * 5.6 + 30);
-        // плашку не центруем: она растёт вправо от даты — так её не срезает край прокрутки
-        const right = x + 6 + w > W - 4;
-        const left = right ? W - 4 - w : x + 6;
-        ms.w = Math.round(w);
-        ms.shift = right ? '-100%' : '0';
-        let row = 0;
-        while (row < occupied.length && occupied[row] > left - 6) row += 1;
-        occupied[row] = left + w;
-        ms.row = row;
-      });
-      const stoneRows = Math.max(1, occupied.length);
-
-      // дела на день — по одной точке на день: несколько задач одного дня не сливаются
-      const byDay = {};
-      dailies.forEach((tk) => {
-        const d = new Date(tk.startAt);
-        if (d < y0 || d >= y1) return;
-        const k = keyOf(d);
-        if (!byDay[k]) byDay[k] = { left: (d - y0) / span, date: d, items: [] };
-        byDay[k].items.push(tk);
-      });
-      const rowTasks = Object.keys(byDay).map((k) => byDay[k]).sort((x, y) => x.left - y.left);
-
-      return {
-        grade: g, startYear, current: g === grade,
-        tracks: rowTracks, lanes: Math.max(1, lanes.length), stones: rowStones,
-        tasks: rowTasks, stoneRows, y0, y1
-      };
-    });
-
-    const hasAnything = (r) => !!(r.tracks.length || r.stones.length || r.tasks.length);
-    const hiddenPast = rows.filter((r) => r.grade < grade && !hasAnything(r));
-    const shown = rows.filter((r) => !hiddenPast.includes(r));
-
-    const current = rows.find((r) => r.current);
-    const nowLeft = current ? ((t - current.y0) / (current.y1 - current.y0)) * 100 : 0;
-    const nowCol = (t.getMonth() - 8 + 12) % 12;      // столбец текущего месяца (сентябрь = 0)
-
-    // что происходит прямо сейчас
-    const live = tracks
-      .map((tr) => ({ item: tr, stat: trackStat(tr) }))
-      .filter((x) => x.stat.live)
-      .sort((a, b) => b.stat.pct - a.stat.pct);
-    const next = nextMilestone();
-    const todayKey = keyOf(t);
-    const todayTasks = dailies
-      .filter((p) => keyOf(new Date(p.startAt)) === todayKey)
-      .sort((a, b) => String(a.startAt).localeCompare(String(b.startAt)));
-    const yearItems = current ? current.tracks.length + current.stones.length + current.tasks.length : 0;
-
-    const nowCard =
-      '<div class="rm-now">' +
-        '<div class="rm-now__top">' +
-          '<span class="rm-now__pill">' + e(grade) + ' класс · ' + e(MONTHS[t.getMonth()]) + '</span>' +
-          '<span class="muted small">' + e(academicLabel(syStart)) + ' учебный год</span>' +
-        '</div>' +
-        (next
-          ? '<button class="rm-next" onclick="SH.views.roadmap.openItem(\'' + next.id + '\')">' +
-              '<span class="rm-next__ico">' + icon('flag', 16) + '</span>' +
-              '<span class="grow" style="min-width:0;text-align:left">' +
-                '<span class="rm-next__title">' + e(next.title) + '</span>' +
-                '<span class="rm-next__sub">' + e(dayLabel(new Date(next.startAt))) + ' · ' + e(countdown(next.startAt)) + '</span>' +
-              '</span>' +
-              '<span class="rm-next__go">' + icon('chevronRight', 18) + '</span>' +
-            '</button>'
-          : (yearItems === 0
-              ? '<div class="rm-next rm-next--empty">В этом году пока пусто: добавь дедлайн или дело на день — появится здесь.</div>'
-              : '<div class="rm-next rm-next--empty">Ближайших дедлайнов нет — самое время добавить</div>')) +
-        (todayTasks.length
-          ? '<button class="rm-todaycard" onclick="SH.views.roadmap.goToday()">' +
-              '<span class="rm-today__ico">' + icon('clock', 16) + '</span>' +
-              '<span class="grow" style="min-width:0;text-align:left">' +
-                '<span class="rm-today__title">Сегодня ' + todayTasks.length + ' ' +
-                  plural(todayTasks.length, 'дело', 'дела', 'дел') + '</span>' +
-                '<span class="rm-today__sub ellipsis">' +
-                  e(todayTasks.slice(0, 2).map((x) => timeLabel(x.startAt) + ' ' + x.title).join(' · ')) +
-                '</span>' +
-              '</span>' +
-              '<span class="rm-next__go">' + icon('chevronRight', 18) + '</span>' +
-            '</button>'
-          : '') +
-        (live.length
-          ? '<div class="rm-live">' + live.slice(0, 2).map((x) =>
-              '<button class="rm-live__row" onclick="SH.views.roadmap.openItem(\'' + x.item.id + '\')">' +
-                '<span class="rm-dot" style="background:var(--' + (x.item.color || 'sky') + ')"></span>' +
-                '<span class="grow ellipsis">' + e(x.item.title) + '</span>' +
-                '<b>' + x.stat.dayIndex + '/' + x.stat.totalDays + '</b>' +
-              '</button>').join('') + '</div>'
-          : '') +
-      '</div>';
-
-    const monthsHead = '<div class="rm-months">' +
-      Array.from({ length: 12 }, (_, i) => {
-        const m = (8 + i) % 12;
-        return '<span class="rm-mon' + (i === nowCol ? ' rm-mon--now' : '') + '">' + MON[m] + '</span>';
-      }).join('') +
-    '</div>';
-
-    const laneH = 32;
-    const sizes = shown.map((r) => {
-      const marksH = r.stones.length ? r.stoneRows * 19 + 8 : 8;
-      const dotsH = r.tasks.length ? 12 : 0;
-      const empty = !r.tracks.length && !r.stones.length && !r.tasks.length;
-      return { marksH, dotsH, empty, height: empty ? 40 : marksH + r.lanes * laneH + dotsH + 8 };
-    });
-
-    /* левая колонка: классы и учебные годы — не прокручивается вбок */
-    const side = '<div class="rm-side">' +
-      '<div class="rm-side__head"></div>' +
-      shown.map((r, i) => '<div class="rm-side__year' + (r.current ? ' is-now' : '') +
-        '" style="height:' + sizes[i].height + 'px">' +
-        '<b>' + r.grade + ' класс</b>' +
-        '<span>' + e(academicLabel(r.startYear)) + '</span>' +
-        (r.current ? '<i>сейчас</i>' : '') +
-      '</div>').join('') +
-    '</div>';
-
-    /* правая часть: месяцев, вехи, змейки, точки дел — прокручивается вбок */
-    const body = shown.map((r, i) => {
-      const size = sizes[i];
-
-      const cells = Array.from({ length: 12 }, (_, k) => {
-        const m = (8 + k) % 12;
-        const y = r.startYear + (8 + k >= 12 ? 1 : 0);
-        const d = new Date(y, m, 1);
-        const isNow = r.current && m === t.getMonth();
-        return '<button class="rm-cell' + (isNow ? ' rm-cell--now' : '') + '" ' +
-          'onclick="SH.views.roadmap.zoomTo(\'' + keyOf(d) + '\')" ' +
-          'aria-label="' + e(MONTHS[m] + ' ' + y) + '"></button>';
-      }).join('');
-
-      const marks = r.stones.map((ms) => {
-        const isNext = next && next.id === ms.item.id;
-        const soon = !ms.item.done && daysTo(ms.item.startAt) >= 0 && daysTo(ms.item.startAt) <= 7;
-        return '<button class="rm-ms' + (ms.item.done ? ' rm-ms--done' : '') +
-            (isNext || soon ? ' rm-ms--soon' : '') + '" ' +
-          'style="left:' + (ms.left * 100).toFixed(3) + '%;top:' + (ms.row * 19) + 'px;' +
-            'transform:translateX(' + ms.shift + ');max-width:' + ms.w + 'px" ' +
-          'onclick="SH.views.roadmap.openItem(\'' + ms.item.id + '\')" title="' + e(ms.item.title) + '">' +
-          '<span class="rm-ms__dot"></span>' +
-          '<span class="rm-ms__label">' + e(ms.item.title) + '</span>' +
-        '</button>';
-      }).join('');
-
-      const lanes = r.tracks.map((tr) => {
-        const st = tr.stat;
-        const px = tr.width * 12 * 64;
-        const label = px < 34 ? '' : (px < 120 ? st.pct + '%' : (tr.item.title + ' · ' + st.dayIndex + ' из ' + st.totalDays + ' · ' + st.pct + '%'));
-        return '<button class="rm-track rm-track--' + e(tr.item.color || 'sky') + (st.finished ? ' rm-track--done' : '') + '" ' +
-          'style="left:' + (tr.left * 100).toFixed(3) + '%;width:' + (tr.width * 100).toFixed(3) + '%;' +
-            'top:' + (tr.lane * laneH) + 'px" ' +
-          'onclick="SH.views.roadmap.openItem(\'' + tr.item.id + '\')" title="' + e(tr.item.title) + '">' +
-          '<span class="rm-track__fill" style="width:' + st.pct + '%"></span>' +
-          '<span class="rm-track__label">' + e(label) + '</span>' +
-        '</button>';
-      }).join('');
-
-      const dots = r.tasks.map((day) => {
-        const isToday = sameDay(day.date, today());
-        const left = day.items.filter((x) => !x.done).length;
-        const title = day.items.map((x) => timeLabel(x.startAt) + ' ' + x.title).join(' · ');
-        return '<button class="rm-tdot' + (left === 0 ? ' is-done' : '') + (isToday ? ' is-today' : '') + '" ' +
-          'style="left:' + (day.left * 100).toFixed(3) + '%" ' +
-          'onclick="SH.views.roadmap.zoomTo(\'' + keyOf(day.date) + '\')" ' +
-          'title="' + e(title) + '" aria-label="' + e(title) + '"></button>';
-      }).join('');
-
-      return '<div class="rm-canvas' + (size.empty ? ' rm-canvas--empty' : '') +
-          (r.current ? ' rm-canvas--now' : '') + '" style="height:' + size.height + 'px">' +
-        '<div class="rm-cells">' + cells + '</div>' +
-        (r.current ? '<div class="rm-nowline" style="left:' + nowLeft.toFixed(3) + '%"><i></i></div>' : '') +
-        (size.empty ? '<div class="rm-empty-year">пока пусто</div>' : '<div class="rm-marks">' + marks + '</div>') +
-        '<div class="rm-lanes" style="top:' + size.marksH + 'px">' + lanes + '</div>' +
-        '<div class="rm-dots" style="top:' + (size.marksH + r.lanes * laneH + 2) + 'px">' + dots + '</div>' +
-      '</div>';
-    }).join('');
-
-    const legend = '<div class="rm-legend">' +
-      '<span><i class="rm-legend__dot"></i>веха или дедлайн</span>' +
-      '<span><i class="rm-legend__bar"></i>марафон: закрашено = прожито</span>' +
-      '<span><i class="rm-legend__tdot"></i>дела по дням</span>' +
-    '</div>';
-
-    return nowCard +
-      (hiddenPast.length
-        ? '<div class="rm-note">' + hiddenPast.map((r) => r.grade + ' класс').join(' и ') +
-          ' — записей нет, поэтому не показываю</div>'
-        : '') +
-      '<div class="rm-gantt">' + side +
-        '<div class="rm-scroll">' +
-          '<div class="rm-table" style="--mw:64px">' + monthsHead + body + '</div>' +
-        '</div>' +
-      '</div>' +
-      legend;
-  }
-
-  /* ─────────────────────────── 4 ГОДА: кольца 9 → 12 ─────────────────────────── */
-
-  const RING_R = { 9: 66, 10: 89, 11: 112, 12: 135 };
-
-  function macroScreen() {
-    const t = today();
-    const grade = myGrade();
-    const base = schoolYearStart(t) + (9 - grade);
-    const items = store.plan();
-    const colors = arcColors();
-
-    const rows = [9, 10, 11, 12].map((g) => {
-      const startYear = base + (g - 9);
-      const y0 = new Date(startYear, 8, 1);
-      const y1 = new Date(startYear + 1, 8, 1);
-      const span = y1 - y0;
-      const ang = (d) => -Math.PI / 2 + ((d - y0) / span) * TAU;
-      const tracks = items.filter((p) => p.kind === 'track' && p.endAt &&
-          new Date(p.startAt) < y1 && new Date(p.endAt) >= y0)
-        .map((p) => ({
-          item: p,
-          a: ang(new Date(Math.max(new Date(p.startAt).getTime(), y0.getTime()))),
-          b: ang(new Date(Math.min(new Date(p.endAt).getTime() + DAY, y1.getTime())))
-        }))
-        .filter((x) => x.b > x.a + 0.004);
-      const stones = items.filter((p) => p.kind === 'milestone' &&
-          new Date(p.startAt) >= y0 && new Date(p.startAt) < y1)
-        .map((p) => ({ item: p, a: ang(new Date(p.startAt)) }));
-      return { g, startYear, y0, y1, ang, tracks, stones, now: g === grade };
-    });
-
-    const nowRow = rows.find((r) => r.now);
-
-    /* месяцы — то же внешнее кольцо, что и в «Круге» */
-    const months = Array.from({ length: 12 }, (_, k) => {
-      const m = (8 + k) % 12;
-      const a0 = -Math.PI / 2 + (k / 12) * TAU;
-      const a1 = -Math.PI / 2 + ((k + 1) / 12) * TAU;
-      const [lx, ly] = pt(167, (a0 + a1) / 2);
-      const y = nowRow.startYear + (8 + k >= 12 ? 1 : 0);
-      return '<g class="rcy-month rcy-month--' + seasonOf(m) + '">' +
-        '<path class="rcy-month__area" d="' + sectorPath(150, 184, a0, a1) + '" ' +
-          'onclick="SH.views.roadmap.focusMonth(' + y + ', ' + m + ')">' +
-          '<title>' + e(MON_NOM[m] + ' ' + y) + '</title></path>' +
-        '<text class="rcy-month__label" x="' + r2(lx) + '" y="' + r2(ly + 4) + '" text-anchor="middle">' +
-          MON3[m] + '</text>' +
-      '</g>';
-    }).join('');
-
-    const rings = rows.map((r) => {
-      const R = RING_R[r.g];
-      const arcs = r.tracks.map((x) =>
-        '<path class="rcy-arc" d="' + arcPath(R, x.a, x.b) + '" ' +
-          'stroke="' + (colors[x.item.id] || trackColor(x.item.color)) + '" ' +
-          'onclick="SH.views.roadmap.openItem(\'' + x.item.id + '\')">' +
-          '<title>' + e(x.item.title) + '</title></path>').join('');
-      const dots = r.stones.map((x) => {
-        const [cx, cy] = pt(R, x.a);
-        return '<circle class="rcy-ringdot' + (x.item.done ? ' is-done' : '') + '" cx="' + r2(cx) + '" cy="' + r2(cy) +
-          '" r="6" onclick="SH.views.roadmap.openItem(\'' + x.item.id + '\')">' +
-          '<title>' + e(x.item.title + ' · ' + dayLabel(new Date(x.item.startAt))) + '</title></circle>';
-      }).join('');
-      const [nx, ny] = pt(R, Math.PI * 0.86);
-      return '<g class="rcy-ring' + (r.now ? ' is-now' : '') + '">' +
-        '<circle class="rcy-ring__base" cx="190" cy="190" r="' + R + '"></circle>' +
-        '<circle class="rcy-ring__hit" cx="190" cy="190" r="' + R + '" ' +
-          'onclick="SH.app.go(\'#/roadmap/c/' + r.g + '\')">' +
-          '<title>' + r.g + ' класс · ' + yearLabel(r.startYear) + '</title></circle>' +
-        arcs + dots +
-        '<circle class="rcy-ringnum__bg" cx="' + r2(nx) + '" cy="' + r2(ny) + '" r="9"></circle>' +
-        '<text class="rcy-ringnum" x="' + r2(nx) + '" y="' + r2(ny + 3.5) + '" text-anchor="middle">' + r.g + '</text>' +
-      '</g>';
-    }).join('');
-
-    /* сегодня — игла от центра к кольцу текущего класса */
-    const aNow = nowRow.ang(t);
-    const [sx, sy] = pt(40, aNow);
-    const [ex, ey] = pt(RING_R[nowRow.g], aNow);
-    const needle = '<line class="rcy-now" x1="' + r2(sx) + '" y1="' + r2(sy) +
-        '" x2="' + r2(ex) + '" y2="' + r2(ey) + '"></line>' +
-      '<circle class="rcy-nowdot" cx="' + r2(ex) + '" cy="' + r2(ey) + '" r="4"></circle>';
-
-    const svg =
-      '<svg class="rcy" viewBox="0 0 380 380" role="img" aria-label="Все четыре года: кольца 9–12 класс">' +
-        '<circle class="rcy-base" cx="190" cy="190" r="184"></circle>' +
-        months + rings + needle +
-        '<circle class="rcy-hub" cx="190" cy="190" r="34"></circle>' +
-        '<text class="rcy-hub__class" x="190" y="188" text-anchor="middle">старт</text>' +
-        '<text class="rcy-hub__sub" x="190" y="202" text-anchor="middle">' + t.getDate() + ' ' + MON[t.getMonth()] + '</text>' +
-      '</svg>';
-
-    const pills = [9, 10, 11, 12].map((gg) =>
-      '<button class="pill" aria-pressed="' + (gg === grade) + '" onclick="SH.app.go(\'#/roadmap/c/' + gg + '\')">' +
-        gg + ' кл</button>').join('');
-
-    return '<div class="screen">' +
-      head('Роадмап', 'Все 4 года (кольца)', iconButton('plus', 'Добавить в роадмап', 'SH.views.roadmap.addItem()')) +
-      gradePicker(null, 'all', 'y') +
-      modeSwitch('macro', null) +
-      '<div class="rcy-wrap">' + svg + '</div>' +
-      '<p class="rcap">Кольца от центра к краю: 9 → 12 класс</p>' +
-      '<div class="rm-legend" style="justify-content:center;margin:0 0 12px">' +
-        '<span><i class="rcal-key rcal-key--track"></i>марафон</span>' +
-        '<span><i class="rcal-key rcal-key--date"></i>дата</span>' +
-        '<span><i class="rcal-key rcal-key--today"></i>сегодня</span>' +
-      '</div>' +
-      '<div class="rcap__card">Тап по кольцу открывает этот год. Дуга — длительность марафона, кружок — дата. Все 4 года помещаются на одном экране.</div>' +
-      '<div class="rcal-pills">' + pills + '</div>' +
-      '<details class="rm-lenta">' +
-        '<summary>Лента 9→12 по месяцам</summary>' +
-        '<div class="rm-lenta__body">' + ganttBody() + '</div>' +
-      '</details>' +
-      goalsSection() +
-    '</div>';
-  }
-
   function iconButton(ico, label, onclick) {
     return '<button class="icon-btn icon-btn--plain" onclick="' + onclick + '" aria-label="' + e(label) + '">' +
       icon(ico, 22) + '</button>';
   }
-
 
   /* ─────────────────────────── КРУГ: один учебный год ─────────────────────────── */
 
@@ -5599,9 +5098,7 @@ html[data-theme='dark'] .rcap__card { background: var(--surface); }
 
   /* «Мой роадмап • 10 класс» — тот же выбор, что и на скриншоте */
   function gradePicker(current, kind, route) {
-    const all = kind === 'all'
-      ? '<option value="0" selected>Мой роадмап • 9–12 классы</option>' : '';
-    const opts = all + [9, 10, 11, 12].map((gg) => {
+    const opts = [9, 10, 11, 12].map((gg) => {
       const ys = schoolYearStart(today()) + (gg - myGrade());
       const label = kind === 'year' ? yearLabel(ys) : gg + ' класс';
       return '<option value="' + gg + '"' + (gg === current ? ' selected' : '') + '>' +
@@ -5758,6 +5255,7 @@ html[data-theme='dark'] .rcap__card { background: var(--surface); }
       '</div>' +
       '<button class="btn btn--brand btn--block rm-cta" onclick="SH.views.roadmap.addItem()">' +
         icon('plus', 18) + '<span>Поставить точку или марафон</span></button>' +
+      goalsSection() +
     '</div>';
   }
 
@@ -6124,39 +5622,15 @@ html[data-theme='dark'] .rcap__card { background: var(--surface); }
 
   /* ─────────────────────────── монтирование ─────────────────────────── */
 
-  let savedScroll = null;
-  let mountHash = null;
-
   function mount(root) {
     const cal = root.querySelector('.rcal');
-    if (cal) {
-      const fresh = calHash !== location.hash;
-      calHash = location.hash;
-      let target = null;
-      if (calFocus) { target = cal.querySelector('[data-m="' + calFocus + '"]'); calFocus = null; }
-      if (!target && fresh) target = cal.querySelector('.rcal__m.is-now');
-      if (target) setTimeout(() => target.scrollIntoView({ block: 'center' }), 40);
-      return;
-    }
-
-    const sc = root.querySelector('.rm-scroll');
-    if (!sc) return;
-
-    // пришли на экран заново — показываем «сейчас», а не сентябрь
-    if (mountHash !== location.hash) { savedScroll = null; mountHash = location.hash; }
-
-    if (savedScroll === null) {
-      const table = sc.querySelector('.rm-table');
-      const mw = parseFloat(getComputedStyle(table).getPropertyValue('--mw')) || 64;
-      const col = (today().getMonth() - 8 + 12) % 12;   // сентябрь = 0
-      savedScroll = Math.max(0, col * mw - 26);
-    }
-    sc.scrollLeft = savedScroll;
-
-    if (!sc.dataset.bound) {
-      sc.dataset.bound = '1';
-      sc.addEventListener('scroll', () => { savedScroll = sc.scrollLeft; }, { passive: true });
-    }
+    if (!cal) return;
+    const fresh = calHash !== location.hash;
+    calHash = location.hash;
+    let target = null;
+    if (calFocus) { target = cal.querySelector('[data-m="' + calFocus + '"]'); calFocus = null; }
+    if (!target && fresh) target = cal.querySelector('.rcal__m.is-now');
+    if (target) setTimeout(() => target.scrollIntoView({ block: 'center' }), 40);
   }
 
   /* ─────────────────────────── действия ─────────────────────────── */
@@ -6471,7 +5945,7 @@ html[data-theme='dark'] .rcap__card { background: var(--surface); }
       '</div>';
     }
     if (p1 === 'w') return weekScreen(parseKey(p2));
-    if (p1 === 'y') return macroScreen();
+    if (p1 === 'y') return circleScreen(null);      // старые ссылки на «4 года» → круг
     if (p1 === 'cal') return calendarScreen(p2 ? parseInt(p2, 10) : null);
     if (p1 === 'c') return circleScreen(p2 ? parseInt(p2, 10) : null);
     return circleScreen(null);          // по умолчанию — круг года
