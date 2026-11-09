@@ -1897,119 +1897,348 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 .rm-ms { padding-left: 7px; }
 
 /* ==========================================================================
-   Круг года: один учебный год, сентябрь наверху
+   Роадмап: выбор класса, вкладки, круг года, календарь года
    ========================================================================== */
 
+/* ── «Мой роадмап • 10 класс» ── */
+.rm-pick { position: relative; margin: 0 0 12px; }
+.rm-pick select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 50px;
+  padding: 0 46px 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 650;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+.rm-pick select:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.rm-pick__chev {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%) rotate(90deg);
+  display: flex;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+/* ── вкладки: Круг / 4 года / Календарь ── */
+.rm-switch {
+  display: flex;
+  width: 100%;
+  gap: 4px;
+  padding: 4px;
+  margin: 0 0 16px;
+  background: var(--chip);
+  border-radius: 14px;
+}
+.rm-switch button {
+  flex: 1 1 0;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  padding: 10px 6px;
+  border-radius: 11px;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+.rm-switch button[aria-selected='true'] {
+  background: var(--text);
+  color: var(--bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.rm-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: -4px 0 10px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── круг ── */
 .rcy-wrap {
   max-width: 460px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 auto 12px;
+  padding: 6px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 22px;
-  padding: 6px;
   box-shadow: var(--shadow-sm);
-  margin-bottom: 10px;
 }
 .rcy { display: block; width: 100%; height: auto; }
-
 .rcy-base { fill: var(--bg); }
 
 /* месяцы */
-.rcy-month__area {
-  fill: transparent;
-  stroke: var(--border);
-  stroke-width: 1.2;
-  cursor: pointer;
-  transition: fill 0.15s ease;
-}
-.rcy-month:hover .rcy-month__area { fill: color-mix(in srgb, var(--primary) 8%, transparent); }
-.rcy-month.is-now .rcy-month__area { fill: color-mix(in srgb, var(--primary) 13%, transparent); }
-.rcy-month__label {
-  font-size: 12px;
-  fill: var(--muted);
-  letter-spacing: 0.2px;
-  pointer-events: none;
-}
-.rcy-month.is-now .rcy-month__label { fill: var(--primary); font-weight: 700; }
-
-/* сезоны */
-.rcy-season { stroke: var(--surface); stroke-width: 1.5; }
-.rcy-season--autumn { fill: color-mix(in srgb, var(--lavender) 72%, var(--surface)); }
-.rcy-season--winter { fill: color-mix(in srgb, var(--sky) 78%, var(--surface)); }
-.rcy-season--spring { fill: color-mix(in srgb, var(--mint) 82%, var(--surface)); }
-.rcy-season--summer { fill: color-mix(in srgb, var(--sun) 88%, var(--surface)); }
-.rcy-season__label {
-  font-size: 10.5px;
-  font-weight: 650;
-  fill: #3d3a4a;
-  pointer-events: none;
-}
-
-/* марафоны */
-.rcy-track__base { fill: none; stroke: var(--chip); stroke-width: 9; stroke-linecap: round; }
-.rcy-track__fill { fill: none; stroke: var(--tc, var(--sky)); stroke-width: 9; stroke-linecap: round; }
-.rcy-track__hit { fill: none; stroke: transparent; stroke-width: 18; cursor: pointer; }
-.rcy-track--sky { --tc: #8fcaf7; }
-.rcy-track--mint { --tc: #7fdc9f; }
-.rcy-track--sun { --tc: #f2cf63; }
-.rcy-track--lavender { --tc: #b9a6f2; }
-.rcy-track--blush { --tc: #f5a9c4; }
-
-/* вехи и дни */
-.rcy-stone {
-  fill: color-mix(in srgb, var(--sun) 72%, var(--surface));
-  stroke: #b57f00;
-  stroke-width: 1.6;
-  cursor: pointer;
-  transition: fill 0.15s ease;
-}
-.rcy-stone:hover { fill: var(--sun); stroke-width: 2.2; }
-.rcy-stone.is-soon { fill: var(--sun); stroke: #b57f00; stroke-width: 2; }
-.rcy-stone.is-done { fill: var(--success); stroke: var(--surface); stroke-width: 2; }
-.rcy-tick { fill: var(--muted); opacity: 0.55; cursor: pointer; }
-.rcy-tick.is-done { fill: var(--success); opacity: 0.8; }
-
-/* сегодня */
-.rcy-now { stroke: var(--primary); stroke-width: 2; stroke-linecap: round; opacity: 0.55; }
-.rcy-now__dot { fill: var(--primary); }
-
-/* центр */
-.rcy-hub { fill: var(--surface); stroke: var(--border); stroke-width: 1.5; }
-.rcy-hub__date { font-size: 12.5px; font-weight: 750; fill: var(--text); }
-.rcy-hub__sub { font-size: 8.5px; fill: var(--muted); }
-
-/* цвет секторов как в «круге года»: осень — лиловый, зима — голубой, весна — зелёный, лето — жёлтый */
-.rcy-month__area { fill: color-mix(in srgb, var(--season) 68%, var(--surface)); }
 .rcy-month--autumn { --season: var(--lavender); }
 .rcy-month--winter { --season: var(--sky); }
 .rcy-month--spring { --season: var(--mint); }
 .rcy-month--summer { --season: var(--sun); }
-.rcy-month:hover .rcy-month__area { fill: color-mix(in srgb, var(--season) 88%, var(--surface)); }
+.rcy-month__area {
+  fill: color-mix(in srgb, var(--season) 64%, var(--surface));
+  stroke: var(--surface);
+  stroke-width: 1.5;
+  cursor: pointer;
+  transition: fill 0.15s ease;
+}
+.rcy-month:hover .rcy-month__area { fill: color-mix(in srgb, var(--season) 84%, var(--surface)); }
 .rcy-month.is-now .rcy-month__area {
-  fill: color-mix(in srgb, var(--season) 96%, var(--surface));
+  fill: color-mix(in srgb, var(--season) 94%, var(--surface));
   stroke: var(--primary);
   stroke-width: 2;
 }
-.rcy-month__label { font-weight: 600; }
-.rcy-month.is-now .rcy-month__label { fill: var(--text); font-weight: 750; }
-.rcy-now { opacity: 0.4; }
+.rcy-month__label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  fill: var(--text);
+  opacity: 0.72;
+  pointer-events: none;
+}
+.rcy-month.is-now .rcy-month__label { opacity: 1; font-weight: 800; }
 
-/* круг года в тёмной теме: пастель подмешиваем к фону, подписи — к тексту */
+/* марафоны — дуги */
+.rcy-track { fill: none; stroke-width: 12; stroke-linecap: round; cursor: pointer; }
+.rcy-track__hit { fill: none; stroke: transparent; stroke-width: 20; cursor: pointer; }
+
+/* вехи — нумерованные точки */
+.rcy-stone circle {
+  fill: var(--surface);
+  stroke: var(--primary);
+  stroke-width: 1.6;
+  cursor: pointer;
+  transition: fill 0.15s ease;
+}
+.rcy-stone text {
+  font-size: 9px;
+  font-weight: 750;
+  fill: var(--primary);
+  pointer-events: none;
+}
+.rcy-stone:hover circle { fill: color-mix(in srgb, var(--primary) 14%, var(--surface)); }
+.rcy-stone.is-done circle { stroke: var(--success); fill: color-mix(in srgb, var(--success) 12%, var(--surface)); }
+.rcy-stone.is-done text { fill: var(--success); }
+
+/* сегодня */
+.rcy-nowdot { fill: var(--primary); stroke: var(--surface); stroke-width: 1.5; }
+
+/* центр */
+.rcy-hub { fill: var(--surface); stroke: var(--border); stroke-width: 1.2; }
+.rcy-hub__class { font-size: 15px; font-weight: 800; fill: var(--text); }
+.rcy-hub__year { font-size: 10.5px; font-weight: 650; fill: var(--muted); }
+.rcy-hub__sub { font-size: 9.5px; fill: var(--muted); }
+
+/* ── список под кругом ── */
+.rcy-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0 0 14px;
+}
+.rcy-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 6px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.rcy-row:hover { background: var(--chip); }
+.rcy-row__bar { width: 26px; height: 7px; flex: none; border-radius: 999px; }
+.rcy-row__num {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1.6px solid var(--primary);
+  border-radius: 50%;
+  color: var(--primary);
+  font-size: 10.5px;
+  font-weight: 750;
+  font-style: normal;
+}
+.rcy-row__title {
+  flex: 1 1 auto;
+  min-width: 64px;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--text);
+  line-height: 1.3;
+}
+.rcy-row__meta {
+  flex: 0 0 auto;
+  max-width: 52%;
+  text-align: right;
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--muted);
+}
+.rcy-row.is-done .rcy-row__title { color: var(--muted); text-decoration: line-through; }
+.rcy-row.is-done .rcy-row__num { border-color: var(--success); color: var(--success); }
+
+@media (max-width: 430px) {
+  .rcy-row { flex-wrap: wrap; row-gap: 2px; }
+  .rcy-row__title { flex: 1 1 calc(100% - 36px); }
+  .rcy-row__meta { flex: 0 0 100%; max-width: none; text-align: left; padding-left: 36px; }
+}
+
+.rcy-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--r-card);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.rcy-empty svg { flex: none; opacity: 0.7; }
+
+.rm-cta {
+  height: 52px;
+  max-width: 560px;
+  margin: 2px auto 0;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.rcy-list { max-width: 560px; margin: 0 auto 14px; }
+.rcy-empty { max-width: 560px; margin: 0 auto 14px; }
+
+/* ── календарь года: 12 карточек-месяцев ── */
+.rcal {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(102px, 1fr));
+  gap: 8px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.rcal__m {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  overflow: hidden;
+  scroll-margin: 90px;
+}
+.rcal__m.is-now { box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent); }
+.rcal__m--autumn { --season: var(--lavender); }
+.rcal__m--winter { --season: var(--sky); }
+.rcal__m--spring { --season: var(--mint); }
+.rcal__m--summer { --season: var(--sun); }
+
+.rcal__head {
+  display: block;
+  width: 100%;
+  padding: 7px 4px;
+  border: 0;
+  background: color-mix(in srgb, var(--season) 70%, var(--surface));
+  color: var(--text);
+  font: inherit;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-align: center;
+  cursor: pointer;
+}
+.rcal__wd {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 4px 4px 1px;
+  font-size: 8px;
+  font-weight: 650;
+  color: var(--muted);
+  text-align: center;
+}
+.rcal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  padding: 0 4px 6px;
+}
+.rcal__d {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 17px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 8.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.rcal__d.is-blank { cursor: default; }
+.rcal__d.is-date {
+  box-shadow: inset 0 0 0 1.3px var(--primary);
+  color: var(--primary);
+  font-weight: 800;
+}
+.rcal__d.is-today { background: var(--primary); color: #fff; font-weight: 800; }
+.rcal__bar {
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  bottom: 1.5px;
+  height: 2px;
+  border-radius: 2px;
+}
+.rcal__d.is-today .rcal__bar { background: rgba(255, 255, 255, 0.85) !important; }
+
+.rcal__legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+}
+.rcal-key { display: inline-block; flex: none; }
+.rcal-key--track { width: 16px; height: 4px; border-radius: 2px; background: linear-gradient(90deg, #f2cf63 0 55%, #7fdc9f 55% 100%); }
+.rcal-key--date { width: 10px; height: 10px; border-radius: 50%; box-shadow: inset 0 0 0 1.4px var(--primary); }
+.rcal-key--today { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); }
+
+/* ── тёмная тема ── */
 html[data-theme='dark'] .rcy-base { fill: var(--surface); }
+html[data-theme='dark'] .rcy-month__area { fill: color-mix(in srgb, var(--season) 24%, var(--surface)); }
+html[data-theme='dark'] .rcy-month:hover .rcy-month__area { fill: color-mix(in srgb, var(--season) 36%, var(--surface)); }
+html[data-theme='dark'] .rcy-month.is-now .rcy-month__area { fill: color-mix(in srgb, var(--season) 44%, var(--surface)); }
+html[data-theme='dark'] .rcy-month__label { fill: var(--text); opacity: 0.85; }
+html[data-theme='dark'] .rcy-month.is-now .rcy-month__label { opacity: 1; }
 html[data-theme='dark'] .rcy-hub { fill: var(--bg); stroke: var(--border); }
-html[data-theme='dark'] .rcy-month__area { fill: color-mix(in srgb, var(--season) 22%, var(--surface)); }
-html[data-theme='dark'] .rcy-month:hover .rcy-month__area { fill: color-mix(in srgb, var(--season) 34%, var(--surface)); }
-html[data-theme='dark'] .rcy-month.is-now .rcy-month__area { fill: color-mix(in srgb, var(--season) 40%, var(--surface)); }
-html[data-theme='dark'] .rcy-month__label { fill: var(--text); opacity: 0.9; }
-html[data-theme='dark'] .rcy-month.is-now .rcy-month__label { fill: #fff; opacity: 1; }
-html[data-theme='dark'] .rcy-season__label { fill: var(--text); }
-html[data-theme='dark'] .rcy-season { stroke: var(--surface); }
-html[data-theme='dark'] .rcy-track__base { stroke: color-mix(in srgb, var(--muted) 32%, transparent); }
-html[data-theme='dark'] .rcy-stone { fill: color-mix(in srgb, var(--sun) 42%, var(--surface)); stroke: #d9a017; }
-html[data-theme='dark'] .rcy-stone.is-soon { fill: var(--sun); stroke: #f3c33f; }
-html[data-theme='dark'] .rcy-stone.is-done { fill: var(--success); stroke: var(--surface); }
-html[data-theme='dark'] .rcy-tick { fill: var(--muted); }
+html[data-theme='dark'] .rcy-stone circle { fill: var(--bg); }
+html[data-theme='dark'] .rcy-nowdot { fill: var(--primary); stroke: var(--surface); }
+
+html[data-theme='dark'] .rcal__head { background: color-mix(in srgb, var(--season) 26%, var(--surface)); color: var(--text); }
+html[data-theme='dark'] .rcal__m { background: var(--surface); }
+html[data-theme='dark'] .rcal__d.is-today { background: var(--primary); color: #fff; }
 
 </style>
 </head>
@@ -4770,11 +4999,12 @@ html[data-theme='dark'] .rcy-tick { fill: var(--muted); }
     '</div>';
   }
 
-  function modeSwitch(active) {
+  function modeSwitch(active, g) {
+    const gg = [9, 10, 11, 12].indexOf(g) >= 0 ? '/' + g : '';
     return '<div class="rm-switch" role="tablist">' +
-      '<button role="tab" aria-selected="' + (active === 'macro') + '" onclick="SH.app.go(\'#/roadmap\')">Годы</button>' +
-      '<button role="tab" aria-selected="' + (active === 'circle') + '" onclick="SH.app.go(\'#/roadmap/c\')">Круг</button>' +
-      '<button role="tab" aria-selected="' + (active === 'micro') + '" onclick="SH.views.roadmap.goToday()">Неделя</button>' +
+      '<button role="tab" aria-selected="' + (active === 'circle') + '" onclick="SH.app.go(\'#/roadmap/c' + gg + '\')">Круг</button>' +
+      '<button role="tab" aria-selected="' + (active === 'macro') + '" onclick="SH.app.go(\'#/roadmap/y\')">4 года</button>' +
+      '<button role="tab" aria-selected="' + (active === 'calendar') + '" onclick="SH.app.go(\'#/roadmap/cal' + gg + '\')">Календарь</button>' +
     '</div>';
   }
 
@@ -5076,174 +5306,240 @@ html[data-theme='dark'] .rcy-tick { fill: var(--muted); }
       ' A' + r + ' ' + r + ' 0 ' + large + ' 1 ' + r2(x1) + ' ' + r2(y1);
   }
 
-  const SEASONS = [
-    { key: 'autumn', label: 'осень', from: 0 },
-    { key: 'winter', label: 'зима', from: 3 },
-    { key: 'spring', label: 'весна', from: 6 },
-    { key: 'summer', label: 'лето', from: 9 }
-  ];
+  /* палитра марафонов совпадает с CSS (--tc у .rm-track--*) */
+  const TRACK_HEX = { sky: '#8fcaf7', mint: '#7fdc9f', sun: '#f2cf63', lavender: '#b9a6f2', blush: '#f5a9c4' };
+  const trackColor = (c) => TRACK_HEX[c] || TRACK_HEX.sky;
 
-  let circleGrade = null;
+  const MON_NOM = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+  const MON3 = ['ЯНВ', 'ФЕВ', 'МАР', 'АПР', 'МАЙ', 'ИЮН', 'ИЮЛ', 'АВГ', 'СЕН', 'ОКТ', 'НОЯ', 'ДЕК'];
+  const seasonOf = (m) => (m >= 8 && m <= 10 ? 'autumn' : m === 11 || m <= 1 ? 'winter' : m <= 4 ? 'spring' : 'summer');
+  const yearLabel = (y) => y + '–' + String(y + 1).slice(2);
 
-  function circleScreen(gradeArg) {
-    const t = today();
+  /* «1 окт – 10 дек», а внутри месяца — «10 – 31 янв» */
+  function rangeLabel(a, b) {
+    const d1 = a.getDate();
+    const d2 = b.getDate();
+    return a.getMonth() === b.getMonth()
+      ? d1 + ' – ' + d2 + ' ' + MON[b.getMonth()]
+      : d1 + ' ' + MON[a.getMonth()] + ' – ' + d2 + ' ' + MON[b.getMonth()];
+  }
+
+  let circleGrade = null;      // выбранный класс — общий для «Круга» и «Календаря»
+  let calFocus = null;         // месяц, к которому надо прокрутить календарь
+  let calHash = null;
+
+  /* класс → учебный год: 10 класс = 2026/27, 11 класс = 2027/28 и т. д. */
+  function gradeState(gradeArg) {
     const myG = myGrade();
     const picked = [9, 10, 11, 12].indexOf(gradeArg) >= 0 ? gradeArg : circleGrade;
     const g = [9, 10, 11, 12].indexOf(picked) >= 0 ? picked : myG;
     circleGrade = g;
-    const yearStart = schoolYearStart(t) + (g - myG);      // учебный год этого класса
-    const y0 = new Date(yearStart, 8, 1);
-    const y1 = new Date(yearStart + 1, 8, 1);
-    const span = y1 - y0;
+    const yearStart = schoolYearStart(today()) + (g - myG);
+    return { g, myG, yearStart, y0: new Date(yearStart, 8, 1), y1: new Date(yearStart + 1, 8, 1) };
+  }
 
+  /* «Мой роадмап • 10 класс» — тот же выбор, что и на скриншоте */
+  function gradePicker(current, kind, route) {
+    const opts = [9, 10, 11, 12].map((gg) => {
+      const ys = schoolYearStart(today()) + (gg - myGrade());
+      const label = kind === 'year' ? yearLabel(ys) : gg + ' класс';
+      return '<option value="' + gg + '"' + (gg === current ? ' selected' : '') + '>' +
+        'Мой роадмап • ' + label + '</option>';
+    }).join('');
+    return '<div class="rm-pick">' +
+      '<select aria-label="Класс и учебный год" onchange="SH.views.roadmap.pickGrade(this.value, \'' + route + '\')">' +
+        opts + '</select>' +
+      '<span class="rm-pick__chev">' + icon('chevronRight', 16) + '</span>' +
+    '</div>';
+  }
+
+  function circleScreen(gradeArg) {
+    const t = today();
+    const st = gradeState(gradeArg);
+    const g = st.g;
+    const y0 = st.y0;
+    const y1 = st.y1;
+    const span = y1 - y0;
     const ang = (d) => -Math.PI / 2 + ((d - y0) / span) * TAU;   // сентябрь — наверху
     const inYear = (d) => d >= y0 && d < y1;
 
     const items = store.plan();
-    const stones = items.filter((p) => p.kind === 'milestone' && inYear(new Date(p.startAt)));
-    const tracks = items.filter((p) => p.kind === 'track' && p.endAt)
-      .map((p) => {
-        const a = Math.max(new Date(p.startAt).getTime(), y0.getTime());
-        const b = Math.min(new Date(p.endAt).getTime() + DAY, y1.getTime());
-        return b > a ? { item: p, a: new Date(a), b: new Date(b) } : null;
-      })
-      .filter(Boolean);
-    const taskDays = {};
-    items.filter((p) => p.kind === 'task' && inYear(new Date(p.startAt))).forEach((p) => {
-      const k = keyOf(new Date(p.startAt));
-      taskDays[k] = taskDays[k] || { date: new Date(p.startAt), left: 0 };
-      if (!p.done) taskDays[k].left += 1;
-    });
+    const stones = items.filter((p) => p.kind === 'milestone' && inYear(new Date(p.startAt)))
+      .sort((a, b) => String(a.startAt).localeCompare(String(b.startAt)));
+    const tracks = items.filter((p) => p.kind === 'track' && p.endAt &&
+        new Date(p.startAt) < y1 && new Date(p.endAt) >= y0)
+      .sort((a, b) => String(a.startAt).localeCompare(String(b.startAt)));
 
-    /* месяцы: полные названия, цвет — по сезону (осень → лето) */
-    const seasonOf = (m) => (m >= 8 && m <= 10 ? 'autumn' : m === 11 || m <= 1 ? 'winter' : m <= 4 ? 'spring' : 'summer');
+    /* месяцы: цвет по сезону, сентябрь наверху, дальше по часовой */
     const monthCells = Array.from({ length: 12 }, (_, k) => {
       const m = (8 + k) % 12;
-      const y = yearStart + (8 + k >= 12 ? 1 : 0);
+      const y = st.yearStart + (8 + k >= 12 ? 1 : 0);
       const a0 = -Math.PI / 2 + (k / 12) * TAU;
       const a1 = -Math.PI / 2 + ((k + 1) / 12) * TAU;
-      const isNow = g === myG && m === t.getMonth();
-      const [lx, ly] = pt(154, (a0 + a1) / 2);
+      const isNow = g === st.myG && m === t.getMonth();
+      const [lx, ly] = pt(160, (a0 + a1) / 2);
       return '<g class="rcy-month rcy-month--' + seasonOf(m) + (isNow ? ' is-now' : '') + '">' +
-        '<path class="rcy-month__area" d="' + sectorPath(126, 184, a0, a1) + '" ' +
-          'onclick="SH.views.roadmap.openMonth(' + y + ',' + m + ')" ' +
-          'aria-label="' + e(MONTHS[m] + ' ' + y) + '"><title>' + e(MONTHS[m] + ' ' + y) + '</title></path>' +
+        '<path class="rcy-month__area" d="' + sectorPath(136, 184, a0, a1) + '" ' +
+          'onclick="SH.views.roadmap.focusMonth(' + y + ', ' + m + ')" ' +
+          'aria-label="' + e(MON_NOM[m] + ' ' + y) + '"><title>' + e(MON_NOM[m] + ' ' + y) + '</title></path>' +
         '<text class="rcy-month__label" x="' + r2(lx) + '" y="' + r2(ly + 4) + '" text-anchor="middle">' +
-          MONTHS[m] + '</text>' +
+          MON3[m] + '</text>' +
       '</g>';
     }).join('');
 
-    /* сезоны: внутренний пояс */
-    const seasons = SEASONS.map((sn) => {
-      const a0 = -Math.PI / 2 + (sn.from / 12) * TAU;
-      const a1 = -Math.PI / 2 + ((sn.from + 3) / 12) * TAU;
-      const [lx, ly] = pt(50, (a0 + a1) / 2);
-      return '<path class="rcy-season rcy-season--' + sn.key + '" d="' + sectorPath(36, 64, a0, a1) + '"></path>' +
-        '<text class="rcy-season__label" x="' + r2(lx) + '" y="' + r2(ly + 4) + '" text-anchor="middle">' + sn.label + '</text>';
-    }).join('');
-
-    /* марафоны: дуги, до 4 дорожек */
-    const laneR = [112, 103, 94, 85];
-    const laneBusy = [];
-    const trackArcs = tracks.map((tr) => {
-      let lane = 0;
-      const a0 = ang(tr.a);
-      const a1 = Math.max(a0 + 0.02, ang(tr.b));
-      while (lane < laneR.length - 1 && (laneBusy[lane] || 0) > a0) lane += 1;
-      laneBusy[lane] = a1;
-      const st = trackStat(tr.item);
-      const nowA = Math.min(a1, Math.max(a0, ang(t)));
-      const r = laneR[lane];
-      return '<g class="rcy-track rcy-track--' + e(tr.item.color || 'sky') + '">' +
-        '<path class="rcy-track__base" d="' + arcPath(r, a0, a1) + '"></path>' +
-        (nowA > a0 ? '<path class="rcy-track__fill" d="' + arcPath(r, a0, nowA) + '"></path>' : '') +
-        '<path class="rcy-track__hit" d="' + arcPath(r, a0, a1) + '" ' +
-          'onclick="SH.views.roadmap.openItem(\'' + tr.item.id + '\')">' +
-          '<title>' + e(tr.item.title + ' · ' + st.pct + '%') + '</title></path>' +
-      '</g>';
-    }).join('');
-
-    /* вехи: точки, при совпадении дат — в два ряда */
-    const seen = [];
-    const stoneDots = stones
-      .slice()
-      .sort((x, y) => String(x.startAt).localeCompare(String(y.startAt)))
-      .map((ms) => {
-        const d = new Date(ms.startAt);
-        const a = ang(d);
-        let r = 119;
-        if (seen.some((x) => Math.abs(x - a) < 0.09)) r = 113;
-        seen.push(a);
-        const [x, y] = pt(r, a);
-        const soon = !ms.done && daysTo(ms.startAt) >= 0 && daysTo(ms.startAt) <= 7;
-        return '<circle class="rcy-stone' + (ms.done ? ' is-done' : '') + (soon ? ' is-soon' : '') + '" ' +
-          'cx="' + r2(x) + '" cy="' + r2(y) + '" r="5.5" ' +
+    /* вехи: нумерованные точки, номер совпадает с номером в списке под кругом */
+    const seenA = [];
+    const stoneDots = stones.map((ms, i) => {
+      const d = new Date(ms.startAt);
+      const a = ang(d);
+      let r = 118;
+      if (seenA.some((x) => Math.abs(x - a) < 0.1)) r = 109;
+      seenA.push(a);
+      const [x, y] = pt(r, a);
+      return '<g class="rcy-stone' + (ms.done ? ' is-done' : '') + '" ' +
           'onclick="SH.views.roadmap.openItem(\'' + ms.id + '\')">' +
-          '<title>' + e(ms.title + ' · ' + dayLabel(d)) + '</title></circle>';
-      }).join('');
-
-    /* дни с делами — тонкие насечки */
-    const taskTicks = Object.keys(taskDays).map((k) => {
-      const day = taskDays[k];
-      const a = ang(day.date);
-      const [x, y] = pt(124, a);
-      return '<circle class="rcy-tick' + (day.left ? '' : ' is-done') + '" cx="' + r2(x) + '" cy="' + r2(y) +
-        '" r="1.8" onclick="SH.views.roadmap.zoomTo(\'' + k + '\')"><title>' +
-        e(k.split('-').reverse().slice(0, 2).join(' ') + ' · дел: ' + (day.left || 0)) + '</title></circle>';
+        '<circle cx="' + r2(x) + '" cy="' + r2(y) + '" r="9"></circle>' +
+        '<text x="' + r2(x) + '" y="' + r2(y + 3.2) + '" text-anchor="middle">' + (i + 1) + '</text>' +
+        '<title>' + e(ms.title + ' · ' + dayLabel(d)) + '</title>' +
+      '</g>';
     }).join('');
 
-    /* сегодня */
-    const isThisYear = t >= y0 && t < y1;
-    const aNow = isThisYear ? ang(t) : 0;
-    const [nx, ny] = pt(124, aNow);
-    const [hx, hy] = pt(66, aNow);
-    const needle = isThisYear
-      ? '<line class="rcy-now" x1="' + r2(hx) + '" y1="' + r2(hy) + '" x2="' + r2(nx) + '" y2="' + r2(ny) + '"></line>' +
-        '<circle class="rcy-now__dot" cx="' + r2(nx) + '" cy="' + r2(ny) + '" r="4"></circle>'
-      : '';
+    /* марафоны: цветная дуга на своей дорожке */
+    const laneR = [96, 84, 72];
+    const trackArcs = tracks.map((p, i) => {
+      const a0 = ang(new Date(Math.max(new Date(p.startAt).getTime(), y0.getTime())));
+      const a1 = Math.max(a0 + 0.03,
+        ang(new Date(Math.min(new Date(p.endAt).getTime() + DAY, y1.getTime()))));
+      const r = laneR[i % laneR.length];
+      const d = arcPath(r, a0, a1);
+      return '<path class="rcy-track" d="' + d + '" stroke="' + trackColor(p.color) + '">' +
+          '<title>' + e(p.title) + '</title></path>' +
+        '<path class="rcy-track__hit" d="' + d + '" ' +
+          'onclick="SH.views.roadmap.openItem(\'' + p.id + '\')"><title>' + e(p.title) + '</title></path>';
+    }).join('');
 
-    const next = stones.filter((x) => !x.done && new Date(x.startAt) >= t)
-      .sort((x, y) => String(x.startAt).localeCompare(String(y.startAt)))[0] || null;
+    /* сегодня: засечка на внутреннем крае кольца месяцев */
+    const isThisYear = t >= y0 && t < y1;
+    const aNow = isThisYear ? ang(t) : -Math.PI / 2;
+    const [qx, qy] = pt(131, aNow);
+    const nowDot = isThisYear
+      ? '<circle class="rcy-nowdot" cx="' + r2(qx) + '" cy="' + r2(qy) + '" r="4"></circle>' : '';
+    const dayNo = Math.round((t - y0) / DAY) + 1;
+    const hubSub = isThisYear ? 'день ' + dayNo : (y0 > t ? 'ещё впереди' : 'прошлый год');
 
     const svg =
       '<svg class="rcy" viewBox="0 0 380 380" role="img" aria-label="Круг года: ' + g + ' класс">' +
         '<circle class="rcy-base" cx="190" cy="190" r="184"></circle>' +
-        seasons +
         monthCells +
         trackArcs +
         stoneDots +
-        taskTicks +
-        needle +
-        '<circle class="rcy-hub" cx="190" cy="190" r="34"></circle>' +
-        '<text class="rcy-hub__date" x="190" y="187" text-anchor="middle">' + t.getDate() + ' ' + MON[t.getMonth()] + '</text>' +
-        '<text class="rcy-hub__sub" x="190" y="203" text-anchor="middle">сегодня</text>' +
+        nowDot +
+        '<circle class="rcy-hub" cx="190" cy="190" r="60"></circle>' +
+        '<text class="rcy-hub__class" x="190" y="181" text-anchor="middle">' + g + ' класс</text>' +
+        '<text class="rcy-hub__year" x="190" y="196" text-anchor="middle">' + yearLabel(st.yearStart) + '</text>' +
+        '<text class="rcy-hub__sub" x="190" y="210" text-anchor="middle">' + hubSub + '</text>' +
       '</svg>';
 
-    const pills = [9, 10, 11, 12].map((gg) =>
-      '<button class="pill" aria-pressed="' + (gg === g) + '" onclick="SH.app.go(\'#/roadmap/c/' + gg + '\')">' +
-        gg + ' класс</button>').join('');
+    /* список под кругом: марафоны полоской, вехи — своим номером */
+    const rows = tracks.map((p) => {
+      const stat = trackStat(p);
+      const meta = stat.live ? 'день ' + stat.dayIndex + ' из ' + stat.totalDays
+        : stat.finished ? 'завершён · ' + stat.totalDays + ' ' + plural(stat.totalDays, 'день', 'дня', 'дней')
+        : stat.totalDays + ' ' + plural(stat.totalDays, 'день', 'дня', 'дней');
+      return '<button class="rcy-row" onclick="SH.views.roadmap.openItem(\'' + p.id + '\')">' +
+        '<i class="rcy-row__bar" style="background:' + trackColor(p.color) + '"></i>' +
+        '<span class="rcy-row__title">' + e(p.title) + '</span>' +
+        '<span class="rcy-row__meta">' +
+          e(rangeLabel(new Date(p.startAt), new Date(p.endAt)) + ' · ' + meta) + '</span>' +
+      '</button>';
+    }).concat(stones.map((ms, i) =>
+      '<button class="rcy-row' + (ms.done ? ' is-done' : '') + '" ' +
+        'onclick="SH.views.roadmap.openItem(\'' + ms.id + '\')">' +
+        '<i class="rcy-row__num">' + (i + 1) + '</i>' +
+        '<span class="rcy-row__title">' + e(ms.title) + '</span>' +
+        '<span class="rcy-row__meta">' + e(dayLabel(new Date(ms.startAt)) + ' · ' +
+          (ms.done ? 'закрыто' : countdown(ms.startAt))) + '</span>' +
+      '</button>')).join('');
+
+    const body = rows
+      ? '<div class="rcy-list">' + rows + '</div>'
+      : '<div class="rcy-empty">' + icon('map', 18) +
+        '<span>На этот год пока пусто. Поставь веху или марафон — он сразу появится на круге.</span></div>';
 
     return '<div class="screen">' +
-      head('Роадмап', 'Круг одного учебного года', iconButton('plus', 'Добавить в роадмап', 'SH.views.roadmap.addItem()')) +
-      modeSwitch('circle') +
-      '<div class="hscroll" style="margin-bottom:14px;gap:6px">' + pills + '</div>' +
+      head('Роадмап', 'Круг учебного года') +
+      gradePicker(g, 'class', 'c') +
+      modeSwitch('circle', g) +
       '<div class="rcy-wrap">' + svg + '</div>' +
-      '<div class="rm-legend" style="justify-content:center">' +
-        '<span><i class="rm-legend__dot"></i>веха</span>' +
-        '<span><i class="rm-legend__bar"></i>марафон</span>' +
-        '<span><i class="rm-legend__tdot"></i>день с делами</span>' +
+      body +
+      '<button class="btn btn--brand btn--block rm-cta" onclick="SH.views.roadmap.addItem()">' +
+        icon('plus', 18) + '<span>Поставить точку или марафон</span></button>' +
+    '</div>';
+  }
+
+  /* ─────────────────────────── КАЛЕНДАРЬ: 12 месяцев сеткой ─────────────────────────── */
+
+  function calendarScreen(gradeArg) {
+    const t = today();
+    const st = gradeState(gradeArg);
+    const items = store.plan();
+
+    /* отметки по дням: веха, марафон, сегодня */
+    const marks = {};
+    const mark = (k) => marks[k] || (marks[k] = {});
+    items.forEach((p) => {
+      if (p.kind === 'milestone') {
+        const m = mark(keyOf(new Date(p.startAt)));
+        m.stone = true;
+        if (p.done) m.stoneDone = true;
+      } else if (p.kind === 'track' && p.endAt) {
+        const end = midnight(new Date(p.endAt));
+        let d = midnight(new Date(p.startAt));
+        for (let i = 0; i <= 400 && d <= end; i++, d = shift(d, 1)) {
+          const m = mark(keyOf(d));
+          if (!m.color) m.color = trackColor(p.color);
+        }
+      }
+    });
+
+    const cards = Array.from({ length: 12 }, (_, k) => {
+      const m = (8 + k) % 12;
+      const y = st.yearStart + (8 + k >= 12 ? 1 : 0);
+      const dim = new Date(y, m + 1, 0).getDate();
+      const lead = (new Date(y, m, 1).getDay() + 6) % 7;      // 0 = понедельник
+      const isNowMonth = y === t.getFullYear() && m === t.getMonth();
+      let cells = '';
+      for (let i = 0; i < lead; i++) cells += '<span class="rcal__d is-blank"></span>';
+      for (let dd = 1; dd <= dim; dd++) {
+        const key = y + '-' + pad(m + 1) + '-' + pad(dd);
+        const mk = marks[key] || {};
+        const isToday = key === keyOf(t);
+        const cls = 'rcal__d' + (isToday ? ' is-today' : mk.stone ? ' is-date' : '');
+        cells += '<button class="' + cls + '" onclick="SH.views.roadmap.openDay(\'' + key + '\')" ' +
+          'aria-label="' + dd + ' ' + MONTHS[m] + '">' + dd +
+          (mk.color ? '<i class="rcal__bar" style="background:' + mk.color + '"></i>' : '') +
+        '</button>';
+      }
+      return '<section class="rcal__m rcal__m--' + seasonOf(m) + (isNowMonth ? ' is-now' : '') + '" ' +
+          'data-m="' + y + '-' + pad(m + 1) + '">' +
+        '<button class="rcal__head" onclick="SH.views.roadmap.openMonth(' + y + ', ' + m + ')">' +
+          MON_NOM[m].toUpperCase() + '</button>' +
+        '<div class="rcal__wd">' + WD.map((w) => '<span>' + w[0] + '</span>').join('') + '</div>' +
+        '<div class="rcal__grid">' + cells + '</div>' +
+      '</section>';
+    }).join('');
+
+    return '<div class="screen">' +
+      head('Роадмап', 'Календарь года') +
+      gradePicker(st.g, 'year', 'cal') +
+      modeSwitch('calendar', st.g) +
+      '<div class="rcal">' + cards + '</div>' +
+      '<div class="rm-legend rcal__legend">' +
+        '<span><i class="rcal-key rcal-key--track"></i>марафон</span>' +
+        '<span><i class="rcal-key rcal-key--date"></i>дата</span>' +
+        '<span><i class="rcal-key rcal-key--today"></i>сегодня</span>' +
       '</div>' +
-      (next
-        ? '<button class="rm-next mt-16" onclick="SH.views.roadmap.openItem(\'' + next.id + '\')">' +
-            '<span class="rm-next__ico">' + icon('flag', 16) + '</span>' +
-            '<span class="grow" style="min-width:0;text-align:left">' +
-              '<span class="rm-next__title">' + e(next.title) + '</span>' +
-              '<span class="rm-next__sub">' + e(dayLabel(new Date(next.startAt))) + ' · ' + e(countdown(next.startAt)) + '</span>' +
-            '</span><span class="rm-next__go">' + icon('chevronRight', 18) + '</span>' +
-          '</button>'
-        : '<div class="small muted center" style="margin-top:14px">В этом году дедлайнов ещё нет</div>') +
-      '<p class="small muted" style="margin:14px 0 0;line-height:1.55">' +
-        'Сентябрь наверху, дальше по часовой. Тап по месяцу — расписание этого месяца, тап по точке — сама дата.</p>' +
     '</div>';
   }
 
@@ -5338,7 +5634,8 @@ html[data-theme='dark'] .rcy-tick { fill: var(--muted); }
 
     return '<div class="screen">' +
       head('Роадмап', 'Неделя и день', iconButton('plus', 'Добавить в роадмап', 'SH.views.roadmap.addItem(\'' + selectedKey + '\')')) +
-      modeSwitch('micro') +
+      '<button class="rm-back" onclick="SH.app.go(\'#/roadmap/cal\')">' + icon('arrowLeft', 15) + 'К календарю</button>' +
+      modeSwitch('calendar', circleGrade) +
       '<div class="rm-weekhead">' +
         '<button class="icon-btn icon-btn--plain" onclick="SH.views.roadmap.shiftWeek(-1)" aria-label="Прошлая неделя">' + icon('arrowLeft', 20) + '</button>' +
         '<button class="grow rm-weekhead__title" onclick="SH.app.go(\'#/roadmap\')">' + e(range) +
@@ -5541,6 +5838,17 @@ html[data-theme='dark'] .rcy-tick { fill: var(--muted); }
   let mountHash = null;
 
   function mount(root) {
+    const cal = root.querySelector('.rcal');
+    if (cal) {
+      const fresh = calHash !== location.hash;
+      calHash = location.hash;
+      let target = null;
+      if (calFocus) { target = cal.querySelector('[data-m="' + calFocus + '"]'); calFocus = null; }
+      if (!target && fresh) target = cal.querySelector('.rcal__m.is-now');
+      if (target) setTimeout(() => target.scrollIntoView({ block: 'center' }), 40);
+      return;
+    }
+
     const sc = root.querySelector('.rm-scroll');
     if (!sc) return;
 
@@ -5576,6 +5884,21 @@ html[data-theme='dark'] .rcy-tick { fill: var(--muted); }
       const first = new Date(year, month, 1);
       const target = (first <= today() && today() < new Date(year, month + 1, 1)) ? today() : first;
       SH.app.go('#/roadmap/w/' + keyOf(target));
+    },
+    openDay(dateKey) { SH.app.go('#/roadmap/w/' + dateKey); },
+
+    /* тап по месяцу на круге → календарь, прокрученный к этому месяцу */
+    focusMonth(year, month) {
+      calFocus = year + '-' + pad(month + 1);
+      const g = [9, 10, 11, 12].indexOf(circleGrade) >= 0 ? circleGrade : myGrade();
+      SH.app.go('#/roadmap/cal/' + g);
+    },
+
+    pickGrade(value, route) {
+      const g = parseInt(value, 10);
+      if ([9, 10, 11, 12].indexOf(g) < 0) return;
+      circleGrade = g;
+      SH.app.go('#/roadmap/' + (route === 'cal' ? 'cal' : 'c') + '/' + g);
     },
 
     /* создание и правка */
@@ -5857,8 +6180,10 @@ html[data-theme='dark'] .rcy-tick { fill: var(--muted); }
       '</div>';
     }
     if (p1 === 'w') return weekScreen(parseKey(p2));
+    if (p1 === 'y') return macroScreen();
+    if (p1 === 'cal') return calendarScreen(p2 ? parseInt(p2, 10) : null);
     if (p1 === 'c') return circleScreen(p2 ? parseInt(p2, 10) : null);
-    return macroScreen();
+    return circleScreen(null);          // по умолчанию — круг года
   }
 
   SH.views = SH.views || {};
