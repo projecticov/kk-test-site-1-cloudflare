@@ -1,5 +1,5 @@
 /* Service worker: офлайн-режим и мгновенный запуск */
-const VERSION = 'v1.12.2';
+const VERSION = 'v1.13.0';
 const CACHE = 'studenthub-' + VERSION;
 
 const PRECACHE = [
@@ -68,4 +68,30 @@ self.addEventListener('fetch', (event) => {
 // обновление контента по сообщению из приложения
 self.addEventListener('message', (event) => {
   if (event.data === 'skip-waiting') self.skipWaiting();
+});
+
+/* ── push: показываем уведомление от сервера ── */
+self.addEventListener('push', (event) => {
+  let data = { title: 'Student Hub', body: 'Дело на носу', url: './#/roadmap' };
+  try { if (event.data) data = Object.assign(data, event.data.json()); } catch (e) {}
+  event.waitUntil(self.registration.showNotification(data.title, {
+    body: data.body,
+    icon: './pwa/icons/icon-192.png',
+    badge: './pwa/icons/icon-192.png',
+    data: { url: data.url || './#/roadmap' },
+    vibrate: [40, 60, 40]
+  }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || './#/roadmap';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if ('focus' in c) { c.navigate(url); return c.focus(); }
+      }
+      return self.clients.openWindow(url);
+    })
+  );
 });

@@ -3463,6 +3463,68 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
 .mini--tagg.is-on { box-shadow: inset 0 0 0 2px var(--ink); }
 html[data-theme='dark'] .tplc { background: #24262f; }
 
+/* ── kk: спринты, алерты 48 ч, нагрузка менторов, дайджест ── */
+.spr { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+.spr__h { font-size: 15px; font-weight: 800; color: var(--ink); }
+.spr__list { list-style: none; margin: 6px 0 14px; padding: 0; display: grid; gap: 8px; }
+.spr__row { display: grid; grid-template-columns: 10px 1fr auto auto; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 16px; background: var(--chip); }
+.spr__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink); opacity: .35; }
+.spr__body { display: grid; gap: 2px; min-width: 0; }
+.spr__body b { font-size: 13.5px; font-weight: 700; }
+.spr__body .mu { font-size: 12px; }
+.spr__grid { display: grid; gap: 4px 6px; align-items: center; overflow-x: auto; padding-bottom: 4px; }
+.spr__wk { font-size: 10.5px; color: var(--muted); white-space: nowrap; }
+.spr__bar { height: 22px; border-radius: 11px; color: #2b2f3a; font-size: 11px; font-weight: 700;
+  padding: 0 10px; line-height: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: .92; }
+.spr__bar--done { opacity: .45; text-decoration: line-through; }
+.spr__bar.is-late { outline: 2px solid var(--blush); outline-offset: -2px; }
+
+.alert__row { cursor: default; }
+.alert__bell { color: var(--muted); display: inline-flex; }
+.load { display: grid; gap: 10px; }
+.load__row { display: grid; grid-template-columns: minmax(120px, 1.2fr) 2fr 34px auto; align-items: center; gap: 12px; }
+.load__n { font-size: 13.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.load__bar { height: 10px; border-radius: 6px; background: var(--chip); overflow: hidden; }
+.load__bar i { display: block; height: 100%; border-radius: 6px; }
+.load__v { font-size: 14px; font-weight: 800; text-align: right; }
+.rebal { margin-top: 16px; display: grid; gap: 10px; }
+.rebal__row { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 14px; border-radius: 16px; background: var(--chip); }
+.rebal__row div { display: grid; gap: 2px; min-width: 0; }
+.rebal__row b { font-size: 13.5px; }
+.rebal__row .mu { font-size: 12px; }
+.digest { margin: 0; padding: 14px 16px; border-radius: 16px; background: var(--chip);
+  font: 500 13px/1.6 var(--font-body); color: var(--text); white-space: pre-wrap; word-break: break-word; }
+.tpl__rel { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+html[data-theme='dark'] .digest, html[data-theme='dark'] .spr__row, html[data-theme='dark'] .rebal__row { background: #24262f; }
+@media (max-width: 640px) {
+  .load__row { grid-template-columns: 1fr 34px; row-gap: 4px; }
+  .load__bar { grid-column: 1 / -1; order: 3; }
+  .load__row .chip { order: 2; justify-self: end; }
+  .rebal__row { flex-direction: column; align-items: flex-start; }
+  .spr__row { grid-template-columns: 10px 1fr auto; }
+  .spr__row .ib { grid-column: 3; }
+}
+
+/* ── kk: превью шаблона с кругом прямо на экране ── */
+.pane--tplview { margin-top: 20px; }
+.pane--tplview .kk-tabs--pill { margin: 4px 0 14px; }
+.tpl__items--static { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.tpl__chip { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 999px;
+  background: var(--chip); font-size: 12.5px; font-weight: 600; color: var(--text); }
+.tpl__chip i { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.mini--dash-tag { border-style: solid; border-color: var(--lavender); background: color-mix(in srgb, var(--lavender) 22%, transparent); }
+.mini--tagg .mini__id span.mu { font-size: 11px; }
+html[data-theme='dark'] .tpl__chip { background: #24262f; }
+
+/* ── push-уведомления в профиле ── */
+.pushcard { margin-bottom: 18px; }
+.pushrow { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.pushrow__t { display: grid; gap: 2px; min-width: 0; }
+.pushrow__t b { font-size: 14.5px; }
+@media (max-width: 520px) { .pushrow { gap: 10px; } .pushrow .btn { flex: 1 1 auto; } }
+
 </style>
 </head>
 <body>
@@ -4052,6 +4114,13 @@ html[data-theme='dark'] .tplc { background: #24262f; }
     orgSetMentor(studentId, mentorId) { return this.request('POST', '/api/org/students/' + encodeURIComponent(studentId) + '/mentor', { mentorId }); },
     orgRemoveStudent(studentId) { return this.request('POST', '/api/org/students/' + encodeURIComponent(studentId) + '/remove', {}); },
     orgTemplateFromStudent(userId) { return this.request('POST', '/api/org/templates/from-student', { userId }); },
+    orgSprintAdd(payload) { return this.request('POST', '/api/org/sprints', payload); },
+    orgSprintPatch(id, patch) { return this.request('PATCH', '/api/org/sprints/' + encodeURIComponent(id), patch); },
+    orgSprintDel(id) { return this.request('DELETE', '/api/org/sprints/' + encodeURIComponent(id)); },
+    orgAlerts() { return this.request('GET', '/api/org/alerts'); },
+    orgDigest(userId) { return this.request('GET', '/api/org/digest?user=' + encodeURIComponent(userId)); },
+    orgBalance() { return this.request('GET', '/api/org/balance'); },
+    orgTemplateAssignAt(id, userIds, startDate) { return this.request('POST', '/api/org/templates/' + encodeURIComponent(id) + '/assign', { userIds, startDate }); },
     orgTagGroupAdd(payload) { return this.request('POST', '/api/org/tag-groups', payload); },
     orgTagGroupDel(id) { return this.request('DELETE', '/api/org/tag-groups/' + encodeURIComponent(id)); },
     orgCreateUser(payload) { return this.request('POST', '/api/org/users', payload); },
@@ -7684,6 +7753,29 @@ html[data-theme='dark'] .tplc { background: #24262f; }
     SH.app.render();
   }
 
+  /** Настройка push-уведомлений: без «мёртвой» кнопки — состояние видно сразу. */
+  function pushCard() {
+    const p = SH.push;
+    if (!p) return '';
+    const st = p.state();
+    const row = (label, hint, action) =>
+      '<div class="pushrow"><div class="pushrow__t"><b>' + label + '</b><span class="small muted">' + hint + '</span></div>' + action + '</div>';
+    let body = '';
+    if (st === 'unsupported') {
+      body = '<p class="small muted">Этот браузер не поддерживает push. На телефоне поставь приложение на главный экран — уведомления заработают.</p>';
+    } else if (st === 'denied') {
+      body = '<p class="small muted">Уведомления запрещены в настройках браузера. Разреши их для этого сайта — и вернись сюда.</p>';
+    } else if (st === 'on') {
+      body = row('Включены', 'Придёт напоминание о делах на ближайшие 48 часов',
+          '<button class="btn btn--soft btn--sm" onclick="SH.push.test()">Проверить</button>' +
+          '<button class="btn btn--ghost btn--sm" onclick="SH.views.profile.pushOff()">Выключить</button>');
+    } else {
+      body = row('Выключены', 'Напомним о делах за 48 часов — один раз в день',
+          '<button class="btn btn--brand btn--sm" onclick="SH.views.profile.pushOn()">Включить</button>');
+    }
+    return '<div class="card pushcard"><div class="section-head"><span class="h2">Уведомления</span></div>' + body + '</div>';
+  }
+
   function html() {
     if (!store.isAuthed) {
       return (
@@ -7718,6 +7810,7 @@ html[data-theme='dark'] .tplc { background: #24262f; }
           : '') +
 
         mentorCardBlock() +
+        pushCard() +
         '<div class="row" style="gap:14px;margin-bottom:18px">' +
           ui.avatar(u, 56) +
           '<div class="grow" style="min-width:0">' +
@@ -7937,6 +8030,8 @@ html[data-theme='dark'] .tplc { background: #24262f; }
       }
     },
 
+    pushOn() { SH.push.enable().then(() => SH.app.render()); },
+    pushOff() { SH.push.disable().then(() => SH.app.render()); },
     editProfile() {
       const u = store.currentUser;
       ui.sheet({
@@ -9630,6 +9725,9 @@ html[data-theme='dark'] .tplc { background: #24262f; }
   let filters = { status: '', tag: '', q: '' };
   let templateEdit = null;  // редактируемый шаблон
   let tplFilter = null;      // активная группа тегов (фильтр шаблонов)
+  let alerts = null;         // алерты на 48 часов вперёд
+  let balance = null;        // нагрузка менторов
+  let digest = null;         // дайджест родителю для отчёта
   let report = null;        // предпросмотр отчёта
   let mentorSort = 'plan';  // plan | risk | students
   const reportParts = { status: true, done: true, next: true, metrics: true, projects: true, certificates: true };
@@ -9665,10 +9763,18 @@ html[data-theme='dark'] .tplc { background: #24262f; }
     return SH.api.orgCrm(id)
       .then((d) => { data = d || data; loadedFor = id; })
       .catch((err) => { error = err.message || 'Не удалось загрузить организацию'; })
+      .then(() => SH.api.orgAlerts().then((a) => { alerts = a; }).catch(() => { alerts = { soon: [], overdue: [] }; }))
       .finally(() => {
         loading = false;
         if (SH.app && store.isAuthed) SH.app.render();
       });
+  }
+
+  function loadBalance(force) {
+    if (balance && !force) return Promise.resolve(balance);
+    return SH.api.orgBalance()
+      .then((b) => { balance = b; if (SH.app) SH.app.render(); return b; })
+      .catch(() => { balance = { load: [], avg: 0, suggestions: [] }; return balance; });
   }
 
   function loadCard(id, force) {
@@ -9808,6 +9914,29 @@ html[data-theme='dark'] .tplc { background: #24262f; }
       '</div>').join('') + '</div>';
   }
 
+  /** Что горит в ближайшие 48 часов — блок обзора. */
+  function alertsBlock() {
+    const a = alerts;
+    if (!a) return '<section class="pane"><header class="pane__h"><h2>Ближайшие 48 часов</h2></header>' + ui.skeletonList(2) + '</section>';
+    const soon = a.soon || [], late = a.overdue || [];
+    if (!soon.length && !late.length) {
+      return '<section class="pane"><header class="pane__h"><h2>Ближайшие 48 часов</h2></header>' +
+        '<p class="mu">Просрочек нет, новых событий на два дня вперёд тоже — можно выдохнуть.</p></section>';
+    }
+    const row = (x, tone) => '<div class="att__row alert__row">' + av({ name: x.student, color: 'sky' }) +
+      '<div class="att__body"><b>' + e(x.title) + '</b>' +
+        '<span class="mu">' + e(x.student) + ' · ' + (x.days === 0 ? 'сегодня' : x.days === 1 ? 'завтра' :
+          tone === 'late' ? 'просрочено на ' + x.days + ' дн' : 'через ' + x.days + ' дн') + '</span></div>' +
+      (x.importance === 'high' ? '<span class="evt__imp imp--high">Высокая</span>' : '') +
+      (x.notify ? '<span class="alert__bell">' + icon('bell', 14) + '</span>' : '') +
+    '</div>';
+    return '<section class="pane"><header class="pane__h"><h2>Ближайшие 48 часов</h2>' +
+        '<span class="chip chip--sun">' + soon.length + '</span></header>' +
+      (soon.length ? soon.map((x) => row(x, 'soon')).join('') : '<p class="mu">На два дня вперёд событий нет.</p>') +
+      (late.length ? '<p class="fl__k" style="margin:16px 0 6px">ПРОСРОЧЕНО</p>' + late.slice(0, 5).map((x) => row(x, 'late')).join('') : '') +
+    '</section>';
+  }
+
   function overviewView() {
     const me = store.currentUser || {};
     return head(me.orgRole === 'mentor' ? 'Мои ученики' : 'Обзор', data && data.org ? e(data.org.name) + ' · ' + new Date().getFullYear() : '') +
@@ -9817,6 +9946,7 @@ html[data-theme='dark'] .tplc { background: #24262f; }
           (me.orgRole === 'mentor' ? '' :
           '<section class="pane"><header class="pane__h"><h2>Эффективность менторов</h2>' +
             '<button class="sort" onclick="SH.views.org.cycleSort()">сортировка: ' + sortLabel() + ' ▾</button></header>' + mentorTable() + '</section>') +
+          alertsBlock() +
           '<section class="pane"><header class="pane__h"><h2>Требуют внимания</h2>' +
             '<button class="btn btn--soft btn--sm" onclick="SH.app.go(\'#/org/students\')">Все ' + myStudents().filter((s) => s.status !== 'plan').length + '</button></header>' +
             attentionList() + '</section>' +
@@ -9825,6 +9955,34 @@ html[data-theme='dark'] .tplc { background: #24262f; }
   }
 
   /* ─────────────────────────── МЕНТОРЫ ─────────────────────────── */
+
+  /** Балансировка нагрузки: кто перегружен, кого можно догрузить. */
+  function balanceBlock() {
+    const b = balance;
+    if (!b) { loadBalance(); return '<section class="pane"><header class="pane__h"><h2>Нагрузка</h2></header>' + ui.skeletonList(2) + '</section>'; }
+    const load = b.load || [];
+    if (!load.length) return '';
+    const max = Math.max.apply(null, load.map((m) => m.students).concat([1]));
+    return '<section class="pane"><header class="pane__h"><h2>Нагрузка менторов</h2>' +
+        '<button class="btn btn--soft btn--sm" onclick="SH.views.org.rebalance()">Пересчитать</button></header>' +
+      '<p class="mu" style="margin:-4px 0 14px">В среднем ' + b.avg + ' ' + ui.plural(b.avg, 'ученик', 'ученика', 'учеников') + ' на ментора</p>' +
+      '<div class="load">' + load.map((m, i) =>
+        '<div class="load__row"><span class="load__n">' + e(m.name) + '</span>' +
+          '<span class="load__bar"><i style="width:' + Math.round((m.students / max) * 100) + '%;background:' + ARC_COLORS[i % ARC_COLORS.length] + '"></i></span>' +
+          '<b class="load__v">' + m.students + '</b>' +
+          (m.risky ? '<span class="chip chip--blush">' + m.risky + ' в риске</span>' : '<span class="chip">ок</span>') +
+        '</div>').join('') + '</div>' +
+      ((b.suggestions || []).length
+        ? '<div class="rebal">' + b.suggestions.map((sg) =>
+            '<div class="rebal__row"><div><b>Передать ' + sg.students.length + ' ' +
+              ui.plural(sg.students.length, 'ученика', 'учеников', 'учеников') + '</b>' +
+              '<span class="mu">' + e(sg.from.name) + ' (' + sg.from.students + ') → ' + e(sg.to.name) + ' (' + sg.to.students + ')</span>' +
+              '<span class="mu">' + sg.students.map((x) => e(x.name)).join(', ') + '</span></div>' +
+              '<button class="btn btn--brand btn--sm" onclick="SH.views.org.applyRebalance(' + load.indexOf((b.load || []).find((m) => m.id === sg.from.id)) + ')">Передать</button>' +
+            '</div>').join('') + '</div>'
+        : '<p class="hint">Нагрузка ровная — перераспределять нечего.</p>') +
+    '</section>';
+  }
 
   function mentorsView() {
     const rows = (data && data.mentorStats) || [];
@@ -9843,7 +10001,8 @@ html[data-theme='dark'] .tplc { background: #24262f; }
             '<div><span class="mu">В зоне риска</span><b>' + m.risk + '</b></div>' +
           '</div>' +
           '<button class="btn btn--soft btn--block btn--sm" onclick="SH.app.go(\'#/org/mentor/' + m.id + '\')">Ученики</button>' +
-        '</article>').join('') + '</div>';
+        '</article>').join('') + '</div>' +
+      (isMgr ? balanceBlock() : '');
   }
 
   function mentorView(id) {
@@ -9984,7 +10143,56 @@ html[data-theme='dark'] .tplc { background: #24262f; }
         '</div>';
       }).join('') + '</div>' : '<p class="mu">Пока пусто — добавьте первую дату.</p>') +
       '<div class="mini-cal">' + months.map((m) => miniMonth(m, list)).join('') + '</div>' +
+      sprintsBlock() +
     '</section>';
+  }
+
+  /** Подкалендарь проекта: спринты внутри карточки ученика. */
+  function sprintsBlock() {
+    const list = ((card && card.sprints) || []).slice().sort((a, b) => String(a.startDate).localeCompare(String(b.startDate)));
+    const canWrite = (store.currentUser || {}).role !== 'user';
+    const today = ymd(new Date());
+    const ST = { plan: ['Впереди', 'chip'], active: ['Идёт', 'chip chip--mint'], done: ['Завершён', 'chip chip--sky'] };
+    // сетка по неделям: от первой до последней даты спринтов
+    let grid = '';
+    if (list.length) {
+      const start = parseDay(list[0].startDate);
+      const last = parseDay(list[list.length - 1].endDate || list[list.length - 1].startDate);
+      start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+      const weeks = [];
+      for (let d = new Date(start); d <= last; d.setDate(d.getDate() + 7)) weeks.push(new Date(d));
+      grid = '<div class="spr__grid" style="grid-template-columns:repeat(' + weeks.length + ',minmax(58px,1fr))">' +
+        weeks.map((w) => '<span class="spr__wk">' + w.getDate() + ' ' + ui.MONTHS[w.getMonth()] + '</span>').join('') +
+        list.map((sp, i) => {
+          const a = parseDay(sp.startDate), b = parseDay(sp.endDate || sp.startDate);
+          const idx = Math.max(0, Math.round((a - start) / 604800000));
+          const span = Math.max(1, Math.round(((b - a) / 604800000) + 1));
+          const late = sp.status !== 'done' && b < parseDay(today);
+          return '<span class="spr__bar spr__bar--' + (sp.status || 'plan') + (late ? ' is-late' : '') +
+            '" style="grid-column:' + (idx + 1) + ' / span ' + span + '; grid-row:' + (i + 2) +
+            '; background:' + ARC_COLORS[i % ARC_COLORS.length] + '" title="' + e(sp.title) + ' · ' +
+            e(sp.startDate) + ' → ' + e(sp.endDate) + '">' + e(sp.title) + '</span>';
+        }).join('') + '</div>';
+    }
+    return '<div class="spr">' +
+      '<header class="pane__h"><h3 class="spr__h">Спринты проекта</h3>' +
+        (canWrite ? '<button class="btn btn--soft btn--sm" onclick="SH.views.org.sprintForm()">' + icon('plus', 14) + 'Спринт</button>' : '') +
+      '</header>' +
+      (list.length ? '<ul class="spr__list">' + list.map((sp) => {
+        const st = ST[sp.status] || ST.plan;
+        const a = parseDay(sp.startDate), b = parseDay(sp.endDate || sp.startDate);
+        const days = Math.max(1, Math.round((b - a) / 86400000) + 1);
+        const late = sp.status !== 'done' && b < parseDay(today);
+        return '<li class="spr__row"><span class="spr__dot"></span>' +
+          '<div class="spr__body"><b>' + e(sp.title) + '</b>' +
+            '<span class="mu">' + (sp.project ? e(sp.project) + ' · ' : '') + days + ' ' + ui.plural(days, 'день', 'дня', 'дней') +
+            ' · ' + dayLabel(a) + ' — ' + dayLabel(b) + '</span></div>' +
+          (late ? '<span class="chip chip--blush">Просрочен</span>' : '<span class="' + st[1] + '">' + st[0] + '</span>') +
+          (canWrite ? '<button class="ib ib--sm" aria-label="Удалить спринт" onclick="SH.views.org.delSprint(\'' + sp.id + '\')">' + icon('trash', 15) + '</button>' : '') +
+        '</li>';
+      }).join('') + '</ul>' + grid
+        : '<p class="mu">Спринты — короткие отрезки работы над проектом: видно, что идёт сейчас и что просрочено.</p>') +
+    '</div>';
   }
 
   function miniMonth(base, slots) {
@@ -10107,7 +10315,25 @@ html[data-theme='dark'] .tplc { background: #24262f; }
       '</div></div>';
   }
 
-  /** Группы тегов — как «Группа SAT-интенсив» в kk. */
+  /** Группы тегов — карточки в общей сетке, как «Группа SAT-интенсив» в kk. */
+  function tagGroupCards() {
+    const groups = (data && data.tagGroups) || [];
+    const tpls = (data && data.templates) || [];
+    const isMgr = (store.currentUser || {}).role !== 'user';
+    return groups.map((g) => {
+      const hit = tpls.filter((t) => (t.tags || []).some((x) => g.tags.includes(x)));
+      const on = tplFilter === g.id;
+      return '<article class="mini mini--tagg' + (on ? ' is-on' : '') + '" onclick="SH.views.org.filterTpl(\'' + g.id + '\')">' +
+        '<header class="mini__h"><div class="mini__id"><b>' + e(g.title) + '</b>' +
+          '<span class="mu">Группа тегов</span></div>' +
+          (isMgr ? '<button class="ib" aria-label="Удалить группу" onclick="event.stopPropagation();SH.views.org.delTagGroup(\'' + g.id + '\')">' + icon('trash', 16) + '</button>' : '') +
+        '</header>' +
+        '<div class="mini__meta">' + tagList(g.tags) + '</div>' +
+        '<p class="mu">' + hit.length + ' ' + ui.plural(hit.length, 'шаблон', 'шаблона', 'шаблонов') + ' с этими тегами</p>' +
+      '</article>';
+    }).join('');
+  }
+
   function tagGroupsBlock() {
     const groups = (data && data.tagGroups) || [];
     const tpls = (data && data.templates) || [];
@@ -10131,6 +10357,30 @@ html[data-theme='dark'] .tplc { background: #24262f; }
     '</section>';
   }
 
+  /** Превью шаблона как в kk: круг + классы + «Назначить ученикам» / «Сохранить». */
+  function templatePreview() {
+    const t = templateEdit;
+    if (!t || !t.id) return '';
+    const grades = ['10 кл', '11 кл', '12 кл'];
+    const gradeOn = String(t.grade || '').includes('11') ? '11 кл' : String(t.grade || '').includes('12') ? '12 кл' : '10 кл';
+    return '<section class="pane pane--tplview">' +
+      '<header class="pane__h"><div><h2>' + e(t.title) + '</h2>' +
+        '<p class="mu">' + (t.tags || []).length + ' ' + ui.plural((t.tags || []).length, 'тег', 'тега', 'тегов') +
+        ' · ' + (t.items || []).length + ' ' + ui.plural((t.items || []).length, 'шаг', 'шага', 'шагов') + '</p></div>' +
+        '<div class="row" style="gap:8px">' +
+          '<button class="btn btn--soft btn--sm" onclick="SH.views.org.assignTemplate()">Назначить ученикам</button>' +
+          '<button class="btn btn--brand btn--sm" onclick="SH.views.org.saveTemplate()">Сохранить</button>' +
+          '<button class="ib" aria-label="Закрыть превью" onclick="SH.views.org.closeTemplate()">' + icon('close', 16) + '</button>' +
+        '</div></header>' +
+      '<div class="kk-tabs kk-tabs--pill">' + grades.map((g) =>
+        '<button class="kk-tab' + (g === gradeOn ? ' is-on' : '') + '">' + g + '</button>').join('') + '</div>' +
+      templateCircle(t) +
+      '<div class="tpl__items tpl__items--static">' + (t.items || []).map((x, i) =>
+        '<span class="tpl__chip"><i style="background:' + ARC_COLORS[i % ARC_COLORS.length] + '"></i>' +
+        e(x.title) + ' · ' + (ui.MONTHS[x.month] || '').slice(0, 3) + ' ' + x.day + '</span>').join('') + '</div>' +
+    '</section>';
+  }
+
   function templateEditor() {
     if (!templateEdit) return '';
     const t = templateEdit;
@@ -10146,6 +10396,15 @@ html[data-theme='dark'] .tplc { background: #24262f; }
         '<label class="fl" style="flex:1">КЛАСС<input class="inp" id="tpl-grade" value="' + e(t.grade || '') + '" placeholder="10"></label>' +
         '<label class="fl" style="flex:2">ТЕГИ (через запятую)<input class="inp" id="tpl-tags" value="' + e((t.tags || []).join(', ')) + '" placeholder="сша, premium"></label>' +
       '</div>' +
+      '<div class="row" style="gap:8px;align-items:center;margin:14px 0 8px;flex-wrap:wrap">' +
+        '<span class="fl__k">СДВИГ ВСЕХ ДАТ</span>' +
+        '<button class="btn btn--soft btn--sm" onclick="SH.views.org.tplShift(-7)">−7 дн</button>' +
+        '<button class="btn btn--soft btn--sm" onclick="SH.views.org.tplShift(-1)">−1</button>' +
+        '<button class="btn btn--soft btn--sm" onclick="SH.views.org.tplShift(1)">+1</button>' +
+        '<button class="btn btn--soft btn--sm" onclick="SH.views.org.tplShift(7)">+7 дн</button>' +
+        '<span class="mu">сдвигается весь набор, порядок сохраняется</span>' +
+      '</div>' +
+      '<p class="fl__k" style="margin:10px 0 6px">ДАТЫ ШАБЛОНА</p>' +
       '<div class="tpl__items">' + (items.length ? items.map((x, i) =>
         '<div class="tpl__row"><i class="evt__dot" style="background:' + (x.kind === 'course' ? '#b9a6f2' : '#8fcaf7') + '"></i>' +
           '<input class="inp inp--mini" value="' + e(x.title) + '" onchange="SH.views.org.tplItem(' + i + ',\'title\',this.value)">' +
@@ -10157,11 +10416,15 @@ html[data-theme='dark'] .tplc { background: #24262f; }
             '<option value="date"' + (x.kind !== 'course' ? ' selected' : '') + '>Дата</option>' +
             '<option value="course"' + (x.kind === 'course' ? ' selected' : '') + '>Курс</option>' +
           '</select>' +
+          '<label class="tpl__rel" title="Относительный слот: дни от даты старта потока">' +
+            '<input type="checkbox"' + (x.offset !== null && x.offset !== undefined ? ' checked' : '') +
+              ' onchange="SH.views.org.tplRel(' + i + ',this.checked)"> от старта</label>' +
           '<button class="ib ib--sm" aria-label="Удалить" onclick="SH.views.org.tplRemove(' + i + ')">' + icon('trash', 15) + '</button>' +
         '</div>').join('') : '<p class="mu">Добавьте даты — при назначении они превращаются в реальные события ученика.</p>') + '</div>' +
       '<button class="btn btn--soft btn--sm" style="margin-top:12px" onclick="SH.views.org.tplAdd()">' + icon('plus', 14) + 'Дата</button>' +
       templateCircle(t) +
-      '<p class="hint">В шаблоне даты привязаны к классу, а не к году. При назначении ученику они становятся его учебным годом.</p>' +
+      '<p class="hint">Слот «от старта» хранит не дату, а число дней от начала потока: назначили шаблон с 1 февраля — все даты сдвинулись вместе с ним. ' +
+        'Обычные даты привязаны к месяцу и переносятся на ближайший год.</p>' +
     '</section>';
   }
 
@@ -10174,11 +10437,12 @@ html[data-theme='dark'] .tplc { background: #24262f; }
         isMgr ? '<button class="btn btn--brand" onclick="SH.views.org.newTemplate()">' + icon('plus', 16) + 'Новый шаблон</button>' : '') +
       (group ? '<div class="filterline"><span class="chip-btn is-on">#' + e(group.title) + '</span>' +
         '<button class="btn btn--ghost btn--sm" onclick="SH.views.org.filterTpl(\'\')">Сбросить</button></div>' : '') +
-      (list.length ? '<div class="cards">' + list.map(templateCard).join('') +
-        (isMgr ? '<button class="mini mini--dash" onclick="SH.views.org.newTemplate()">+ Сохранить роадмап ученика как шаблон</button>' : '') + '</div>'
+      (list.length ? '<div class="cards">' + list.map(templateCard).join('') + tagGroupCards() +
+        (isMgr ? '<button class="mini mini--dash" onclick="SH.views.org.newTemplate()">+ Сохранить роадмап ученика как шаблон</button>' +
+          '<button class="mini mini--dash mini--dash-tag" onclick="SH.views.org.tagGroupForm()">+ Новая группа тегов</button>' : '') + '</div>'
         : '<div class="pane">' + ui.empty('layers', group ? 'В этой группе пока нет шаблонов' : 'Шаблонов пока нет',
             'Создайте шаблон — и назначайте его ученикам одним нажатием.') + '</div>') +
-      tagGroupsBlock() +
+      templatePreview() +
       templateEditor();
   }
 
@@ -10196,6 +10460,14 @@ html[data-theme='dark'] .tplc { background: #24262f; }
     return head('Создать отчёт', 'Собирается из роадмапа и портфолио · ' + e(u.name || ''),
         '<button class="btn btn--soft" onclick="SH.app.go(\'#/org/student/' + id + '\')">← Карточка</button>') +
       '<div class="kk-grid kk-grid--report">' +
+        '<div class="kk-col"><section class="pane"><header class="pane__h"><h2>Дайджест родителю</h2>' +
+          '<button class="btn btn--soft btn--sm" onclick="SH.views.org.loadDigest(\'' + id + '\')">Собрать текст</button></header>' +
+          (digest && digest.userId === id
+            ? '<pre class="digest">' + e(digest.text) + '</pre>' +
+              '<div class="row" style="gap:8px;margin-top:10px"><button class="btn btn--soft btn--sm" onclick="SH.views.org.copyDigest()">Скопировать</button>' +
+              '<button class="btn btn--ghost btn--sm" onclick="SH.views.org.sendDigest(\'' + id + '\')">Отправить в чат ученику</button></div>'
+            : '<p class="mu">Короткое письмо для родителя: статус, что сделано, что впереди. Собирается из роадмапа и портфолио.</p>') +
+        '</section></div>' +
         '<div class="kk-col">' +
           '<section class="pane">' +
             '<div class="rl"><span class="fl__k">ПЕРИОД</span><div class="chips">' +
@@ -10525,11 +10797,78 @@ html[data-theme='dark'] .tplc { background: #24262f; }
         .catch((err) => ui.toast('Не сохранилось: ' + err.message));
     },
 
+    /* спринты */
+    sprintForm() {
+      const sp = card && card.sprints ? card.sprints : [];
+      const today = new Date();
+      const iso = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      const end = new Date(today.getTime() + 13 * 86400000);
+      ui.sheet({ title: 'Новый спринт', body:
+        '<label class="fl">НАЗВАНИЕ<input class="inp" id="sp-title" placeholder="Спринт 1 · сборка прототипа"></label>' +
+        '<label class="fl" style="margin-top:10px">ПРОЕКТ<input class="inp" id="sp-project" placeholder="Эко-датчик"></label>' +
+        '<div class="row" style="gap:10px;margin-top:10px">' +
+          '<label class="fl" style="flex:1">СТАРТ<input class="inp" id="sp-start" type="date" value="' + iso(today) + '"></label>' +
+          '<label class="fl" style="flex:1">ФИНИШ<input class="inp" id="sp-end" type="date" value="' + iso(end) + '"></label>' +
+        '</div>' +
+        '<button class="btn btn--brand btn--block" style="margin-top:14px" onclick="SH.views.org.saveSprint()">Создать спринт</button>' });
+    },
+    saveSprint() {
+      const val = (id) => { const el = document.querySelector(id); return el ? el.value.trim() : ''; };
+      const title = val('#sp-title');
+      if (!title) { ui.toast('Нужно название спринта'); return; }
+      SH.api.orgSprintAdd({ userId: card.user.id, title, project: val('#sp-project'),
+        startDate: val('#sp-start'), endDate: val('#sp-end') })
+        .then(() => { ui.closeSheet(); ui.toast('Спринт создан'); return loadCard(card.user.id, true); })
+        .catch((err) => ui.toast('Не получилось: ' + err.message));
+    },
+    delSprint(id) {
+      ui.confirmSheet('Удалить спринт?', 'События роадмапа останутся на месте.', 'Удалить', () => {
+        SH.api.orgSprintDel(id).then(() => { ui.toast('Спринт удалён'); return loadCard(card.user.id, true); });
+      });
+    },
+
+    /* дайджест и баланс */
+    loadDigest(userId) {
+      SH.api.orgDigest(userId)
+        .then((d) => { digest = { userId, text: d.text }; SH.app.render(); })
+        .catch((err) => ui.toast('Не собралось: ' + err.message));
+    },
+    copyDigest() {
+      if (!digest) return;
+      const done = () => ui.toast('Текст скопирован');
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(digest.text).then(done).catch(done);
+      else done();
+    },
+    sendDigest(userId) {
+      if (!digest) return;
+      const student = (data.students || []).find((s) => s.id === userId);
+      ui.confirmSheet('Отправить дайджест?', 'Текст уйдёт ученику ' + (student ? student.name : '') + ' в чат приложения.', 'Отправить', () => {
+        SH.api.directChat(userId)
+          .then((res) => {
+            const chatId = res && (res.chatId || (res.chat && res.chat.id));
+            if (!chatId) throw new Error('нет чата');
+            store.sendMessage(chatId, digest.text);
+            ui.toast('Отправлено в чат ученику');
+          })
+          .catch(() => ui.toast('Чат недоступен — скопируйте текст'));
+      });
+    },
+    rebalance() { balance = null; loadBalance(true); },
+    applyRebalance(i) {
+      const b = balance;
+      if (!b || !b.suggestions || !b.suggestions[i]) return;
+      const sg = b.suggestions[i];
+      Promise.all(sg.students.map((st) => SH.api.orgSetMentor(st.id, sg.to.id)))
+        .then(() => { ui.toast('Передано ' + sg.students.length + ' ученикам'); balance = null; return load(true); })
+        .catch((err) => ui.toast('Не получилось: ' + err.message));
+    },
+
     /* шаблоны */
     newTemplate() {
       templateEdit = { id: '', title: 'Новый шаблон', tags: [], grade: '', items: [] };
       SH.app.render();
     },
+    closeTemplate() { templateEdit = null; SH.app.render(); },
     openTemplate(id) {
       const t = ((data && data.templates) || []).find((x) => x.id === id);
       if (!t) return;
@@ -10548,6 +10887,32 @@ html[data-theme='dark'] .tplc { background: #24262f; }
       SH.app.render();
     },
     tplRemove(i) { if (templateEdit) { templateEdit.items.splice(i, 1); SH.app.render(); } },
+    tplRel(i, on) {
+      if (!templateEdit) return;
+      const it = templateEdit.items[i];
+      if (on) {
+        // дни от 1 сентября текущего учебного года до «месяц/день»
+        const base = new Date(new Date().getMonth() >= 8 ? new Date().getFullYear() : new Date().getFullYear() - 1, 8, 1);
+        const target = new Date(base.getFullYear() + (it.month >= 8 ? 0 : 1), it.month, it.day);
+        it.offset = Math.round((target - base) / 86400000);
+      } else {
+        const base = new Date(new Date().getMonth() >= 8 ? new Date().getFullYear() : new Date().getFullYear() - 1, 8, 1);
+        const d = new Date(base.getTime() + (it.offset || 0) * 86400000);
+        it.month = d.getMonth(); it.day = d.getDate(); it.offset = null;
+      }
+      SH.app.render();
+    },
+    tplShift(days) {
+      if (!templateEdit) return;
+      const items = templateEdit.items || [];
+      items.forEach((it) => {
+        if (it.offset !== null && it.offset !== undefined) { it.offset = Math.max(-365, Math.min(1460, Number(it.offset) + days)); return; }
+        const d = new Date(2026, it.month, it.day + days);
+        it.month = d.getMonth(); it.day = Math.min(28, d.getDate());
+      });
+      ui.toast('Даты сдвинуты на ' + (days > 0 ? '+' : '') + days + ' дн');
+      SH.app.render();
+    },
     saveTemplate() {
       const val = (id) => { const el = document.querySelector(id); return el ? el.value : ''; };
       const payload = {
@@ -10591,14 +10956,22 @@ html[data-theme='dark'] .tplc { background: #24262f; }
     assignTemplate() {
       if (!templateEdit || !templateEdit.id) { ui.toast('Сначала сохраните шаблон'); return; }
       const list = myStudents();
-      ui.sheet({ title: 'Назначить ученикам', body: '<div class="pick">' + list.map((s) =>
+      const hasRel = (templateEdit.items || []).some((x) => x.offset !== null && x.offset !== undefined);
+      const today = new Date();
+      const iso = today.getFullYear() + '-' + pad(today.getMonth() + 1) + '-' + pad(today.getDate());
+      ui.sheet({ title: 'Назначить ученикам', body:
+        (hasRel ? '<label class="fl">ДАТА СТАРТА ПОТОКА<input class="inp" id="as-start" type="date" value="' + iso + '"></label>' +
+          '<p class="hint">От неё считаются слоты «от старта» — все даты шаблона сдвинутся вместе.</p>' : '') +
+        '<div class="pick" style="margin-top:' + (hasRel ? '12px' : '0') + '">' + list.map((s) =>
         '<label class="pick__i"><input type="checkbox" value="' + s.id + '">' + av(s) + '<span>' + e(s.name) + '</span></label>').join('') + '</div>' +
         '<button class="btn btn--brand btn--block" style="margin-top:14px" onclick="SH.views.org.doAssign()">Назначить</button>' });
     },
     doAssign() {
       const ids = Array.from(document.querySelectorAll('.pick input:checked')).map((x) => x.value);
       if (!ids.length) { ui.toast('Выберите хотя бы одного ученика'); return; }
-      SH.api.orgTemplateAssign(templateEdit.id, ids)
+      const startEl = document.querySelector('#as-start');
+      const startDate = startEl ? startEl.value : '';
+      SH.api.orgTemplateAssignAt(templateEdit.id, ids, startDate)
         .then(() => { ui.closeSheet(); ui.toast('Даты добавлены ' + ids.length + ' ученикам'); return load(true); })
         .catch((err) => ui.toast('Не получилось: ' + err.message));
     },
@@ -10816,6 +11189,78 @@ html[data-theme='dark'] .tplc { background: #24262f; }
       });
     }
   };
+
+  /* ─────────────────────────── push-уведомления ─────────────────────────── */
+
+  const push = {
+    supported() {
+      return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    },
+    state() {
+      if (!this.supported()) return 'unsupported';
+      if (Notification.permission === 'denied') return 'denied';
+      return this.sub ? 'on' : 'off';
+    },
+    sub: null,
+    urlBase64ToUint8Array(base64String) {
+      const pad = '='.repeat((4 - (base64String.length % 4)) % 4);
+      const b64 = (base64String + pad).replace(/-/g, '+').replace(/_/g, '/');
+      const raw = atob(b64);
+      const out = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+      return out;
+    },
+    async refresh() {
+      if (!this.supported()) return null;
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        this.sub = await reg.pushManager.getSubscription();
+      } catch (e) { this.sub = null; }
+      return this.sub;
+    },
+    async enable() {
+      if (!this.supported()) { ui.toast('Этот браузер не умеет push'); return null; }
+      try {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') { ui.toast('Уведомления запрещены в настройках браузера'); return null; }
+        const keyRes = await SH.api.request('GET', '/api/push/key');
+        if (!keyRes || !keyRes.key) { ui.toast('На сервере не настроен ключ уведомлений'); return null; }
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: this.urlBase64ToUint8Array(keyRes.key)
+        });
+        await SH.api.request('POST', '/api/push/subscribe', { subscription: sub.toJSON() });
+        this.sub = sub;
+        ui.toast('Уведомления включены');
+        return sub;
+      } catch (e) {
+        ui.toast('Не получилось включить: ' + (e.message || e));
+        return null;
+      }
+    },
+    async disable() {
+      try {
+        const sub = this.sub || (await navigator.serviceWorker.ready).pushManager.getSubscription();
+        if (sub) {
+          try { await SH.api.request('DELETE', '/api/push/subscribe', { subscription: { endpoint: sub.endpoint } }); } catch (e) {}
+          await sub.unsubscribe();
+        }
+        this.sub = null;
+        ui.toast('Уведомления выключены');
+      } catch (e) { ui.toast('Не получилось выключить'); }
+    },
+    async test() {
+      try {
+        const r = await SH.api.request('POST', '/api/push/test');
+        ui.toast(r && r.sent ? 'Тестовое уведомление отправлено' : 'Нет событий на 48 часов вперёд — присылать нечего');
+      } catch (e) { ui.toast('Не отправилось: ' + (e.message || e)); }
+    },
+    init() {
+      this.refresh().then(() => { if (SH.app && SH.app.render) SH.app.render(); });
+    }
+  };
+  SH.push = push;
 
   /* ─────────────────────────── роутер ─────────────────────────── */
 
@@ -11038,6 +11483,7 @@ html[data-theme='dark'] .tplc { background: #24262f; }
   function boot() {
     store.init();
     install.init();
+    push.init();
 
     // сервер сказал 401 при живом токене → сессия истекла, честно уводим на вход
     if (SH.api) {
