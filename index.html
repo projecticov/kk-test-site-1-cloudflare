@@ -9710,8 +9710,9 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
 
   function navTabs(current) {
     const me = store.currentUser || {};
-    const items = [['overview', 'Обзор'], ['mentors', 'Менторы'], ['students', 'Ученики'], ['templates', 'Шаблоны']];
-    if (me.orgRole === 'mentor') return '';
+    const items = me.orgRole === 'mentor'
+      ? [['overview', 'Мои ученики'], ['students', 'Ученики']]
+      : [['overview', 'Обзор'], ['mentors', 'Менторы'], ['students', 'Ученики'], ['templates', 'Шаблоны']];
     return '<div class="kk-tabs">' + items.map(([id, label]) =>
       '<button class="kk-tab' + (current === id ? ' is-on' : '') + '" onclick="SH.app.go(\'#/org/' + id + '\')">' + label + '</button>'
     ).join('') + '</div>';
@@ -9720,7 +9721,19 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
   /* ─────────────────────────── ОБЗОР ─────────────────────────── */
 
   function kpiColumn() {
-    const k = (data && data.kpi) || { students: 0, onPlan: 0, onPlanPct: 0, lag: 0, risk: 0, mentors: 0 };
+    const me = store.currentUser || {};
+    let k = (data && data.kpi) || { students: 0, onPlan: 0, onPlanPct: 0, lag: 0, risk: 0, mentors: 0 };
+    if (me.orgRole === 'mentor') {
+      const mine = myStudents();
+      const plan = mine.filter((s) => s.status === 'plan').length;
+      k = {
+        students: mine.length, onPlan: plan,
+        onPlanPct: mine.length ? Math.round((plan / mine.length) * 100) : 0,
+        lag: mine.filter((s) => s.status === 'lag').length,
+        risk: mine.filter((s) => s.status === 'risk').length,
+        mentors: 1
+      };
+    }
     const item = (label, value, note, tone) =>
       '<div class="kpi kpi--' + tone + '"><span class="kpi__k">' + e(label) + '</span>' +
         '<span class="kpi__v">' + value + '</span>' +
@@ -9771,12 +9784,14 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
   }
 
   function overviewView() {
-    return head('Обзор', data && data.org ? e(data.org.name) + ' · ' + new Date().getFullYear() : '') +
+    const me = store.currentUser || {};
+    return head(me.orgRole === 'mentor' ? 'Мои ученики' : 'Обзор', data && data.org ? e(data.org.name) + ' · ' + new Date().getFullYear() : '') +
       '<div class="kk-grid kk-grid--overview">' +
         '<div class="kk-col kk-col--kpi">' + kpiColumn() + '</div>' +
         '<div class="kk-col kk-col--main">' +
+          (me.orgRole === 'mentor' ? '' :
           '<section class="pane"><header class="pane__h"><h2>Эффективность менторов</h2>' +
-            '<button class="sort" onclick="SH.views.org.cycleSort()">сортировка: ' + sortLabel() + ' ▾</button></header>' + mentorTable() + '</section>' +
+            '<button class="sort" onclick="SH.views.org.cycleSort()">сортировка: ' + sortLabel() + ' ▾</button></header>' + mentorTable() + '</section>') +
           '<section class="pane"><header class="pane__h"><h2>Требуют внимания</h2>' +
             '<button class="btn btn--soft btn--sm" onclick="SH.app.go(\'#/org/students\')">Все ' + myStudents().filter((s) => s.status !== 'plan').length + '</button></header>' +
             attentionList() + '</section>' +
@@ -9974,7 +9989,8 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
   function portfolioTab() {
     const c = (card && card.card) || {};
     const canWrite = (store.currentUser || {}).role !== 'user';
-    return '<div class="kk-grid kk-grid--portfolio">' +
+    return '<div class="kk-grid kk-grid--card"><div class="kk-col">' + cardHeader() + '</div>' +
+      '<div class="kk-col kk-col--wide"><div class="kk-grid kk-grid--portfolio">' +
       '<div class="kk-col">' +
         '<section class="pane"><header class="pane__h"><h2>Показатели</h2>' +
           (canWrite ? '<button class="btn btn--soft btn--sm" onclick="SH.views.org.editCard()">' + icon('edit', 14) + 'Редактировать</button>' : '') + '</header>' +
@@ -9995,7 +10011,7 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
         portfolioBlock((card && card.certificates) || [], 'Сертификаты', 'Сертификатов пока нет.') +
         '<p class="hint">Правки админа и ментора видны ученику в его профиле с пометкой, кто изменил.</p>' +
       '</div>' +
-    '</div>';
+    '</div></div></div>';
   }
 
   function studentView(id) {
@@ -10015,7 +10031,7 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
     '</div>';
     return head('Карточка ученика', e(c.name) + (c.grade ? ' · ' + e(c.grade) + ' класс' : ''), actions) +
       (tab === 'portfolio'
-        ? '<div class="kk-grid kk-grid--card">' + '<div class="kk-col">' + cardHeader() + '</div>' + portfolioTab() + '</div>'
+        ? portfolioTab()
         : '<div class="kk-grid kk-grid--card">' + '<div class="kk-col">' + cardHeader() + '</div>' +
             '<div class="kk-col kk-col--wide">' + roadmapTab() + '</div></div>');
   }
