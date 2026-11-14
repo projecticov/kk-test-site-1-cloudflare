@@ -2467,7 +2467,7 @@ html[data-theme='dark'] .rcal__d.is-today { background: var(--primary); color: #
   font-size: 12px;
   font-weight: 700;
   background: var(--chip);
-  color: var(--ink);
+  color: var(--ink-fg);
 }
 .tag--mint { background: var(--mint); color: #204a1f; }
 .tag--sky { background: var(--sky); color: #143c63; }
@@ -2511,7 +2511,7 @@ html[data-theme='dark'] .search input {
 .field textarea:focus,
 .field select:focus,
 .search input:focus {
-  border-color: var(--ink);
+  border-color: var(--ink-fg);
   box-shadow: 0 0 0 3px rgba(20, 22, 31, 0.08);
 }
 html[data-theme='dark'] .field input:focus,
@@ -2530,7 +2530,7 @@ html[data-theme='dark'] .field textarea:focus { border-color: #fff; box-shadow: 
 }
 .tab { color: var(--muted); font-weight: 700; font-size: 10.5px; }
 .tab svg { width: 22px; height: 22px; }
-.tab[aria-selected='true'] { color: var(--ink); }
+.tab[aria-selected='true'] { color: var(--ink-fg); }
 html[data-theme='dark'] .tab[aria-selected='true'] { color: #fff; }
 .tab[aria-selected='true'] .tab__ico,
 .tab[aria-selected='true'] svg { stroke-width: 2.2; }
@@ -2587,18 +2587,18 @@ html[data-theme='dark'] .tab[aria-selected='true'] { color: #fff; }
   background: var(--surface);
   border-radius: var(--r-card);
   box-shadow: var(--shadow-sm);
-  color: var(--ink);
+  color: var(--ink-fg);
   padding: 20px;
 }
 .readiness__label,
 .readiness__hint { color: var(--muted); }
-.readiness__value { color: var(--ink); font-family: Nunito, Manrope, sans-serif; }
+.readiness__value { color: var(--ink-fg); font-family: Nunito, Manrope, sans-serif; }
 .readiness__row { color: var(--ink-2); border-top: 1px solid var(--border); padding-top: 8px; }
-.readiness__row b { color: var(--ink); }
+.readiness__row b { color: var(--ink-fg); }
 .readiness__row:first-child { border-top: 0; padding-top: 0; }
 .readiness .progress { background: var(--border); }
 .readiness .progress i { background: var(--ink); }
-.readiness__how { background: var(--chip); color: var(--ink); border-radius: 16px; }
+.readiness__how { background: var(--chip); color: var(--ink-fg); border-radius: 16px; }
 
 /* ── тосты и листы ── */
 .toast { background: var(--ink); color: #fff; border-radius: 18px; box-shadow: var(--shadow-md); }
@@ -2617,7 +2617,7 @@ html[data-theme='dark'] .toast { background: #2a2c36; }
   background: var(--chip);
   box-shadow: none;
 }
-.rcal__m.is-now { box-shadow: 0 0 0 2px var(--ink); }
+.rcal__m.is-now { box-shadow: 0 0 0 2px var(--ink-fg); }
 .rcal__head {
   height: 24px;
   padding: 0 4px;
@@ -2625,7 +2625,7 @@ html[data-theme='dark'] .toast { background: #2a2c36; }
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.03em;
-  color: var(--ink);
+  color: var(--ink-fg);
   background: var(--cal-bg, var(--chip));
 }
 .rcal__m--autumn { --cal-bg: var(--cal-autumn); }
@@ -2639,7 +2639,7 @@ html[data-theme='dark'] .toast { background: #2a2c36; }
   border-radius: 6px;
   font-size: 10px;
   font-weight: 600;
-  color: var(--ink);
+  color: var(--ink-fg);
 }
 html[data-theme='dark'] .rcal__d { color: var(--text); }
 .rcal__d.is-date {
@@ -2651,14 +2651,14 @@ html[data-theme='dark'] .rcal__d { color: var(--text); }
 html[data-theme='dark'] .rcal__d.is-date { background: #fff; color: #14161f; }
 .rcal__d.is-today {
   background: transparent;
-  box-shadow: inset 0 0 0 1.5px var(--ink);
-  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--ink-fg);
+  color: var(--ink-fg);
   font-weight: 800;
 }
 html[data-theme='dark'] .rcal__d.is-today { box-shadow: inset 0 0 0 1.5px #fff; color: #fff; }
 .rcal__bar { left: 2px; right: 2px; bottom: 1px; height: 3px; border-radius: 0; }
 .rcal__task { display: none; }
-.rcal-key--date { box-shadow: inset 0 0 0 1.4px var(--ink); }
+.rcal-key--date { box-shadow: inset 0 0 0 1.4px var(--ink-fg); }
 .rcal-key--today { background: var(--ink); }
 html[data-theme='dark'] .rcal-key--date { box-shadow: inset 0 0 0 1.4px #fff; }
 html[data-theme='dark'] .rcal-key--today { background: #fff; }
@@ -2671,11 +2671,11 @@ html[data-theme='dark'] .rcal-key--today { background: #fff; }
 .rcy-month--summer { --season: var(--cal-summer); }
 .rcy-month__area { stroke: var(--surface); stroke-width: 2; }
 .rcy-hub__class { font-family: Nunito, Manrope, sans-serif; }
-.rcy-stone circle { stroke: var(--ink); }
-.rcy-stone text { fill: var(--ink); }
+.rcy-stone circle { stroke: var(--ink-fg); }
+.rcy-stone text { fill: var(--ink-fg); }
 html[data-theme='dark'] .rcy-stone circle { stroke: #fff; }
 html[data-theme='dark'] .rcy-stone text { fill: #fff; }
-.rcy-row__num { border-color: var(--ink); color: var(--ink); }
+.rcy-row__num { border-color: var(--ink-fg); color: var(--ink-fg); }
 .rcy-nowdot { fill: #ff8f80; stroke: var(--surface); }
 
 /* ── Админка и организации: та же геометрия ── */
@@ -2719,7 +2719,7 @@ html[data-theme='dark'] .rcy-stone text { fill: #fff; }
   align-items: center;
   gap: 10px;
   padding: 12px 16px 14px;
-  color: var(--ink);
+  color: var(--ink-fg);
 }
 .event-hero__title {
   font-family: Nunito, Manrope, sans-serif;
@@ -2727,7 +2727,7 @@ html[data-theme='dark'] .rcy-stone text { fill: #fff; }
   font-size: 16px;
   line-height: 1.28;
   letter-spacing: -0.3px;
-  color: var(--ink);
+  color: var(--ink-fg);
 }
 .event-hero__meta { color: var(--muted); font-size: 12px; margin-top: 3px; font-weight: 600; }
 .event-hero__cta {
@@ -2761,7 +2761,7 @@ html[data-theme='dark'] .event-hero__title { color: var(--text); }
 .install-banner__icon { background: rgba(255, 255, 255, 0.14); border-radius: 14px; }
 .install-banner__btn {
   background: #fff;
-  color: var(--ink);
+  color: var(--ink-fg);
   border-radius: 19px;
   height: 38px;
   font-weight: 700;
@@ -2782,7 +2782,7 @@ html[data-theme='dark'] .install-banner { background: #24262f; }
 .rcy-empty { box-shadow: var(--shadow-sm); }
 
 /* месяц «сейчас» в календаре — мягкая обводка вместо жирной рамки */
-.rcal__m.is-now { box-shadow: inset 0 0 0 1.5px var(--ink), var(--shadow-sm); }
+.rcal__m.is-now { box-shadow: inset 0 0 0 1.5px var(--ink-fg), var(--shadow-sm); }
 html[data-theme='dark'] .rcal__m.is-now { box-shadow: inset 0 0 0 1.5px #fff, var(--shadow-sm); }
 
 /* ── прочее: чипы, поля, скроллбары ── */
@@ -2804,7 +2804,7 @@ select, input, textarea, button { font-family: inherit; }
   border-radius: 18px;
   color: var(--ink-2);
 }
-.ai-note b, .ai-note strong { color: var(--ink); }
+.ai-note b, .ai-note strong { color: var(--ink-fg); }
 html[data-theme='dark'] .ai-note { color: var(--text); }
 html[data-theme='dark'] .ai-note b { color: #fff; }
 
@@ -2856,7 +2856,7 @@ html[data-theme='dark'] .kpi-card:nth-child(1) { background: var(--sun); }
 html[data-theme='dark'] .kpi-card:nth-child(2) { background: var(--sky); }
 html[data-theme='dark'] .kpi-card:nth-child(3) { background: var(--blush); }
 html[data-theme='dark'] .kpi-card:nth-child(4) { background: var(--mint); }
-.kpi__value { font-family: Nunito, Manrope, sans-serif; color: var(--ink); }
+.kpi__value { font-family: Nunito, Manrope, sans-serif; color: var(--ink-fg); }
 .kpi__value--danger { color: #b3261e; }
 .kpi__label { color: rgba(20, 22, 31, 0.62); font-weight: 600; }
 
@@ -3005,7 +3005,7 @@ html[data-theme='dark'] .rcy-hub { fill: #24262f; stroke: var(--border); }
 .kk-title {
   font-family: Nunito, Manrope, sans-serif;
   font-size: 30px; line-height: 1.12; font-weight: 800; letter-spacing: -0.8px;
-  margin: 0; color: var(--ink);
+  margin: 0; color: var(--ink-fg);
 }
 .kk-sub { margin: 6px 0 0; font-size: 13px; color: var(--muted); font-weight: 600; }
 html[data-theme='dark'] .kk-title { color: var(--text); }
@@ -3057,7 +3057,7 @@ html[data-theme='dark'] .kpi--blush { background: #4a2b2b; color: #ffe0da; }
 }
 .pane__h h2 {
   font-family: Nunito, Manrope, sans-serif; font-size: 17px; font-weight: 800;
-  letter-spacing: -0.3px; margin: 0; flex: 1 1 auto; color: var(--ink);
+  letter-spacing: -0.3px; margin: 0; flex: 1 1 auto; color: var(--ink-fg);
 }
 html[data-theme='dark'] .pane__h h2 { color: var(--text); }
 .hint {
@@ -3074,7 +3074,7 @@ html[data-theme='dark'] .pane__h h2 { color: var(--text); }
 }
 .tbl td {
   padding: 12px; border-top: 1px solid var(--border); font-size: 13px;
-  color: var(--ink); vertical-align: middle;
+  color: var(--ink-fg); vertical-align: middle;
 }
 html[data-theme='dark'] .tbl td { color: var(--text); }
 .tbl__row { cursor: pointer; }
@@ -3141,7 +3141,7 @@ html[data-theme='dark'] .chip-btn.is-on { background: #f4f5f8; color: #14161f; }
   padding: 16px; border-radius: var(--r-card); background: var(--surface);
   box-shadow: var(--shadow-sm); text-align: left;
 }
-.mini.is-on { box-shadow: inset 0 0 0 2px var(--ink); }
+.mini.is-on { box-shadow: inset 0 0 0 2px var(--ink-fg); }
 .mini--dash {
   border: 1.5px dashed #6b7084; background: transparent; box-shadow: none;
   align-items: center; justify-content: center; min-height: 120px;
@@ -3446,7 +3446,7 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
   border-radius: var(--r-card); background: var(--chip); }
 .tplc__svg { width: 160px; height: 160px; flex: 0 0 auto; }
 .tplc__t1 { font-size: 12px; font-weight: 700; fill: var(--muted); }
-.tplc__t2 { font-size: 15px; font-weight: 800; fill: var(--ink); }
+.tplc__t2 { font-size: 15px; font-weight: 800; fill: var(--ink-fg); }
 .tplc__side { min-width: 0; flex: 1; max-width: 300px; }
 .tplc__legend { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
 .tplc__legend li { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
@@ -3460,12 +3460,12 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
 .filterline { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .pane--tags { margin-top: 20px; }
 .mini--tagg { cursor: pointer; }
-.mini--tagg.is-on { box-shadow: inset 0 0 0 2px var(--ink); }
+.mini--tagg.is-on { box-shadow: inset 0 0 0 2px var(--ink-fg); }
 html[data-theme='dark'] .tplc { background: #24262f; }
 
 /* ── kk: спринты, алерты 48 ч, нагрузка менторов, дайджест ── */
 .spr { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
-.spr__h { font-size: 15px; font-weight: 800; color: var(--ink); }
+.spr__h { font-size: 15px; font-weight: 800; color: var(--ink-fg); }
 .spr__list { list-style: none; margin: 6px 0 14px; padding: 0; display: grid; gap: 8px; }
 .spr__row { display: grid; grid-template-columns: 10px 1fr auto auto; align-items: center; gap: 10px;
   padding: 10px 12px; border-radius: 16px; background: var(--chip); }
@@ -3566,6 +3566,43 @@ html[data-theme='dark'] .plrow .pl { background: #24262f; }
   .evt__row .ib:nth-of-type(2) { grid-area: 1 / 5; }
   .evt__row .evt__meta { grid-area: 2 / 2 / 3 / 3; font-size: 11px; }
   .evt__row .evt__imp { grid-area: 2 / 3; }
+}
+
+/* ── тёмная тема: токены текста и точечные фиксы ──
+   --ink-fg = цвет «чернил» для текста/обводок; в тёмной теме светлый,
+   заливки по-прежнему берут --ink. */
+:root { --ink-fg: #14161f; }
+
+html[data-theme='dark'] {
+  --ink-fg: #f4f5f8;
+  --ink-2: #c2c7d6;
+}
+
+/* мягкие кнопки и вкладки: текст всегда читается */
+html[data-theme='dark'] .btn--soft,
+html[data-theme='dark'] .btn--outline,
+html[data-theme='dark'] .btn--ghost { color: var(--text); }
+html[data-theme='dark'] .btn--soft svg,
+html[data-theme='dark'] .btn--outline svg { stroke: currentColor; }
+html[data-theme='dark'] .btn--danger { color: #ff9d90; }
+
+/* бейджи мест в топе и прочие пастельные плашки */
+html[data-theme='dark'] .rank-badge--top { color: #ffe9a8; }
+html[data-theme='dark'] .tag--glass { background: rgba(255, 255, 255, 0.14); color: var(--text); }
+
+/* тост: светлая плашка с тёмным текстом (как в kk) */
+html[data-theme='dark'] .toast { background: #f2f2f5; color: #14161f; }
+html[data-theme='dark'] .toast b,
+html[data-theme='dark'] .toast strong { color: #14161f; }
+
+/* всплывающее меню (лист): на десктопе это модалка — скругляем со всех сторон */
+@media (min-width: 900px) {
+  .sheet {
+    border-radius: 26px;
+    box-shadow: 0 24px 60px rgba(10, 12, 20, 0.28);
+  }
+  html[data-theme='dark'] .sheet { box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65); }
+  .sheet .sheet__grab { display: none; }
 }
 
 </style>
