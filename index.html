@@ -4032,8 +4032,8 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
     orgTemplateFromStudent(userId) { return this.request('POST', '/api/org/templates/from-student', { userId }); },
     orgCreateUser(payload) { return this.request('POST', '/api/org/users', payload); },
     orgCreateSlot(payload) { return this.request('POST', '/api/org/slots', payload); },
-    orgUpdateSlot(id, patch) { return this.request('PATCH', '/api/org/slots/' + id, patch); },
-    orgDeleteSlot(id) { return this.request('DELETE', '/api/org/slots/' + id); },
+    orgUpdateSlot(id, patch) { return this.request('PATCH', '/api/org/slots/' + encodeURIComponent(id), patch); },
+    orgDeleteSlot(id) { return this.request('DELETE', '/api/org/slots/' + encodeURIComponent(id)); },
 
     /* ── закладки ── */
     toggleSaved(eventId) { return this.request('POST', '/api/saved/' + eventId, {}); },
@@ -9776,7 +9776,7 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
         '<div class="kk-col kk-col--kpi">' + kpiColumn() + '</div>' +
         '<div class="kk-col kk-col--main">' +
           '<section class="pane"><header class="pane__h"><h2>Эффективность менторов</h2>' +
-            '<button class="sort" onclick="SH.views.org.cycleSort()">сортировка: ' + sortLabel + ' ▾</button></header>' + mentorTable() + '</section>' +
+            '<button class="sort" onclick="SH.views.org.cycleSort()">сортировка: ' + sortLabel() + ' ▾</button></header>' + mentorTable() + '</section>' +
           '<section class="pane"><header class="pane__h"><h2>Требуют внимания</h2>' +
             '<button class="btn btn--soft btn--sm" onclick="SH.app.go(\'#/org/students\')">Все ' + myStudents().filter((s) => s.status !== 'plan').length + '</button></header>' +
             attentionList() + '</section>' +
@@ -10237,7 +10237,7 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
     editCard() {
       const c = (card && card.card) || {};
       const u = (card && card.user) || {};
-      ui.sheet('Показатели и теги', '' +
+      ui.sheet({ title: 'Показатели и теги', body: '' +
         '<div class="row" style="gap:10px"><label class="fl" style="flex:1">GPA<input class="inp" id="c-gpa" value="' + e(c.gpa || '') + '" placeholder="4.8"></label>' +
         '<label class="fl" style="flex:1">Заметка<input class="inp" id="c-gpa-note" value="' + e(c.gpaNote || '') + '" placeholder="10 класс, 1 четверть"></label></div>' +
         '<div class="row" style="gap:10px;margin-top:10px"><label class="fl" style="flex:1">SAT<input class="inp" id="c-sat" value="' + e(c.sat || '') + '" placeholder="1380"></label>' +
@@ -10248,7 +10248,7 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
         '<label class="fl" style="flex:1">Заметка<input class="inp" id="c-goal-note" value="' + e(c.goalNote || '') + '" placeholder="STEM · 12 класс"></label></div>' +
         '<label class="fl" style="margin-top:10px">ТЕГИ (через запятую)<input class="inp" id="c-tags" value="' + e((c.tags || []).join(', ')) + '" placeholder="premium, сша"></label>' +
         '<button class="btn btn--brand btn--block" style="margin-top:16px" onclick="SH.views.org.saveCard()">Сохранить</button>' +
-        '<p class="hint">Ученик ' + e(u.name || '') + ' увидит изменения в своём профиле.</p>');
+        '<p class="hint">Ученик ' + e(u.name || '') + ' увидит изменения в своём профиле.</p>' });
     },
 
     saveCard() {
@@ -10270,12 +10270,12 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
     addPortfolio(kindTitle) {
       const kind = kindTitle === 'Достижения' ? 'achievement' : kindTitle === 'Проекты' ? 'project' : 'certificate';
       const isCert = kind === 'certificate';
-      ui.sheet(isCert ? 'Загрузить сертификат' : kindTitle.replace(/ы$/, ''), '' +
+      ui.sheet({ title: isCert ? 'Загрузить сертификат' : kindTitle.replace(/ы$/, ''), body: '' +
         '<label class="fl">НАЗВАНИЕ<input class="inp" id="pf-title" placeholder="' + (isCert ? 'Пробный IELTS, результат' : kind === 'project' ? 'Эко-датчик' : 'Республиканская олимпиада') + '"></label>' +
         '<label class="fl" style="margin-top:10px">ОПИСАНИЕ<input class="inp" id="pf-note" placeholder="' + (isCert ? 'Загрузил ментор' : kind === 'project' ? 'Датчик качества воздуха' : '3 место') + '"></label>' +
         '<label class="fl" style="margin-top:10px">ГОД<input class="inp" id="pf-year" placeholder="2026"></label>' +
         (isCert ? '<label class="fl" style="margin-top:10px">ФАЙЛ<input class="inp" id="pf-file" type="file" accept=".pdf,.png,.jpg,.jpeg"></label>' : '') +
-        '<button class="btn btn--brand btn--block" style="margin-top:16px" onclick="SH.views.org.savePortfolio(\'' + kind + '\')">' + (isCert ? 'Загрузить' : 'Добавить') + '</button>');
+        '<button class="btn btn--brand btn--block" style="margin-top:16px" onclick="SH.views.org.savePortfolio(\'' + kind + '\')">' + (isCert ? 'Загрузить' : 'Добавить') + '</button>' });
     },
 
     savePortfolio(kind) {
@@ -10291,7 +10291,7 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
     },
 
     delPortfolio(id) {
-      ui.confirmSheet('Удалить запись?', 'Она исчезнет из портфолио ученика.', () => {
+      ui.confirmSheet('Удалить запись?', 'Она исчезнет из портфолио ученика.', 'Удалить', () => {
         SH.api.orgPortfolioDel(id)
           .then(() => loadCard(card.user.id, true))
           .catch((err) => ui.toast('Не удалилось: ' + err.message));
@@ -10319,7 +10319,7 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
 
     slotForm(presetDate) {
       const d = presetDate || '';
-      ui.sheet('Новая дата', '' +
+      ui.sheet({ title: 'Новая дата', body: '' +
         '<label class="fl">НАЗВАНИЕ<input class="inp" id="s-title" placeholder="Пробный SAT"></label>' +
         '<div class="row" style="gap:10px;margin-top:10px">' +
           '<label class="fl" style="flex:1">ДАТА<input class="inp" id="s-date" type="date" value="' + e(d) + '"></label>' +
@@ -10329,7 +10329,7 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
           '<label class="fl" style="flex:1">ВАЖНОСТЬ<select class="inp" id="s-imp"><option value="high">High</option><option value="middle" selected>Middle</option><option value="low">Low</option></select></label>' +
           '<label class="fl" style="flex:1">УВЕДОМИТЬ<select class="inp" id="s-notify"><option value="">Без push</option><option value="1">Push ученику</option></select></label>' +
         '</div>' +
-        '<button class="btn btn--brand btn--block" style="margin-top:16px" onclick="SH.views.org.saveSlot()">Добавить</button>');
+        '<button class="btn btn--brand btn--block" style="margin-top:16px" onclick="SH.views.org.saveSlot()">Добавить</button>' });
     },
 
     dayAdd(date) { SH.views.org.slotForm(date); },
@@ -10344,11 +10344,11 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
     },
 
     callForm() {
-      ui.sheet('Назначить созвон', '' +
+      ui.sheet({ title: 'Назначить созвон', body: '' +
         '<label class="fl">ТЕМА<input class="inp" id="call-title" placeholder="Разбор пробного IELTS"></label>' +
         '<label class="fl" style="margin-top:10px">ДАТА<input class="inp" id="call-date" type="date"></label>' +
         '<button class="btn btn--brand btn--block" style="margin-top:16px" onclick="SH.views.org.saveCall()">Назначить</button>' +
-        '<p class="hint">Созвон появится в роадмапе ученика.</p>');
+        '<p class="hint">Созвон появится в роадмапе ученика.</p>' });
     },
 
     saveCall() {
@@ -10363,12 +10363,12 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
       const list = ((data && data.mentorStats) || []);
       if (!list.length) { ui.toast('Сначала создайте ментора'); return; }
       const cur = (card && card.card && card.card.mentorId) || '';
-      ui.sheet('Прикрепить ментора', '<div class="pick">' + list.map((m) =>
+      ui.sheet({ title: 'Прикрепить ментора', body: '<div class="pick">' + list.map((m) =>
         '<label class="pick__i"><input type="radio" name="mentor" value="' + m.id + '"' + (m.id === cur ? ' checked' : '') + '>' +
         av(m) + '<span>' + e(m.name) + ' · ' + m.students + ' уч.</span></label>').join('') +
         '<label class="pick__i"><input type="radio" name="mentor" value=""' + (!cur ? ' checked' : '') + '><span>Без ментора</span></label>' +
         '</div><button class="btn btn--brand btn--block" style="margin-top:14px" onclick="SH.views.org.doSetMentor()">Прикрепить</button>' +
-        '<p class="hint">Роадмап и портфолио переезжают вместе с учеником.</p>');
+        '<p class="hint">Роадмап и портфолио переезжают вместе с учеником.</p>' });
     },
 
     doSetMentor() {
@@ -10382,7 +10382,7 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
 
     removeStudent() {
       const id = card && card.user ? card.user.id : arg(1);
-      ui.confirmSheet('Открепить карточку?', 'Ученик выйдет из организации. Аккаунт и его данные в приложении останутся.', () => {
+      ui.confirmSheet('Открепить карточку?', 'Ученик выйдет из организации. Аккаунт и его данные в приложении останутся.', 'Открепить', () => {
         SH.api.orgRemoveStudent(id)
           .then(() => { ui.toast('Карточка откреплена'); card = null; SH.app.go('#/org/students'); return load(true); })
           .catch((err) => ui.toast('Не получилось: ' + err.message));
@@ -10461,16 +10461,16 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
         .catch((err) => ui.toast('Не сохранилось: ' + err.message));
     },
     delTemplate(id) {
-      ui.confirmSheet('Удалить шаблон?', 'Уже назначенные ученикам даты останутся.', () => {
+      ui.confirmSheet('Удалить шаблон?', 'Уже назначенные ученикам даты останутся.', 'Удалить', () => {
         SH.api.orgTemplateDel(id).then(() => { templateEdit = null; return load(true); });
       });
     },
     assignTemplate() {
       if (!templateEdit || !templateEdit.id) { ui.toast('Сначала сохраните шаблон'); return; }
       const list = myStudents();
-      ui.sheet('Назначить ученикам', '<div class="pick">' + list.map((s) =>
+      ui.sheet({ title: 'Назначить ученикам', body: '<div class="pick">' + list.map((s) =>
         '<label class="pick__i"><input type="checkbox" value="' + s.id + '">' + av(s) + '<span>' + e(s.name) + '</span></label>').join('') + '</div>' +
-        '<button class="btn btn--brand btn--block" style="margin-top:14px" onclick="SH.views.org.doAssign()">Назначить</button>');
+        '<button class="btn btn--brand btn--block" style="margin-top:14px" onclick="SH.views.org.doAssign()">Назначить</button>' });
     },
     doAssign() {
       const ids = Array.from(document.querySelectorAll('.pick input:checked')).map((x) => x.value);
@@ -10485,7 +10485,7 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
     mentorForm() { SH.views.org.userSheet(true); },
     userSheet(isMentor) {
       const tpls = (data && data.templates) || [];
-      ui.sheet(isMentor ? 'Новый ментор' : 'Новый ученик', '' +
+      ui.sheet({ title: isMentor ? 'Новый ментор' : 'Новый ученик', body: '' +
         '<label class="fl">ИМЯ И ФАМИЛИЯ<input class="inp" id="u-name" placeholder="Алия Нурланова"></label>' +
         '<div class="row" style="gap:10px;margin-top:10px">' +
           '<label class="fl" style="flex:1">ЛОГИН<input class="inp" id="u-login" placeholder="aliya@school.ru"></label>' +
@@ -10498,7 +10498,7 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
           '</select></label>' +
           '<p class="hint" style="margin-top:8px">Даты из шаблона сразу появятся в роадмапе ученика.</p>') +
         '<label class="fl" style="margin-top:10px">ПАРОЛЬ (пусто — сгенерируем)<input class="inp" id="u-pass" placeholder="demo2026"></label>' +
-        '<button class="btn btn--brand btn--block" style="margin-top:16px" onclick="SH.views.org.createUser(' + isMentor + ')">Создать карточку</button>');
+        '<button class="btn btn--brand btn--block" style="margin-top:16px" onclick="SH.views.org.createUser(' + isMentor + ')">Создать карточку</button>' });
     },
     createUser(isMentor) {
       const val = (id) => { const el = document.querySelector(id); return el ? el.value : ''; };
