@@ -10450,7 +10450,8 @@ html[data-theme='dark'] .tpl__chip { background: #24262f; }
 
   function reportView(id) {
     const u = card && card.user && card.user.id === id ? card.user : (data.students.find((s) => s.id === id) || {});
-    if (!report || report.userId !== id) {
+    // data может быть ещё null: отчёт запрошен, но ответ не пришёл — держим скелетон
+    if (!report || report.userId !== id || !report.data) {
       loadReport(id, 'month');
       return head('Отчёт для родителей', 'Загружаю…') + '<div class="pane">' + ui.skeletonList(3) + '</div>';
     }
@@ -10517,9 +10518,11 @@ html[data-theme='dark'] .tpl__chip { background: #24262f; }
     report = report && report.userId === id ? report : { userId: id, period: period || 'month', comment: '', data: null };
     report.period = period || report.period;
     if (report.data) { SH.app.render(); return; }
+    if (report.loading) return;          // ответ уже в пути — не дублируем запрос
+    report.loading = true;
     SH.api.orgReport(id, report.period)
-      .then((d) => { report.data = d.report; SH.app.render(); })
-      .catch((err) => ui.toast('Не удалось собрать отчёт: ' + err.message));
+      .then((d) => { report.data = d.report; report.loading = false; SH.app.render(); })
+      .catch((err) => { report.loading = false; ui.toast('Не удалось собрать отчёт: ' + err.message); });
   }
 
   /* ─────────────────────────── КАЛЕНДАРЬ ─────────────────────────── */
@@ -10778,9 +10781,8 @@ html[data-theme='dark'] .tpl__chip { background: #24262f; }
       report = report && report.userId === id ? report : { userId: id, period: period || 'month', comment: '', data: null };
       report.period = period || 'month';
       report.data = null;
-      SH.api.orgReport(id, report.period)
-        .then((d) => { report.data = d.report; SH.app.render(); })
-        .catch((err) => ui.toast('Не удалось собрать отчёт: ' + err.message));
+      report.loading = false;
+      loadReport(id, report.period);
     },
 
     printReport() {
