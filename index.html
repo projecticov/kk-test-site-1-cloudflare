@@ -3441,6 +3441,28 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
 .inds--grid .ind__v { font-size: 21px; }
 @media (max-width: 380px) { .inds--grid { grid-template-columns: minmax(0, 1fr); } }
 
+/* ── kk: круг шаблона и группы тегов ── */
+.tplc { display: flex; align-items: center; gap: 22px; margin-top: 18px; padding: 16px 18px;
+  border-radius: var(--r-card); background: var(--chip); }
+.tplc__svg { width: 160px; height: 160px; flex: 0 0 auto; }
+.tplc__t1 { font-size: 12px; font-weight: 700; fill: var(--muted); }
+.tplc__t2 { font-size: 15px; font-weight: 800; fill: var(--ink); }
+.tplc__side { min-width: 0; flex: 1; max-width: 300px; }
+.tplc__legend { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.tplc__legend li { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 8px; font-size: 13px; color: var(--text); }
+.tplc__legend i { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
+.tplc__legend span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tplc__legend em { font-style: normal; color: var(--muted); font-size: 12px; white-space: nowrap; }
+@media (max-width: 520px) {
+  .tplc { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .tplc__legend li { font-size: 12.5px; }
+}
+.filterline { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.pane--tags { margin-top: 20px; }
+.mini--tagg { cursor: pointer; }
+.mini--tagg.is-on { box-shadow: inset 0 0 0 2px var(--ink); }
+html[data-theme='dark'] .tplc { background: #24262f; }
+
 </style>
 </head>
 <body>
@@ -4030,6 +4052,8 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
     orgSetMentor(studentId, mentorId) { return this.request('POST', '/api/org/students/' + encodeURIComponent(studentId) + '/mentor', { mentorId }); },
     orgRemoveStudent(studentId) { return this.request('POST', '/api/org/students/' + encodeURIComponent(studentId) + '/remove', {}); },
     orgTemplateFromStudent(userId) { return this.request('POST', '/api/org/templates/from-student', { userId }); },
+    orgTagGroupAdd(payload) { return this.request('POST', '/api/org/tag-groups', payload); },
+    orgTagGroupDel(id) { return this.request('DELETE', '/api/org/tag-groups/' + encodeURIComponent(id)); },
     orgCreateUser(payload) { return this.request('POST', '/api/org/users', payload); },
     orgCreateSlot(payload) { return this.request('POST', '/api/org/slots', payload); },
     orgUpdateSlot(id, patch) { return this.request('PATCH', '/api/org/slots/' + encodeURIComponent(id), patch); },
@@ -9605,6 +9629,7 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
   let cardLoading = false;
   let filters = { status: '', tag: '', q: '' };
   let templateEdit = null;  // редактируемый шаблон
+  let tplFilter = null;      // активная группа тегов (фильтр шаблонов)
   let report = null;        // предпросмотр отчёта
   let mentorSort = 'plan';  // plan | risk | students
   const reportParts = { status: true, done: true, next: true, metrics: true, projects: true, certificates: true };
@@ -10053,6 +10078,59 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
     '</article>';
   }
 
+  const ARC_COLORS = ['#f7a072', '#b9a6f2', '#5fc9c9', '#f5a9c4', '#7fdc9f', '#f2cf63', '#8fcaf7', '#e0a6d0'];
+
+  /** Шаблон, показанный кругом: каждая дата — своя дуга. */
+  function templateCircle(t) {
+    const items = (t.items || []).slice(0, 12);
+    const R = 62, C = 2 * Math.PI * R;
+    const n = Math.max(items.length, 1);
+    const gap = n > 1 ? 7 : 0;
+    const len = Math.max(6, (C - gap * n) / n);
+    const segs = items.map((x, i) =>
+      '<circle cx="80" cy="80" r="' + R + '" fill="none" stroke="' + ARC_COLORS[i % ARC_COLORS.length] + '"' +
+      ' stroke-width="12" stroke-linecap="round" stroke-dasharray="' + len.toFixed(2) + ' ' + (C - len).toFixed(2) + '"' +
+      ' stroke-dashoffset="' + (-(i * (len + gap))).toFixed(2) + '" transform="rotate(-90 80 80)"></circle>').join('');
+    const legend = items.map((x, i) =>
+      '<li><i style="background:' + ARC_COLORS[i % ARC_COLORS.length] + '"></i>' +
+        '<span>' + e(x.title) + '</span>' +
+        '<em>' + (ui.MONTHS[x.month] || '').slice(0, 3) + ' ' + x.day + (x.kind === 'course' ? ' · курс' : '') + '</em></li>').join('');
+    return '<div class="tplc">' +
+      '<svg viewBox="0 0 160 160" class="tplc__svg" role="img" aria-label="Круг шаблона">' +
+        '<circle cx="80" cy="80" r="46" fill="var(--chip)"></circle>' + segs +
+        '<text x="80" y="76" text-anchor="middle" class="tplc__t1">Шаблон</text>' +
+        '<text x="80" y="94" text-anchor="middle" class="tplc__t2">' + items.length + ' ' + ui.plural(items.length, 'шаг', 'шага', 'шагов') + '</text>' +
+      '</svg>' +
+      '<div class="tplc__side"><p class="fl__k">ЧТО ВНУТРИ</p>' +
+        (items.length ? '<ul class="tplc__legend">' + legend + '</ul>'
+          : '<p class="mu">Добавьте даты — и они появятся на круге.</p>') +
+      '</div></div>';
+  }
+
+  /** Группы тегов — как «Группа SAT-интенсив» в kk. */
+  function tagGroupsBlock() {
+    const groups = (data && data.tagGroups) || [];
+    const tpls = (data && data.templates) || [];
+    const isMgr = (store.currentUser || {}).role !== 'user';
+    const cards = groups.map((g) => {
+      const hit = tpls.filter((t) => (t.tags || []).some((x) => g.tags.includes(x)));
+      const on = tplFilter === g.id;
+      return '<article class="mini mini--tagg' + (on ? ' is-on' : '') + '" onclick="SH.views.org.filterTpl(\'' + g.id + '\')">' +
+        '<header class="mini__h"><div class="mini__id"><b>' + e(g.title) + '</b></div>' +
+          (isMgr ? '<button class="ib" aria-label="Удалить группу" onclick="event.stopPropagation();SH.views.org.delTagGroup(\'' + g.id + '\')">' + icon('trash', 16) + '</button>' : '') +
+        '</header>' +
+        '<div class="mini__meta">' + tagList(g.tags) + '</div>' +
+        '<p class="mu">' + hit.length + ' ' + ui.plural(hit.length, 'шаблон', 'шаблона', 'шаблонов') + ' с этими тегами</p>' +
+      '</article>';
+    }).join('');
+    return '<section class="pane pane--tags"><header class="pane__h"><h2>Группы тегов</h2>' +
+        (isMgr ? '<button class="btn btn--soft btn--sm" onclick="SH.views.org.tagGroupForm()">' + icon('plus', 14) + 'Новая группа тегов</button>' : '') +
+      '</header>' +
+      (groups.length ? '<div class="cards">' + cards + '</div>'
+        : '<p class="mu">Группа объединяет теги — удобно выдавать ученикам набор шаблонов одного направления.</p>') +
+    '</section>';
+  }
+
   function templateEditor() {
     if (!templateEdit) return '';
     const t = templateEdit;
@@ -10082,18 +10160,25 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
           '<button class="ib ib--sm" aria-label="Удалить" onclick="SH.views.org.tplRemove(' + i + ')">' + icon('trash', 15) + '</button>' +
         '</div>').join('') : '<p class="mu">Добавьте даты — при назначении они превращаются в реальные события ученика.</p>') + '</div>' +
       '<button class="btn btn--soft btn--sm" style="margin-top:12px" onclick="SH.views.org.tplAdd()">' + icon('plus', 14) + 'Дата</button>' +
+      templateCircle(t) +
       '<p class="hint">В шаблоне даты привязаны к классу, а не к году. При назначении ученику они становятся его учебным годом.</p>' +
     '</section>';
   }
 
   function templatesView() {
-    const list = (data && data.templates) || [];
+    const all = (data && data.templates) || [];
+    const group = (data && data.tagGroups || []).find((g) => g.id === tplFilter);
+    const list = group ? all.filter((t) => (t.tags || []).some((x) => group.tags.includes(x))) : all;
     const isMgr = (store.currentUser || {}).role !== 'user';
     return head('Шаблоны роадмапов', 'Один набор дат — много учеников',
         isMgr ? '<button class="btn btn--brand" onclick="SH.views.org.newTemplate()">' + icon('plus', 16) + 'Новый шаблон</button>' : '') +
+      (group ? '<div class="filterline"><span class="chip-btn is-on">#' + e(group.title) + '</span>' +
+        '<button class="btn btn--ghost btn--sm" onclick="SH.views.org.filterTpl(\'\')">Сбросить</button></div>' : '') +
       (list.length ? '<div class="cards">' + list.map(templateCard).join('') +
         (isMgr ? '<button class="mini mini--dash" onclick="SH.views.org.newTemplate()">+ Сохранить роадмап ученика как шаблон</button>' : '') + '</div>'
-        : '<div class="pane">' + ui.empty('layers', 'Шаблонов пока нет', 'Создайте шаблон — и назначайте его ученикам одним нажатием.') + '</div>') +
+        : '<div class="pane">' + ui.empty('layers', group ? 'В этой группе пока нет шаблонов' : 'Шаблонов пока нет',
+            'Создайте шаблон — и назначайте его ученикам одним нажатием.') + '</div>') +
+      tagGroupsBlock() +
       templateEditor();
   }
 
@@ -10475,6 +10560,28 @@ html[data-theme='dark'] .imp--middle { background: #4a421f; color: #fff0b8; }
       SH.api.orgTemplateSave(payload)
         .then((d) => { templateEdit.id = d.id; ui.toast('Шаблон сохранён'); return load(true); })
         .catch((err) => ui.toast('Не сохранилось: ' + err.message));
+    },
+    filterTpl(id) { tplFilter = id && id === tplFilter ? null : (id || null); SH.app.render(); },
+    tagGroupForm() {
+      ui.sheet({ title: 'Новая группа тегов',
+        body: '<label class="fl">НАЗВАНИЕ<input class="inp" id="tg-title" placeholder="Группа SAT-интенсив"></label>' +
+          '<label class="fl" style="margin-top:10px">ТЕГИ ЧЕРЕЗ ЗАПЯТУЮ<input class="inp" id="tg-tags" placeholder="sat, интенсив, 11 класс"></label>' +
+          '<p class="hint">Ученики с этими тегами увидят шаблоны группы первыми.</p>' +
+          '<button class="btn btn--brand btn--block" style="margin-top:14px" onclick="SH.views.org.saveTagGroup()">Создать группу</button>' });
+    },
+    saveTagGroup() {
+      const val = (id) => { const el = document.querySelector(id); return el ? el.value.trim() : ''; };
+      const title = val('#tg-title');
+      const tags = val('#tg-tags');
+      if (!title) { ui.toast('Нужно название группы'); return; }
+      SH.api.orgTagGroupAdd({ title, tags })
+        .then(() => { ui.toast('Группа создана'); ui.closeSheet && ui.closeSheet(); return load(true); })
+        .catch((err) => ui.toast('Не сохранилось: ' + err.message));
+    },
+    delTagGroup(id) {
+      ui.confirmSheet('Удалить группу?', 'Шаблоны и ученики не изменятся — пропадёт только фильтр.', 'Удалить', () => {
+        SH.api.orgTagGroupDel(id).then(() => { if (tplFilter === id) tplFilter = null; ui.toast('Группа удалена'); return load(true); });
+      });
     },
     delTemplate(id) {
       ui.confirmSheet('Удалить шаблон?', 'Уже назначенные ученикам даты останутся.', 'Удалить', () => {
