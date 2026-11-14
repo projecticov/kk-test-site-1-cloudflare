@@ -2,7 +2,7 @@
 <html lang="ru" data-theme="light">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no, interactive-widget=resizes-content">
 <title>Student Hub — возможности, команды и план для школьников</title>
 <meta name="description" content="Student Hub — приложение для школьников: олимпиады, курсы, стажировки, поиск команды и личный роадмап. Устанавливается на главный экран без магазина приложений.">
 
@@ -80,7 +80,7 @@ html[data-theme='dark'] {
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-html, body { height: 100%; }
+html, body { height: 100%; max-width: 100%; overflow-x: hidden; }
 
 body {
   margin: 0;
@@ -120,6 +120,7 @@ svg { display: block; }
 .app {
   position: relative;
   max-width: 540px;
+  overflow-x: hidden;
   margin: 0 auto;
   min-height: 100dvh;
   background: var(--bg);
@@ -143,6 +144,7 @@ svg { display: block; }
 
 .screen {
   flex: 1;
+  min-width: 0;
   padding: 0 20px calc(var(--nav-h) + var(--safe-b) + 26px);
 }
 
@@ -349,6 +351,12 @@ html[data-theme='dark'] .btn--primary { background: #fff; color: #14151a; }
   box-shadow: 0 0 0 3.5px rgba(108, 92, 231, 0.13);
 }
 .field-label { font-size: 12.5px; font-weight: 650; color: var(--muted); margin: 0 0 6px 2px; }
+
+/* iOS увеличивает страницу, если шрифт в поле меньше 16px — держим 16px на телефоне */
+@media (max-width: 899px) {
+  input, textarea, select,
+  .field input, .field textarea, .field select { font-size: 16px; }
+}
 .field-error { color: var(--danger); font-size: 12.5px; margin: 6px 0 0 2px; }
 
 .search {
@@ -906,8 +914,16 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 
 /* ─────────────────────────── чаты ─────────────────────────── */
 
-.chat-scroll { display: flex; flex-direction: column; gap: 8px; padding: 4px 0 16px; }
-.chat-bubble { max-width: 78%; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.45; }
+.chat-scroll { display: flex; flex-direction: column; gap: 8px; padding: 4px 0 8px; }
+.chat-bubble {
+  max-width: 100%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 .chat-bubble--own { background: var(--primary); color: #fff; border-bottom-right-radius: 6px; align-self: flex-end; }
 .chat-bubble--other { background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 6px; align-self: flex-start; }
 .chat-time { font-size: 10.5px; opacity: 0.62; margin-top: 4px; }
@@ -919,13 +935,20 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
 .chat-flag--fail { color: #b4231f; }
 
 .composer {
-  position: sticky; bottom: 0;
-  display: flex; gap: 8px; align-items: center;
-  padding: 10px 0 calc(10px + var(--safe-b));
-  background: linear-gradient(transparent, var(--bg) 30%);
+  position: relative;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0 max(8px, var(--safe-b));
+  background: var(--bg);
 }
-.composer .field { flex: 1; }
-.composer input { min-height: 46px; border-radius: 999px; }
+.composer .field { flex: 1; min-width: 0; }
+.composer input {
+  min-height: 44px;
+  padding: 11px 16px;
+  border-radius: 999px;
+}
+.composer .icon-btn { flex: 0 0 auto; }
 
 /* ─────────────────────────── профиль ─────────────────────────── */
 
@@ -1186,16 +1209,39 @@ html[data-theme='dark'] .toast { background: #f2f2f5; color: #14151a; }
   min-width: 20px; height: 20px; border-radius: 999px; display: grid; place-items: center; padding: 0 6px; }
 
 /* чат */
-.screen--chat { display: flex; flex-direction: column; min-height: 100dvh; padding-bottom: 0; }
+/* чат занимает ровно видимую область: клавиатура не перекрывает поле ввода */
+.app--chat { min-height: 0; height: var(--vvh, 100dvh); }
+.screen--chat {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+  max-width: 100%;
+}
+.screen--chat .chat-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+@media (min-width: 900px) {
+  /* на десктопе приложение живёт в карточке с отступами 24px */
+  .app--chat { height: calc(100dvh - 48px); }
+}
 .chat-person { display: flex; align-items: center; gap: 8px; width: 100%; border: 0;
   background: var(--chip); border-radius: 12px; padding: 6px 10px; margin-bottom: 8px;
   font: inherit; font-size: 12.5px; font-weight: 600; color: var(--text); cursor: pointer; }
 .chat-person .small { margin-left: auto; }
 .chat-members { display: flex; align-items: center; gap: 2px; margin-bottom: 8px; flex-wrap: wrap; }
 
-.msg-line { display: flex; align-items: flex-end; gap: 6px; margin-bottom: 10px; }
+.msg-line { display: flex; align-items: flex-end; gap: 6px; margin-bottom: 10px; min-width: 0; max-width: 100%; }
 .msg-line--own { justify-content: flex-end; }
-.msg-col { max-width: 78%; min-width: 0; }
+.msg-col { max-width: min(78%, 100%); min-width: 0; }
 .msg-edit { opacity: 0; transition: opacity .15s ease; }
 .msg-line:hover .msg-edit { opacity: 1; }
 @media (hover: none) { .msg-edit { opacity: .55; } }
@@ -5243,7 +5289,7 @@ html[data-theme='dark'] .rcal__d.is-today { background: var(--primary); color: #
         '<span>На этот год пока пусто. Поставь веху или марафон — он сразу появится на круге.</span></div>';
 
     return '<div class="screen">' +
-      head('Роадмап', 'Круг учебного года') +
+      head('Роадмап', 'Круг учебного года', iconButton('plus', 'Добавить в роадмап', 'SH.views.roadmap.addItem()')) +
       gradePicker(g, 'class', 'c') +
       modeSwitch('circle', g) +
       '<div class="rcy-wrap">' + svg + '</div>' +
@@ -5318,7 +5364,7 @@ html[data-theme='dark'] .rcal__d.is-today { background: var(--primary); color: #
     }).join('');
 
     return '<div class="screen">' +
-      head('Роадмап', 'Календарь года') +
+      head('Роадмап', 'Календарь года', iconButton('plus', 'Добавить в роадмап', 'SH.views.roadmap.addItem()')) +
       gradePicker(st.g, 'year', 'cal') +
       modeSwitch('calendar', st.g) +
       '<div class="rcal">' + cards + '</div>' +
@@ -6200,9 +6246,18 @@ html[data-theme='dark'] .rcal__d.is-today { background: var(--primary); color: #
         SH.views.chats.send(id);
       }
     });
-    input.focus({ preventScroll: true });
+    // на телефоне не выдёргиваем клавиатуру сами: экран должен открыться целиком,
+    // а курсор ставим без прокрутки и без зума
+    const touch = window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    if (!touch) input.focus({ preventScroll: true });
     const scroller = root.querySelector('.chat-scroll');
     if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    const toBottom = () => {
+      const sc = root.querySelector('.chat-scroll');
+      if (sc) sc.scrollTop = sc.scrollHeight;
+    };
+    document.addEventListener('sh:viewport', toBottom);
+    window.addEventListener('resize', toBottom);
     startPolling(id, 4000);
   }
 
@@ -9050,7 +9105,7 @@ html[data-theme='dark'] .rcal__d.is-today { background: var(--primary); color: #
     const prevScroll = prevScreen ? prevScreen.scrollTop : 0;
 
     root.innerHTML =
-      (view.wide ? '' : '<div class="app">') +
+      (view.wide ? '' : '<div class="app' + (route.name === 'chat' ? ' app--chat' : '') + '">') +
       view.html +
       tabbar +
       (view.wide ? '' : '</div>');
@@ -9069,10 +9124,15 @@ html[data-theme='dark'] .rcal__d.is-today { background: var(--primary); color: #
     }
 
     if (routeChanged) {
+      // уходя с экрана, закрываем клавиатуру — иначе поле ввода остаётся
+      // активным, а вернувшийся экран оказывается сдвинутым
+      const active = document.activeElement;
+      if (active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) active.blur();
       // на десктопе скроллится колонка контента, на мобильном — окно
       const scroller = root.querySelector('.screen');
       if (scroller) scroller.scrollTop = 0;
       window.scrollTo(0, 0);
+      if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
       if (history.scrollRestoration) history.scrollRestoration = 'manual';
     } else if (prevScroll) {
       const scroller = root.querySelector('.screen');
@@ -9160,6 +9220,29 @@ html[data-theme='dark'] .rcal__d.is-today { background: var(--primary); color: #
         store.forceLogout('Сессия истекла — войди заново');
       };
     }
+
+    /* Клавиатура на телефоне: пишем в --vvh реальную высоту видимой области.
+       Тогда экран чата не уезжает под клавиатуру и над полем ввода нет пустоты. */
+    function trackKeyboard() {
+      const vv = window.visualViewport;
+      const root = document.documentElement;
+      const apply = () => {
+        const h = vv ? Math.round(vv.height) : window.innerHeight;
+        root.style.setProperty('--vvh', h + 'px');
+        const kb = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
+        root.classList.toggle('kb-open', kb > 120);
+        // открытый чат должен остаться приклеенным к последнему сообщению
+        document.dispatchEvent(new CustomEvent('sh:viewport', { detail: { height: h, keyboard: kb > 120 } }));
+      };
+      apply();
+      if (vv) {
+        vv.addEventListener('resize', apply);
+        vv.addEventListener('scroll', apply);
+      }
+      window.addEventListener('orientationchange', () => setTimeout(apply, 120));
+      window.addEventListener('resize', apply);
+    }
+    trackKeyboard();
 
     // приложению в отдельном окне нужен свой app-shell (см. styles.css)
     function markStandalone() {
