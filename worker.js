@@ -1,6 +1,6 @@
 /* ============================================================
    Student Hub — единый файл бэкенда для Cloudflare Workers
-   Сборка: 2026-11-14 17:23 · a9bb80f6
+   Сборка: 2026-11-20 21:08 · b16c42f2
    Вставлять целиком в Dashboard → Edit code → Deploy.
    Переменные: DB (биндинг D1), GEMINI_KEYS (secret), ALLOW_ORIGIN
    ============================================================ */
@@ -21,7 +21,25 @@
 
     const users = [
       { id: 'u_admin', name: 'Ирина Соколова', email: 'admin@school.ru', password: 'admin', role: 'admin', position: 'Завуч по учебной работе', city: 'Москва', school: 'Школа №1520', color: 'lavender' },
-      { id: 'u_me', name: 'Азиз Рахимов', email: 'aziz@school.ru', password: 'demo', role: 'student', grade: '10 класс', city: 'Москва', school: 'Школа №1520', color: 'sun', skills: ['Python', 'HTML/CSS', 'Figma'], interests: ['ИИ', 'Хакатоны', 'Дизайн'], rating: 78 },
+      {
+        id: 'u_me', name: 'Азиз Рахимов', email: 'aziz@school.ru', password: 'demo', role: 'student',
+        grade: '10 класс', city: 'Москва', school: 'Школа №1520', color: 'sun',
+        skills: ['Python', 'HTML/CSS', 'Figma', 'ИИ', 'Хакатоны'], interests: ['Дизайн'], rating: 78,
+        portfolio: {
+          gpaScale: '5.0',
+          gpa: { g8: '4.80', g9: '4.92', g10: '4.95', g11: '', g12: '' },
+          english: { type: 'IELTS', score: '7.5', details: 'L 8.0 · R 8.0 · W 7.0 · S 7.5', certName: '', certData: '' },
+          sat: { total: '1490', math: '780', ebrw: '710', certName: '', certData: '' },
+          honors: [
+            { id: 'hn1', title: 'Городская олимпиада по информатике', level: 'Regional', year: '10 класс · 2026', place: 'Призёр (2 степень)', certName: '', certData: '' },
+            { id: 'hn2', title: 'Хакатон «AI для школы»', level: 'National', year: '9 класс · 2025', place: '1 место', certName: '', certData: '' }
+          ],
+          extracurriculars: [
+            { id: 'ec1', title: 'Школьный клуб ИИ и веб-разработки', role: 'Co-Founder & Lead', period: '9–10 класс', hours: '5 ч/нед · 34 нед/год', description: 'Организация воркшопов по Python и совместная разработка школьных сервисов.', certName: '', certData: '' },
+            { id: 'ec2', title: 'Волонтёрский корпус «Школа — району»', role: 'Ментор младших классов', period: '9–10 класс', hours: '3 ч/нед', description: 'Помощь ученикам 6–7 классов по информатике и математике.', certName: '', certData: '' }
+          ]
+        }
+      },
       { id: 'u1', name: 'Мария Ковалёва', email: 'maria@school.ru', role: 'student', grade: '11 класс', city: 'Москва', school: 'Школа №1520', color: 'blush', skills: ['Математика', 'C++'], interests: ['Олимпиады'] },
       { id: 'u2', name: 'Тимур Алиев', email: 'timur@school.ru', role: 'student', grade: '10 класс', city: 'Москва', school: 'Школа №1520', color: 'sky', skills: ['React', 'Node.js'], interests: ['Веб', 'Стартапы'] },
       { id: 'u3', name: 'Дана Сеитова', email: 'dana@school.ru', role: 'student', grade: '9 класс', city: 'Москва', school: 'Школа №1520', color: 'mint', skills: ['Биология', 'Химия'], interests: ['Наука'] },
@@ -268,7 +286,7 @@
 
 /* ───────────────────────── базовое ───────────────────────── */
 
-const BUILD = '2026-11-14 17:23 · a9bb80f6';
+const BUILD = '2026-11-20 21:08 · b16c42f2';
 
 const CORS = (o) => ({
   'access-control-allow-origin': o,
@@ -441,7 +459,12 @@ const COLUMNS = [
   ['org_slots', 'importance', "text default 'middle'"],
   ['org_slots', 'notify', 'integer default 0'],
   ['org_portfolio', 'file_name', 'text'],
-  ['org_portfolio', 'file_size', 'integer default 0']
+  ['org_portfolio', 'file_size', 'integer default 0'],
+  ['org_portfolio', 'file_data', 'text'],
+  ['users', 'portfolio', 'text'],
+  ['teams', 'invite_code', 'text'],
+  ['messages', 'attachment', 'text'],
+  ['plan_items', 'chat_id', 'text']
 ];
 
 const MONTHS_RU = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
@@ -636,8 +659,50 @@ async function ensureReady(env) {
   if (!row || row.c === 0) await seedDemo(env);
   await backfillLinks(env);
   await seedPlanDemo(env);
+  await normalizeMentorsAndTeams(env);
 
   ready = true;
+}
+
+async function normalizeMentorsAndTeams(env) {
+  try {
+    await env.DB.prepare("update users set role='org' where org_role='mentor' and role='student'").run();
+  } catch (e) { /* ignore */ }
+  try {
+    const emptyTeams = await env.DB.prepare("select id from teams where invite_code is null or invite_code=''").all();
+    for (const t of (emptyTeams.results || [])) {
+      const code = (await sha256('kk_inv_' + t.id)).slice(0, 12);
+      await env.DB.prepare('update teams set invite_code=? where id=?').bind(code, t.id).run();
+    }
+  } catch (e) { /* ignore */ }
+  try {
+    const org = await env.DB.prepare('select * from organizations order by created_at limit 1').first();
+    if (org) {
+      const mCount = await env.DB.prepare("select count(*) as c from users where org_id=? and org_role='mentor'").bind(org.id).first();
+      if (!mCount || mCount.c === 0) {
+        const salt = newSalt();
+        const hash = await hashPassword('demo2026', salt);
+        const demoMentors = [
+          { id: 'u_kk_daniyar', name: 'Данияр Касымов', email: 'daniyar@agency.ru', color: 'mint', tags: ['сша'] },
+          { id: 'u_kk_madina', name: 'Мадина Омарова', email: 'madina@agency.ru', color: 'sky', tags: ['италия'] }
+        ];
+        for (const dm of demoMentors) {
+          await env.DB.prepare(
+            `insert or ignore into users (id,name,email,pass_hash,salt,role,org_id,org_role,school,city,color,created_at)
+             values (?,?,?,?,?,'org',?,'mentor',?,?,?,?)`
+          ).bind(dm.id, dm.name, dm.email, hash, salt, org.id, org.name, org.city || 'Москва', dm.color, nowISO()).run();
+          await env.DB.prepare('insert or replace into user_logins (login,user_id,created_at) values (?,?,?)')
+            .bind(dm.email, dm.id, nowISO()).run();
+          await env.DB.prepare(
+            `insert or ignore into org_students (user_id,mentor_id,tags,grade,gpa,gpa_note,sat,sat_note,ielts,ielts_note,goal,goal_note,status,updated_at)
+             values (?,null,?,'','','','','','','','','','plan',?)`
+          ).bind(dm.id, JSON.stringify(dm.tags), nowISO()).run();
+        }
+        await env.DB.prepare("update org_students set mentor_id='u_kk_daniyar' where user_id in ('u_kk_aliya','u_kk_timura','u_kk_sanzhar')").run();
+        await env.DB.prepare("update org_students set mentor_id='u_kk_madina' where user_id in ('u_kk_aruzhan','u_kk_erlan')").run();
+      }
+    }
+  } catch (e) { /* ignore */ }
 }
 
 async function ensureRoot(env) {
@@ -828,8 +893,26 @@ async function seedOrgDemo(env) {
 
   const salt = newSalt();
   const hash = await hashPassword('demo2026', salt);
+  const demoMentors = [
+    { id: 'u_kk_daniyar', name: 'Данияр Касымов', email: 'daniyar@agency.ru', color: 'mint', tags: ['сша'] },
+    { id: 'u_kk_madina', name: 'Мадина Омарова', email: 'madina@agency.ru', color: 'sky', tags: ['италия'] }
+  ];
+  for (const dm of demoMentors) {
+    await put(
+      `insert or ignore into users (id,name,email,pass_hash,salt,role,org_id,org_role,school,city,color,created_at)
+       values (?,?,?,?,?,'org',?,'mentor',?,?,?,?)`,
+      dm.id, dm.name, dm.email, hash, salt, org.id, org.name, org.city || 'Москва', dm.color, nowISO());
+    await put('insert or replace into user_logins (login,user_id,created_at) values (?,?,?)', dm.email, dm.id, nowISO());
+    await put(
+      `insert or replace into org_students (user_id,mentor_id,tags,grade,gpa,gpa_note,sat,sat_note,ielts,ielts_note,goal,goal_note,status,updated_at)
+       values (?,null,?,'','','','','','','','','','plan',?)`,
+      dm.id, JSON.stringify(dm.tags), nowISO());
+  }
+  const mentorAssign = ['u_kk_daniyar', 'u_kk_daniyar', 'u_kk_madina', 'u_kk_madina', org.manager_id || 'u_kk_daniyar', 'u_kk_daniyar'];
+  let pi = 0;
   for (const p of people) {
     const id = 'u_kk_' + p.email.split('@')[0].replace(/[^a-z0-9]/g, '');
+    const assignedMentor = mentorAssign[pi++] || org.manager_id || null;
     await put(
       `insert or ignore into users (id,name,email,pass_hash,salt,role,grade,school,city,color,org_id,created_at)
        values (?,?,?,?,?,'student',?,?,?,?,?,?)`,
@@ -839,7 +922,7 @@ async function seedOrgDemo(env) {
     await put(
       `insert or replace into org_students (user_id,mentor_id,tags,grade,gpa,gpa_note,sat,sat_note,ielts,ielts_note,goal,goal_note,status,template_id,updated_at)
        values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      id, org.manager_id || null, JSON.stringify(p.tags), p.grade, p.gpa, p.gpaNote,
+      id, assignedMentor, JSON.stringify(p.tags), p.grade, p.gpa, p.gpaNote,
       p.sat, p.satNote, p.ielts, p.ieltsNote, p.goal, p.goalNote, 'plan', null, nowISO());
   }
 
@@ -1029,22 +1112,37 @@ async function tableCounts(db) {
 /* ───────────────────────── маппинг ───────────────────────── */
 
 const toPlan = (r) => ({
-  id: r.id, userId: r.user_id, kind: r.kind || 'task', title: r.title, note: r.note || '',
+  id: r.id, userId: r.user_id, chatId: r.chat_id || '', kind: r.kind || 'task',
+  title: r.title, note: r.note || '',
   startAt: r.start_at, endAt: r.end_at || '', done: !!r.done, eventId: r.event_id || '',
   checklist: P(r.checklist, []), color: r.color || 'sky'
 });
+
+const stripPortfolioBlobs = (pf) => {
+  if (!pf || typeof pf !== 'object') return null;
+  const certs = Array.isArray(pf.certificates)
+    ? pf.certificates.map((c) => Object.assign({}, c, { fileData: c.fileData ? '__present__' : '' }))
+    : [];
+  const honors = Array.isArray(pf.honors)
+    ? pf.honors.map((h) => Object.assign({}, h, { certData: h.certData ? '__present__' : '' }))
+    : [];
+  return Object.assign({}, pf, { certificates: certs, honors });
+};
 
 const toUser = (r) => ({
   id: r.id, name: r.name, email: r.email, role: r.role, grade: r.grade, school: r.school,
   city: r.city, color: r.color, position: r.position, rating: r.rating, avatar: r.avatar,
   blocked: !!r.blocked, skills: P(r.skills, []), interests: P(r.interests, []),
+  portfolio: P(r.portfolio, null),
   orgId: r.org_id || null, orgRole: r.org_role || null, createdAt: r.created_at
 });
 
-const publicUser = (u) => ({
+const publicUser = (u, keepBlobs) => ({
   id: u.id, name: u.name, role: u.role, grade: u.grade, school: u.school, city: u.city,
   color: u.color, position: u.position, rating: u.rating, avatar: u.avatar,
-  skills: u.skills, interests: u.interests, orgId: u.orgId || null
+  skills: u.skills, interests: u.interests,
+  portfolio: keepBlobs ? (u.portfolio || null) : stripPortfolioBlobs(u.portfolio),
+  orgId: u.orgId || null, orgRole: u.orgRole || null
 });
 
 const adminUser = (u) => ({
@@ -1147,7 +1245,7 @@ async function authLogin(request, env, origin, body) {
   await audit(env, user.id, viaOtp ? 'login.otp' : 'login', user.id, user.name);
   return json({
     ok: true, token: session.token, expires: session.expires,
-    user: publicUser(toUser(user)), viaOtp
+    user: publicUser(toUser(user), true), viaOtp
   }, 200, origin);
 }
 
@@ -1201,18 +1299,23 @@ async function bootstrap(env, origin, me) {
   const aiKeys = await db.prepare('select count(*) as c from ai_keys where enabled=1').first();
   const aiEnabled = !!((aiKeys && aiKeys.c) || env.GEMINI_KEYS || env.GEMINI_KEY);
 
-  // организации отдаём только тем, кто с ними работает
-  const orgRows = (me && ['root', 'admin', 'org'].includes(me.role))
+  // организации отдаём только управляющим/админам, не менторам
+  const orgRows = (me && ['root', 'admin', 'org'].includes(me.role) && me.orgRole !== 'mentor')
     ? await db.prepare(
         `select o.*, u.name as manager_name,
-           (select count(*) from users x where x.org_id=o.id and x.role='student') as students
+           (select count(*) from users x where x.org_id=o.id and x.role='student' and coalesce(x.org_role,'')!='mentor') as students
          from organizations o left join users u on u.id=o.manager_id
          order by o.created_at`
       ).all()
     : { results: [] };
 
   const planRows = me
-    ? await db.prepare('select * from plan_items where user_id=? order by start_at limit 400').bind(me.id).all()
+    ? await db.prepare(
+        `select * from plan_items
+          where (user_id=? and (chat_id is null or chat_id=''))
+             or (chat_id is not null and chat_id != '' and chat_id in (select chat_id from chat_members where user_id=?))
+          order by start_at limit 600`
+      ).bind(me.id, me.id).all()
     : { results: [] };
 
   const [users, events, posts, goals, tasks, teams, members, chats, chatMembers, messages, comments, likes] =
@@ -1234,7 +1337,8 @@ async function bootstrap(env, origin, me) {
   const byChat = {};
   messages.results.slice().reverse().forEach((m) => {
     (byChat[m.chat_id] = byChat[m.chat_id] || []).push({
-      id: m.id, authorId: m.author_id, text: m.text, at: m.created_at, editedAt: m.edited_at || null
+      id: m.id, authorId: m.author_id, text: m.text, at: m.created_at,
+      editedAt: m.edited_at || null, attachment: P(m.attachment, null)
     });
   });
   Object.keys(byChat).forEach((k) => { byChat[k] = byChat[k].slice(-150); });
@@ -1254,17 +1358,25 @@ async function bootstrap(env, origin, me) {
 
   return json({
     ok: true, source: 'cloud', serverTime: nowISO(), build: BUILD,
-    me: me ? publicUser(me) : null,
-    users: users.results.map((u) => publicUser(toUser(u))),
+    me: me ? publicUser(me, true) : null,
+    users: users.results.map((u) => {
+      const tu = toUser(u);
+      return publicUser(tu, me && tu.id === me.id);
+    }),
     events: events.results.map(toEvent),
     posts: posts.results.map((p) => Object.assign(toPost(p), {
       comments: byPost[p.id] || [], likedBy: likesByPost[p.id] || 0
     })),
-    teams: teams.results.map((t) => ({
-      id: t.id, title: t.title, description: t.description, type: t.type,
-      spotsOpen: t.spots_open, leadId: t.lead_id, tags: P(t.tags, []),
-      status: t.status, createdAt: t.created_at, members: memByTeam[t.id] || []
-    })),
+    teams: teams.results.map((t) => {
+      const tMembers = memByTeam[t.id] || [];
+      const canInvite = !!(me && (t.lead_id === me.id || tMembers.includes(me.id)));
+      return {
+        id: t.id, title: t.title, description: t.description, type: t.type,
+        spotsOpen: t.spots_open, leadId: t.lead_id, tags: P(t.tags, []),
+        status: t.status, createdAt: t.created_at, members: tMembers,
+        inviteCode: canInvite ? (t.invite_code || '') : ''
+      };
+    }),
     chats: chats.results.map((c) => ({
       id: c.id, title: c.title, kind: c.kind || 'group', unread: c.unread || 0,
       lastAt: c.last_at, memberIds: memByChat[c.id] || [], messages: byChat[c.id] || []
@@ -1392,7 +1504,7 @@ async function api(request, env, url, origin) {
 
   if (path === '/auth/me') {
     if (!me) return json({ ok: false, error: 'Сессия истекла' }, 401, origin);
-    return json({ ok: true, user: publicUser(me) }, 200, origin);
+    return json({ ok: true, user: publicUser(me, true) }, 200, origin);
   }
 
   if (path === '/auth/password' && method === 'POST') {
@@ -1416,12 +1528,38 @@ async function api(request, env, url, origin) {
 
   if (path === '/auth/profile' && method === 'PATCH') {
     if (!me) return notAuth();
-    const name = str(body.name, 120) || me.name;
-    await db.prepare('update users set name=?,grade=?,school=?,city=?,skills=?,interests=?,avatar=? where id=?')
-      .bind(name, str(body.grade, 40), str(body.school, 120), str(body.city, 60),
-        K(body.skills || me.skills || []), K(body.interests || me.interests || []),
-        str(body.avatar, 300000) || me.avatar || null, me.id).run();
-    return json({ ok: true }, 200, origin);
+    const name = body.name != null ? (str(body.name, 120) || me.name) : me.name;
+    const grade = body.grade != null ? str(body.grade, 40) : (me.grade || '');
+    const school = body.school != null ? str(body.school, 120) : (me.school || '');
+    const city = body.city != null ? str(body.city, 60) : (me.city || '');
+    const skills = body.skills != null ? body.skills : (me.skills || []);
+    const interests = body.interests != null ? body.interests : (me.interests || []);
+    const avatar = body.avatar !== undefined ? (str(body.avatar, 350000) || null) : (me.avatar || null);
+    const pf = body.portfolio !== undefined
+      ? (body.portfolio && typeof body.portfolio === 'object' ? str(JSON.stringify(body.portfolio), 1800000) : null)
+      : (me.portfolio ? JSON.stringify(me.portfolio) : null);
+    await db.prepare('update users set name=?,grade=?,school=?,city=?,skills=?,interests=?,avatar=?,portfolio=? where id=?')
+      .bind(name, grade, school, city, K(skills), K(interests), avatar, pf, me.id).run();
+    // если ученик прикреплён к организации — синхронизируем GPA/IELTS/SAT с карточкой организации
+    if (me.orgId && body.portfolio && typeof body.portfolio === 'object') {
+      try {
+        const curCard = await db.prepare('select * from org_students where user_id=?').bind(me.id).first();
+        if (curCard) {
+          const gpaObj = body.portfolio.gpa || {};
+          const langObj = body.portfolio.langExam || {};
+          const satObj = body.portfolio.sat || {};
+          await db.prepare('update org_students set gpa=?, ielts=?, sat=?, updated_at=? where user_id=?')
+            .bind(
+              gpaObj.overall != null ? str(gpaObj.overall, 40) : (curCard.gpa || ''),
+              langObj.score != null ? str((langObj.type ? langObj.type + ' ' : '') + langObj.score, 60).trim() : (curCard.ielts || ''),
+              satObj.score != null ? str(satObj.score, 40) : (curCard.sat || ''),
+              nowISO(), me.id
+            ).run();
+        }
+      } catch (e) { /* ignore */ }
+    }
+    const updated = await db.prepare('select * from users where id=?').bind(me.id).first();
+    return json({ ok: true, user: updated ? publicUser(toUser(updated), true) : null }, 200, origin);
   }
 
   /* ── публичное: ключ для push-подписки нужен до входа ── */
@@ -1579,24 +1717,64 @@ async function api(request, env, url, origin) {
   if (path === '/teams' && method === 'POST') {
     if (!me) return notAuth();
     const id = uid('tm');
+    const inviteCode = hex(crypto.getRandomValues(new Uint8Array(6)));
     await db.prepare(
-      "insert into teams (id,title,description,type,spots_open,lead_id,tags,status,created_at) values (?,?,?,?,?,?,?,'open',?)"
-    ).bind(id, str(body.title, 160), str(body.description, 1000), str(body.type, 60),
-      Number(body.spotsOpen) || 1, me.id, K(body.tags || []), nowISO()).run();
+      "insert into teams (id,title,description,type,spots_open,lead_id,tags,status,invite_code,created_at) values (?,?,?,?,?,?,?,'open',?,?)"
+    ).bind(id, str(body.title, 160), str(body.description, 2000), str(body.type, 60),
+      Number(body.spotsOpen) || 1, me.id, K(body.tags || []), inviteCode, nowISO()).run();
     await db.prepare('insert or ignore into team_members (team_id,user_id,created_at) values (?,?,?)')
       .bind(id, me.id, nowISO()).run();
-    return json({ ok: true, id }, 201, origin);
+    await db.prepare("insert or ignore into chats (id,title,kind,unread,last_at) values (?,?,'team',0,?)")
+      .bind('chat_' + id, str(body.title, 160), nowISO()).run();
+    await db.prepare('insert or ignore into chat_members (chat_id,user_id) values (?,?)')
+      .bind('chat_' + id, me.id).run();
+    return json({ ok: true, id, inviteCode, chatId: 'chat_' + id }, 201, origin);
   }
 
-  /* вступление в команду: добавляем в участники и создаём/находим чат команды */
+  /* проверка ссылки-приглашения в команду */
+  m = path.match(/^\/teams\/([^/]+)\/invite$/);
+  if (m && method === 'GET') {
+    if (!me) return notAuth();
+    const team = await db.prepare('select * from teams where id=?').bind(m[1]).first();
+    if (!team) return json({ ok: false, error: 'Команда не найдена' }, 404, origin);
+    const code = String(url.searchParams.get('code') || '').trim();
+    let expected = team.invite_code || '';
+    if (!expected) {
+      expected = (await sha256('kk_inv_' + team.id)).slice(0, 12);
+      await db.prepare('update teams set invite_code=? where id=?').bind(expected, team.id).run();
+    }
+    const members = await db.prepare('select user_id from team_members where team_id=?').bind(m[1]).all();
+    const mIds = (members.results || []).map((r) => r.user_id);
+    const isMember = team.lead_id === me.id || mIds.includes(me.id);
+    return json({
+      ok: true,
+      valid: isMember || (!!code && code === expected),
+      inviteCode: isMember ? expected : '',
+      team: {
+        id: team.id, title: team.title, description: team.description, type: team.type,
+        spotsOpen: team.spots_open, leadId: team.lead_id, tags: P(team.tags, []), members: mIds
+      }
+    }, 200, origin);
+  }
+
+  /* вступление в команду: только по ссылке-приглашению (code) или если уже участник */
   m = path.match(/^\/teams\/([^/]+)\/join$/);
   if (m && method === 'POST') {
     if (!me) return notAuth();
     const team = await db.prepare('select * from teams where id=?').bind(m[1]).first();
     if (!team) return json({ ok: false, error: 'Команда не найдена' }, 404, origin);
+    let expected = team.invite_code || '';
+    if (!expected) {
+      expected = (await sha256('kk_inv_' + team.id)).slice(0, 12);
+      await db.prepare('update teams set invite_code=? where id=?').bind(expected, team.id).run();
+    }
 
     const already = await db.prepare('select 1 from team_members where team_id=? and user_id=?').bind(m[1], me.id).first();
-    if (!already) {
+    if (!already && team.lead_id !== me.id) {
+      const code = String(body.code || '').trim();
+      if (!code || code !== expected) {
+        return json({ ok: false, error: 'Вступить в команду можно только по ссылке-приглашению от автора поста' }, 403, origin);
+      }
       await db.prepare('insert into team_members (team_id,user_id,created_at) values (?,?,?)')
         .bind(m[1], me.id, nowISO()).run();
       await db.prepare('update teams set spots_open = max(0, spots_open - 1) where id=?').bind(m[1]).run();
@@ -1607,6 +1785,8 @@ async function api(request, env, url, origin) {
     if (!chat) {
       await db.prepare("insert into chats (id,title,kind,unread,last_at) values (?,?,'team',0,?)")
         .bind('chat_' + m[1], team.title, nowISO()).run();
+      await db.prepare('insert or ignore into chat_members (chat_id,user_id) values (?,?)')
+        .bind('chat_' + m[1], team.lead_id).run();
       const members = await db.prepare('select user_id from team_members where team_id=?').bind(m[1]).all();
       for (const row of members.results || []) {
         await db.prepare('insert or ignore into chat_members (chat_id,user_id) values (?,?)')
@@ -1617,15 +1797,32 @@ async function api(request, env, url, origin) {
         .bind('chat_' + m[1], me.id).run();
     }
 
+    if (!already && team.lead_id !== me.id) {
+      const joinAt = nowISO();
+      await db.prepare('insert into messages (id,chat_id,author_id,text,created_at) values (?,?,?,?,?)')
+        .bind(uid('m'), 'chat_' + m[1], me.id, '👋 Присоединился(ась) к команде по приглашению!', joinAt).run();
+      await db.prepare('update chats set last_at=? where id=?').bind(joinAt, 'chat_' + m[1]).run();
+    }
+
     const members = await db.prepare('select user_id from team_members where team_id=?').bind(m[1]).all();
     return json({
       ok: true, chatId: 'chat_' + m[1],
       title: team.title,
+      inviteCode: expected,
       members: (members.results || []).map((r) => r.user_id)
     }, 200, origin);
   }
 
   /* ── чаты ── */
+  const attSummary = (att) => {
+    if (!att || typeof att !== 'object') return '';
+    if (att.kind === 'sticker') return '🎭 Стикер' + (att.label ? ' · ' + att.label : '');
+    if (att.kind === 'image') return '🖼 Фотография';
+    if (att.kind === 'file') return '📎 ' + (att.name || 'Документ');
+    if (att.kind === 'invite') return '🤝 Приглашение в команду';
+    return '';
+  };
+
   if (path === '/chats/direct' && method === 'POST') {
     if (!me) return notAuth();
     const other = await db.prepare('select * from users where id=?').bind(body.userId).first();
@@ -1654,6 +1851,7 @@ async function api(request, env, url, origin) {
     const rows = await db.prepare(
       `select c.id, c.title, c.kind, c.unread, c.last_at,
               (select m.text from messages m where m.chat_id=c.id order by m.created_at desc limit 1) as last_text,
+              (select m.attachment from messages m where m.chat_id=c.id order by m.created_at desc limit 1) as last_att,
               (select m.author_id from messages m where m.chat_id=c.id order by m.created_at desc limit 1) as last_author
          from chats c
          join chat_members cm on cm.chat_id=c.id and cm.user_id=?
@@ -1677,7 +1875,8 @@ async function api(request, env, url, origin) {
       id: r.id, title: r.title, kind: r.kind || 'group',
       unread: r.unread || 0, lastAt: r.last_at,
       memberIds: byChat[r.id] || [],
-      lastText: r.last_text || '', lastAuthorId: r.last_author || ''
+      lastText: r.last_text || attSummary(P(r.last_att, null)) || '',
+      lastAuthorId: r.last_author || ''
     })) }, 200, origin);
   }
 
@@ -1691,13 +1890,14 @@ async function api(request, env, url, origin) {
 
     const after = url.searchParams.get('after') || '';
     const rows = await db.prepare(
-      `select id, chat_id, author_id, text, created_at, edited_at from messages
+      `select id, chat_id, author_id, text, attachment, created_at, edited_at from messages
         where chat_id=? and (created_at>=? or coalesce(edited_at,'')>=?)
         order by created_at asc limit 100`
     ).bind(m[1], after, after).all();
 
     return json({ ok: true, messages: (rows.results || []).map((r) => ({
       id: r.id, chatId: r.chat_id, authorId: r.author_id, text: r.text,
+      attachment: P(r.attachment, null),
       at: r.created_at, editedAt: r.edited_at || ''
     })) }, 200, origin);
   }
@@ -1709,8 +1909,14 @@ async function api(request, env, url, origin) {
     if (!member) return json({ ok: false, error: 'Нет доступа к чату' }, 403, origin);
     const id = body.id || uid('m');
     const at = nowISO();
-    await db.prepare('insert into messages (id,chat_id,author_id,text,created_at) values (?,?,?,?,?)')
-      .bind(id, m[1], me.id, str(body.text, 3000), at).run();
+    const attJson = body.attachment && typeof body.attachment === 'object'
+      ? str(JSON.stringify(body.attachment), 700000) : null;
+    const textVal = str(body.text, 3000);
+    if (!textVal.trim() && !attJson) {
+      return json({ ok: false, error: 'Пустое сообщение' }, 400, origin);
+    }
+    await db.prepare('insert into messages (id,chat_id,author_id,text,attachment,created_at) values (?,?,?,?,?,?)')
+      .bind(id, m[1], me.id, textVal, attJson, at).run();
     await db.prepare('update chats set last_at=?, unread=0 where id=?').bind(at, m[1]).run();
     return json({ ok: true, id, at }, 201, origin);
   }
@@ -1733,50 +1939,121 @@ async function api(request, env, url, origin) {
     return json({ ok: true }, 200, origin);
   }
 
-  /* ── роадмап: вехи, марафоны и задачи дня ── */
+  /* ── роадмап: личный + общий роадмап командных/групповых чатов ── */
+  async function notifyChatRoadmap(chatId, actionText, itemTitle, itemDate) {
+    if (!chatId) return;
+    try {
+      const chat = await db.prepare('select * from chats where id=?').bind(chatId).first();
+      if (!chat) return;
+      const at = nowISO();
+      const datePart = itemDate ? ' · ' + String(itemDate).slice(0, 10) : '';
+      const msgText = `🗺 ${me.name.split(' ')[0]} ${actionText} в роадмапе команды: «${itemTitle}»${datePart}`;
+      await db.prepare('insert into messages (id,chat_id,author_id,text,created_at) values (?,?,?,?,?)')
+        .bind(uid('m'), chatId, me.id, msgText, at).run();
+      await db.prepare('update chats set last_at=? where id=?').bind(at, chatId).run();
+      const members = await db.prepare('select user_id from chat_members where chat_id=? and user_id != ?')
+        .bind(chatId, me.id).all();
+      const otherIds = (members.results || []).map((r) => r.user_id);
+      if (otherIds.length) {
+        const ph = otherIds.map(() => '?').join(',');
+        const subs = await db.prepare(`select * from push_subs where user_id in (${ph})`).bind(...otherIds).all();
+        const payload = JSON.stringify({
+          title: 'Роадмап · ' + chat.title,
+          body: `${me.name.split(' ')[0]} ${actionText}: ${itemTitle}${datePart}`,
+          url: './#/roadmap/team/' + encodeURIComponent(chatId)
+        });
+        for (const sub of (subs.results || [])) {
+          await sendPush(env, sub, payload);
+        }
+      }
+    } catch (e) { /* push best-effort */ }
+  }
+
   if (path === '/plan' && method === 'GET') {
     if (!me) return notAuth();
-    const rows = await db.prepare('select * from plan_items where user_id=? order by start_at limit 400')
-      .bind(me.id).all();
+    const chatId = url.searchParams.get('chat') || '';
+    if (chatId) {
+      const mem = await db.prepare('select 1 from chat_members where chat_id=? and user_id=?').bind(chatId, me.id).first();
+      if (!mem) return json({ ok: false, error: 'Нет доступа к чату команды' }, 403, origin);
+      const rows = await db.prepare('select * from plan_items where chat_id=? order by start_at limit 400').bind(chatId).all();
+      return json({ ok: true, items: (rows.results || []).map(toPlan) }, 200, origin);
+    }
+    const rows = await db.prepare(
+      `select * from plan_items
+        where (user_id=? and (chat_id is null or chat_id=''))
+           or (chat_id is not null and chat_id != '' and chat_id in (select chat_id from chat_members where user_id=?))
+        order by start_at limit 600`
+    ).bind(me.id, me.id).all();
     return json({ ok: true, items: (rows.results || []).map(toPlan) }, 200, origin);
   }
 
   if (path === '/plan/items' && method === 'POST') {
     if (!me) return notAuth();
     const kind = ['milestone', 'track', 'task'].includes(body.kind) ? body.kind : 'task';
+    const chatId = body.chatId ? str(body.chatId, 80) : '';
+    if (chatId) {
+      const mem = await db.prepare('select 1 from chat_members where chat_id=? and user_id=?').bind(chatId, me.id).first();
+      if (!mem) return json({ ok: false, error: 'Только участники чата могут менять роадмап команды' }, 403, origin);
+    }
     const id = str(body.id, 60) || uid('p');
     const start = str(body.startAt, 40) || nowISO();
+    const title = str(body.title, 200);
     await db.prepare(
-      `insert or replace into plan_items (id,user_id,kind,title,note,start_at,end_at,done,event_id,checklist,color,created_at,updated_at)
-       values (?,?,?,?,?,?,?,?,?,?,?,?,?)`
-    ).bind(id, me.id, kind, str(body.title, 200), str(body.note, 600), start,
+      `insert or replace into plan_items (id,user_id,chat_id,kind,title,note,start_at,end_at,done,event_id,checklist,color,created_at,updated_at)
+       values (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    ).bind(id, me.id, chatId || null, kind, title, str(body.note, 600), start,
       str(body.endAt, 40), body.done ? 1 : 0, str(body.eventId, 60),
       JSON.stringify(Array.isArray(body.checklist) ? body.checklist.slice(0, 40) : []),
       str(body.color, 20) || 'sky', nowISO(), nowISO()).run();
+    if (chatId) await notifyChatRoadmap(chatId, 'добавил(а) событие', title, start);
     return json({ ok: true, id }, 201, origin);
   }
 
   m = path.match(/^\/plan\/items\/([^/]+)$/);
   if (m && method === 'PATCH') {
     if (!me) return notAuth();
-    const row = await db.prepare('select * from plan_items where id=? and user_id=?').bind(m[1], me.id).first();
+    const row = await db.prepare('select * from plan_items where id=?').bind(m[1]).first();
     if (!row) return json({ ok: false, error: 'Пункт не найден' }, 404, origin);
+    if (row.chat_id) {
+      const mem = await db.prepare('select 1 from chat_members where chat_id=? and user_id=?').bind(row.chat_id, me.id).first();
+      if (!mem) return json({ ok: false, error: 'Нет доступа к роадмапу команды' }, 403, origin);
+    } else if (row.user_id !== me.id) {
+      return json({ ok: false, error: 'Пункт не найден' }, 404, origin);
+    }
     const pick = (key, col, max) => (body[key] === undefined ? row[col] : (body[key] === null ? '' : str(body[key], max)));
+    const nextTitle = pick('title', 'title', 200);
+    const nextStart = pick('startAt', 'start_at', 40);
+    const nextDone = body.done === undefined ? row.done : (body.done ? 1 : 0);
     await db.prepare(
       `update plan_items set title=?, note=?, start_at=?, end_at=?, done=?, checklist=?, color=?, updated_at=?
-       where id=? and user_id=?`
+       where id=?`
     ).bind(
-      pick('title', 'title', 200), pick('note', 'note', 600), pick('startAt', 'start_at', 40),
-      pick('endAt', 'end_at', 40), body.done === undefined ? row.done : (body.done ? 1 : 0),
+      nextTitle, pick('note', 'note', 600), nextStart,
+      pick('endAt', 'end_at', 40), nextDone,
       body.checklist === undefined ? row.checklist : JSON.stringify((body.checklist || []).slice(0, 40)),
-      pick('color', 'color', 20) || 'sky', nowISO(), m[1], me.id
+      pick('color', 'color', 20) || 'sky', nowISO(), m[1]
     ).run();
+    if (row.chat_id && (body.title !== undefined || body.startAt !== undefined || body.done !== undefined)) {
+      const act = body.done !== undefined && !!body.done !== !!row.done
+        ? (nextDone ? 'отметил(а) выполненным' : 'вернул(а) в работу')
+        : 'обновил(а)';
+      await notifyChatRoadmap(row.chat_id, act, nextTitle, nextStart);
+    }
     return json({ ok: true }, 200, origin);
   }
 
   if (m && method === 'DELETE') {
     if (!me) return notAuth();
-    await db.prepare('delete from plan_items where id=? and user_id=?').bind(m[1], me.id).run();
+    const row = await db.prepare('select * from plan_items where id=?').bind(m[1]).first();
+    if (!row) return json({ ok: true }, 200, origin);
+    if (row.chat_id) {
+      const mem = await db.prepare('select 1 from chat_members where chat_id=? and user_id=?').bind(row.chat_id, me.id).first();
+      if (!mem) return json({ ok: false, error: 'Нет доступа к роадмапу команды' }, 403, origin);
+    } else if (row.user_id !== me.id) {
+      return json({ ok: false, error: 'Пункт не найден' }, 404, origin);
+    }
+    await db.prepare('delete from plan_items where id=?').bind(m[1]).run();
+    if (row.chat_id) await notifyChatRoadmap(row.chat_id, 'удалил(а)', row.title, '');
     return json({ ok: true }, 200, origin);
   }
 
@@ -1838,9 +2115,12 @@ async function api(request, env, url, origin) {
     openTasks: r.open_tasks != null ? r.open_tasks : undefined
   });
 
-  /* организация текущего управляющего: её нельзя подменить параметром запроса */
+  /* организация текущего сотрудника: её нельзя подменить параметром запроса */
+  const isMentor = () => !!(me && me.orgRole === 'mentor');
+  const isOrgAdmin = () => !!(me && ((me.role === 'org' && me.orgRole !== 'mentor') || me.role === 'admin' || me.role === 'root'));
+
   async function myOrgRow() {
-    if (me.role === 'org') {
+    if (me.role === 'org' || isMentor()) {
       if (!me.orgId) return null;
       return await db.prepare('select * from organizations where id=?').bind(me.orgId).first();
     }
@@ -1932,10 +2212,10 @@ async function api(request, env, url, origin) {
     }
   }
 
-  /* кабинет управляющего организацией */
+  /* кабинет управляющего организацией (только админ организации) */
   if (path === '/org/overview' && method === 'GET') {
-    if (me.role !== 'org' && me.role !== 'admin' && me.role !== 'root') {
-      return json({ ok: false, error: 'Только для организаций' }, 403, origin);
+    if (!isOrgAdmin()) {
+      return json({ ok: false, error: 'Доступно только администратору организации' }, 403, origin);
     }
     const org = await myOrgRow();
     if (!org) return json({ ok: true, org: null, students: [], slots: [], deadlines: [], kpi: null }, 200, origin);
@@ -1957,8 +2237,8 @@ async function api(request, env, url, origin) {
     const now = nowISO();
     const rows = slots.results || [];
     const kpi = {
-      students: students.results.filter((u) => u.role === 'student').length,
-      staff: students.results.filter((u) => u.role !== 'student').length,
+      students: students.results.filter((u) => u.role === 'student' && u.org_role !== 'mentor').length,
+      staff: students.results.filter((u) => u.role !== 'student' || u.org_role === 'mentor').length,
       open: rows.filter((s) => !s.done).length,
       overdue: rows.filter((s) => !s.done && String(s.date) < now).length,
       weekDeadlines: (deadlines.results || []).filter((d) => String(d.deadline_date) < new Date(Date.now() + 7 * 864e5).toISOString()).length
@@ -1981,10 +2261,10 @@ async function api(request, env, url, origin) {
   }
 
   if (path === '/org/users' && method === 'POST') {
-    if (me.role !== 'org' && me.role !== 'admin' && me.role !== 'root') {
-      return json({ ok: false, error: 'Только для организаций' }, 403, origin);
+    if (!isOrgAdmin()) {
+      return json({ ok: false, error: 'Создавать учеников и менторов может только администратор организации' }, 403, origin);
     }
-    const org = me.role === 'org' ? await myOrgRow() : await myOrgRow();
+    const org = await myOrgRow();
     if (!org) return json({ ok: false, error: 'Организация не найдена' }, 400, origin);
 
     const login = str(body.login, 120).toLowerCase();
@@ -1997,34 +2277,126 @@ async function api(request, env, url, origin) {
     const salt = newSalt();
     const id = uid('u');
     const mentor = !!body.mentor || body.orgRole === 'mentor';
+    const colors = ['mint', 'sky', 'sun', 'blush', 'lavender'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
     await db.prepare(
       `insert into users (id,name,email,pass_hash,salt,role,org_id,grade,school,city,color,org_role,created_at)
-       values (?,?,?,?,?,'student',?,?,?,?,?,?,?)`
+       values (?,?,?,?,?,?,?,?,?,?,?,?,?)`
     ).bind(id, str(body.name, 120) || 'Без имени', login.includes('@') ? login : null,
-      await hashPassword(password, salt), salt, org.id, str(body.grade, 40),
-      str(body.school, 120) || org.name, str(body.city, 60) || org.city || '', 'sky',
+      await hashPassword(password, salt), salt, mentor ? 'org' : 'student', org.id, str(body.grade, 40),
+      str(body.school, 120) || org.name, str(body.city, 60) || org.city || '', color,
       mentor ? 'mentor' : null, nowISO()).run();
     await db.prepare('insert into user_logins (login,user_id,created_at) values (?,?,?)')
       .bind(login, id, nowISO()).run();
-    if (!mentor && Array.isArray(body.tags) && body.tags.length) {
-      await db.prepare(
-        `insert into org_students (user_id,mentor_id,tags,grade,gpa,gpa_note,sat,sat_note,ielts,ielts_note,goal,goal_note,status,updated_at)
-         values (?,?,?,?,'','','','','','','','','plan',?)
-         on conflict(user_id) do update set tags=excluded.tags`
-      ).bind(id, me.role === 'org' ? me.id : org.manager_id || null,
-        JSON.stringify(body.tags.slice(0, 20).map((t) => str(t, 40))), str(body.grade, 40), nowISO()).run();
-    }
-    await audit(env, me.id, 'org.user.create', id, login + ' / ' + org.name);
+    const cleanTags = Array.isArray(body.tags)
+      ? body.tags.slice(0, 20).map((t) => str(t, 40).replace(/^#/, '')).filter(Boolean)
+      : [];
+    const chosenMentor = !mentor
+      ? (body.mentorId ? String(body.mentorId) : (me.role === 'org' ? me.id : org.manager_id || null))
+      : null;
+    await db.prepare(
+      `insert into org_students (user_id,mentor_id,tags,grade,gpa,gpa_note,sat,sat_note,ielts,ielts_note,goal,goal_note,status,template_id,updated_at)
+       values (?,?,?,?,'','','','','','','','','plan',?,?)
+       on conflict(user_id) do update set tags=excluded.tags, mentor_id=excluded.mentor_id, template_id=excluded.template_id`
+    ).bind(id, chosenMentor, JSON.stringify(cleanTags), str(body.grade, 40),
+      !mentor && body.templateId ? String(body.templateId) : null, nowISO()).run();
 
+    // если при создании ученика сразу выбран шаблон роадмапа — разворачиваем его события
+    if (!mentor && body.templateId) {
+      const tpl = await db.prepare('select * from roadmap_templates where id=? and org_id=?')
+        .bind(String(body.templateId), org.id).first();
+      if (tpl) {
+        const items = P(tpl.items, []);
+        const now = new Date();
+        for (const it of items) {
+          const d = new Date(now.getFullYear(), Number(it.month) || 0, Number(it.day) || 1);
+          if (d < now) d.setFullYear(d.getFullYear() + 1);
+          await db.prepare('insert into org_slots (id,org_id,student_id,title,note,date,kind,done,created_by,created_at) values (?,?,?,?,?,?,?,0,?,?)')
+            .bind(uid('slot'), org.id, id, str(it.title, 160), str(it.note, 200),
+              d.toISOString().slice(0, 10), it.kind === 'course' ? 'milestone' : 'internal', me.id, nowISO()).run();
+        }
+      }
+    }
+
+    await audit(env, me.id, 'org.user.create', id, login + ' / ' + org.name);
     return json({ ok: true, id, login, password }, 201, origin);
   }
 
-  if (path === '/org/slots' && method === 'POST') {
-    if (me.role !== 'org' && me.role !== 'admin' && me.role !== 'root') {
-      return json({ ok: false, error: 'Только для организаций' }, 403, origin);
+  /* управление карточкой ментора — строго только для главного админа организации */
+  m = path.match(/^\/org\/mentors\/([^/]+)$/);
+  if (m) {
+    if (!isOrgAdmin()) {
+      return json({ ok: false, error: 'Управлять менторами может только администратор организации' }, 403, origin);
     }
     const org = await myOrgRow();
+    const target = org ? await db.prepare('select * from users where id=? and org_id=?').bind(m[1], org.id).first() : null;
+    if (!target) return json({ ok: false, error: 'Ментор не найден' }, 404, origin);
+    if (method === 'PATCH') {
+      if (body.name != null && String(body.name).trim().length >= 2) {
+        await db.prepare('update users set name=? where id=?').bind(str(body.name, 120).trim(), target.id).run();
+      }
+      if (body.tags != null) {
+        const clean = (Array.isArray(body.tags) ? body.tags : []).slice(0, 20).map((t) => str(t, 40).replace(/^#/, '')).filter(Boolean);
+        await db.prepare(
+          `insert into org_students (user_id,mentor_id,tags,grade,gpa,gpa_note,sat,sat_note,ielts,ielts_note,goal,goal_note,status,updated_at)
+           values (?,null,?,'','','','','','','','','','plan',?)
+           on conflict(user_id) do update set tags=excluded.tags, updated_at=excluded.updated_at`
+        ).bind(target.id, JSON.stringify(clean), nowISO()).run();
+      }
+      await audit(env, me.id, 'org.mentor.update', target.id);
+      return json({ ok: true }, 200, origin);
+    }
+    if (method === 'DELETE') {
+      if (target.id === org.manager_id) {
+        return json({ ok: false, error: 'Нельзя удалить главного управляющего организации' }, 400, origin);
+      }
+      const attached = await db.prepare(
+        "select count(*) as c from org_students s join users u on u.id=s.user_id where u.org_id=? and u.role='student' and coalesce(u.org_role,'')!='mentor' and s.mentor_id=?"
+      ).bind(org.id, target.id).first();
+      if (attached && attached.c > 0) {
+        return json({ ok: false, error: 'Сначала переведите учеников этого ментора другому ментору (' + attached.c + ')' }, 400, origin);
+      }
+      await db.prepare('delete from org_students where user_id=?').bind(target.id).run();
+      await db.prepare('delete from sessions where user_id=?').bind(target.id).run();
+      await db.prepare('delete from user_logins where user_id=?').bind(target.id).run();
+      await db.prepare('delete from users where id=?').bind(target.id).run();
+      await audit(env, me.id, 'org.mentor.delete', target.id, target.name);
+      return json({ ok: true }, 200, origin);
+    }
+  }
+
+  /* ─────────────────── кабинет организации: карточки kk. ─────────────────── */
+
+  function orgGuard(adminOnly) {
+    if (adminOnly && !isOrgAdmin()) {
+      return json({ ok: false, error: 'Доступно только администратору организации' }, 403, origin);
+    }
+    if (!isOrgAdmin() && !isMentor()) {
+      return json({ ok: false, error: 'Только для сотрудников организации' }, 403, origin);
+    }
+    return null;
+  }
+  async function canSeeStudent(org, userId) {
+    if (!org || !userId) return null;
+    const u = await db.prepare("select id from users where id=? and org_id=? and role='student' and coalesce(org_role,'')!='mentor'")
+      .bind(userId, org.id).first();
+    if (!u) return null;
+    if (isMentor()) {
+      const c = await db.prepare('select mentor_id from org_students where user_id=?').bind(userId).first();
+      if (!c || c.mentor_id !== me.id) return null;
+    }
+    return u;
+  }
+  const P2 = (v, def) => P(v, def);
+
+  if (path === '/org/slots' && method === 'POST') {
+    const g = orgGuard(false); if (g) return g;
+    const org = await myOrgRow();
     if (!org) return json({ ok: false, error: 'Организация не найдена' }, 400, origin);
+    const sid = body.studentId ? String(body.studentId) : null;
+    if (isMentor() && (!sid || !(await canSeeStudent(org, sid)))) {
+      return json({ ok: false, error: 'Ментор может добавлять события только своим ученикам' }, 403, origin);
+    }
     const title = str(body.title, 160);
     if (!title.trim()) return json({ ok: false, error: 'Название задачи обязательно' }, 400, origin);
     const date = String(body.date || '').slice(0, 24);
@@ -2035,7 +2407,7 @@ async function api(request, env, url, origin) {
     const importance = ['high', 'middle', 'low'].includes(body.importance) ? body.importance : 'middle';
     await db.prepare(
       'insert into org_slots (id,org_id,student_id,title,note,date,kind,importance,notify,done,created_by,created_at) values (?,?,?,?,?,?,?,?,?,0,?,?)'
-    ).bind(id, org.id, body.studentId ? String(body.studentId) : null, title.trim(),
+    ).bind(id, org.id, sid, title.trim(),
       str(body.note, 400), date, kind, importance, body.notify ? 1 : 0, me.id, nowISO()).run();
     await audit(env, me.id, 'org.slot.create', id, title.trim());
     return json({ ok: true, id }, 201, origin);
@@ -2043,13 +2415,15 @@ async function api(request, env, url, origin) {
 
   m = path.match(/^\/org\/slots\/([^/]+)$/);
   if (m) {
-    if (me.role !== 'org' && me.role !== 'admin' && me.role !== 'root') {
-      return json({ ok: false, error: 'Только для организаций' }, 403, origin);
-    }
+    const g = orgGuard(false); if (g) return g;
+    const org = await myOrgRow();
     const row = await db.prepare('select * from org_slots where id=?').bind(m[1]).first();
     if (!row) return json({ ok: false, error: 'Задача не найдена' }, 404, origin);
-    if (me.role === 'org' && row.org_id !== me.orgId) {
+    if (!org || row.org_id !== org.id) {
       return json({ ok: false, error: 'Это задача другой организации' }, 403, origin);
+    }
+    if (isMentor() && (!row.student_id || !(await canSeeStudent(org, row.student_id)))) {
+      return json({ ok: false, error: 'Нет доступа к чужому ученику' }, 403, origin);
     }
 
     if (method === 'PATCH') {
@@ -2063,7 +2437,7 @@ async function api(request, env, url, origin) {
           body.note != null ? str(body.note, 400) : row.note,
           date, kind,
           body.done == null ? row.done : (body.done ? 1 : 0),
-          body.studentId !== undefined ? (body.studentId ? String(body.studentId) : null) : row.student_id,
+          isMentor() ? row.student_id : (body.studentId !== undefined ? (body.studentId ? String(body.studentId) : null) : row.student_id),
           ['high', 'middle', 'low'].includes(body.importance) ? body.importance : (row.importance || 'middle'),
           body.notify == null ? (row.notify || 0) : (body.notify ? 1 : 0),
           row.id).run();
@@ -2077,23 +2451,6 @@ async function api(request, env, url, origin) {
       return json({ ok: true }, 200, origin);
     }
   }
-
-  /* ─────────────────── кабинет организации: карточки kk. ─────────────────── */
-
-  const ORG_ROLES = ['org', 'admin', 'root'];
-  /* ментор — это сотрудник организации без прав управления: читать можно, писать нет */
-  const isMentor = () => me.role === 'user' && me.orgRole === 'mentor';
-  function orgGuard(write) {
-    if (write && isMentor()) return json({ ok: false, error: 'Ментор только смотрит' }, 403, origin);
-    if (!ORG_ROLES.includes(me.role) && !isMentor()) {
-      return json({ ok: false, error: 'Только для организаций' }, 403, origin);
-    }
-    return null;
-  }
-  function canSeeStudent(org, userId) {
-    return db.prepare('select id from users where id=? and org_id=?').bind(userId, org.id).first();
-  }
-  const P2 = (v, def) => P(v, def);
 
   /* статус ученика: по плану / отстаёт / в зоне риска */
   function studentStatus(slots) {
@@ -2174,7 +2531,7 @@ async function api(request, env, url, origin) {
   }
 
   if (path === '/org/crm' && method === 'GET') {
-    const g = orgGuard(); if (g) return g;
+    const g = orgGuard(false); if (g) return g;
     const org = await myOrgRow();
     if (!org) return json({ ok: true, org: null, mentors: [], students: [], templates: [], kpi: null }, 200, origin);
 
@@ -2195,15 +2552,13 @@ async function api(request, env, url, origin) {
     const slotsBy = {};
     (slots.results || []).forEach((s) => { (slotsBy[s.student_id] = slotsBy[s.student_id] || []).push(s); });
 
-    // ментор может быть привязан к пользователю, который ещё не получил роль org —
-    // поэтому карту менторов строим и по org_students.mentor_id
     (cards.results || []).forEach((c) => {
       if (!c.mentor_id || mentors.some((m) => m.id === c.mentor_id)) return;
       const u = rows.find((x) => x.id === c.mentor_id);
       if (u) mentors.push(adminUser(toUser(u)));
     });
 
-    const list = students.map((u) => {
+    const fullList = students.map((u) => {
       const mine = slotsBy[u.id] || [];
       const st = studentStatus(mine);
       const card = cardMap[u.id] ? cardOf(cardMap[u.id]) : { userId: u.id, tags: [], status: st.status };
@@ -2222,16 +2577,47 @@ async function api(request, env, url, origin) {
       });
     });
 
-    const total = list.length;
-    const byPlan = list.filter((s) => s.status === 'plan').length;
-    const lag = list.filter((s) => s.status === 'lag').length;
-    const risk = list.filter((s) => s.status === 'risk').length;
+    /* МЕНТОР: видит строго ТОЛЬКО свою группу учеников и ближайшие созвоны — никаких чужих менторов, шаблонов и статистики! */
+    if (isMentor()) {
+      const myList = fullList.filter((s) => s.mentorId === me.id);
+      const myStudentIds = new Set(myList.map((s) => s.id));
+      const myCalls = (slots.results || [])
+        .filter((s) => !s.done && myStudentIds.has(s.student_id) && String(s.date) >= nowISO().slice(0, 10))
+        .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+        .slice(0, 12)
+        .map((s) => ({
+          id: s.id, title: s.title, date: s.date, note: s.note || '',
+          studentId: s.student_id,
+          studentName: (myList.find((u) => u.id === s.student_id) || {}).name || ''
+        }));
+      const myTags = cardMap[me.id] ? cardOf(cardMap[me.id]).tags : [];
+      return json({
+        ok: true,
+        myRole: 'mentor',
+        org: { id: org.id, name: org.name, city: org.city || '' },
+        meMentor: { id: me.id, name: me.name, color: me.color || 'mint', tags: myTags },
+        mentors: [],
+        mentorStats: [],
+        students: myList,
+        myCalls,
+        templates: [],
+        tagGroups: [],
+        kpi: null
+      }, 200, origin);
+    }
+
+    const total = fullList.length;
+    const byPlan = fullList.filter((s) => s.status === 'plan').length;
+    const lag = fullList.filter((s) => s.status === 'lag').length;
+    const risk = fullList.filter((s) => s.status === 'risk').length;
 
     const mentorStats = mentors.map((m) => {
-      const mine = list.filter((s) => s.mentorId === m.id);
+      const mine = fullList.filter((s) => s.mentorId === m.id);
       const ok = mine.filter((s) => s.status === 'plan').length;
       return {
-        id: m.id, name: m.name, color: m.color || 'lavender', tags: (cardMap[m.id] ? cardOf(cardMap[m.id]).tags : (m.tags || [])),
+        id: m.id, name: m.name, color: m.color || 'lavender',
+        isManager: m.id === org.manager_id,
+        tags: (cardMap[m.id] ? cardOf(cardMap[m.id]).tags : (m.tags || [])),
         students: mine.length, onPlan: mine.length ? Math.round((ok / mine.length) * 100) : 0,
         risk: mine.filter((s) => s.status !== 'plan').length, updated: 'сегодня'
       };
@@ -2239,11 +2625,12 @@ async function api(request, env, url, origin) {
 
     return json({
       ok: true,
+      myRole: 'admin',
       org: toOrg(Object.assign({}, org, { manager_name: (mentors.find((m) => m.id === org.manager_id) || {}).name || '' })),
-      mentors, mentorStats, students: list,
+      mentors, mentorStats, students: fullList,
       templates: (templates.results || []).map((t) => ({
         id: t.id, title: t.title, tags: P2(t.tags, []), grade: t.grade || '', items: P2(t.items, []),
-        assigned: list.filter((s) => (cardMap[s.id] || {}).template_id === t.id).length, createdAt: t.created_at
+        assigned: fullList.filter((s) => (cardMap[s.id] || {}).template_id === t.id).length, createdAt: t.created_at
       })),
       tagGroups: (tagGroups.results || []).map((t) => ({ id: t.id, title: t.title, tags: P2(t.tags, []) })),
       kpi: { students: total, onPlan: byPlan, onPlanPct: total ? Math.round((byPlan / total) * 100) : 0, lag, risk, mentors: mentors.length }
@@ -2251,11 +2638,11 @@ async function api(request, env, url, origin) {
   }
 
   if (path === '/org/student' && method === 'GET') {
-    const g = orgGuard(); if (g) return g;
+    const g = orgGuard(false); if (g) return g;
     const org = await myOrgRow();
     if (!org) return json({ ok: false, error: 'Организация не найдена' }, 400, origin);
     const id = url.searchParams.get('id') || '';
-    if (!(await canSeeStudent(org, id))) return json({ ok: false, error: 'Ученик не из этой организации' }, 404, origin);
+    if (!(await canSeeStudent(org, id))) return json({ ok: false, error: 'Нет доступа к карточке ученика' }, 403, origin);
 
     const [row, cardRow, portfolio, slots, events, plans, reports, sprints] = await Promise.all([
       db.prepare('select * from users where id=?').bind(id).first(),
@@ -2263,21 +2650,26 @@ async function api(request, env, url, origin) {
       db.prepare('select * from org_portfolio where user_id=? order by created_at desc limit 200').bind(id).all(),
       db.prepare('select * from org_slots where org_id=? and student_id=? order by date limit 500').bind(org.id, id).all(),
       db.prepare('select * from events where id in (select event_id from saved_events where user_id=?) limit 100').bind(id).all(),
-      db.prepare('select * from plan_items where user_id=? order by start_at limit 300').bind(id).all(),
+      db.prepare("select * from plan_items where user_id=? and (chat_id is null or chat_id='') order by start_at limit 300").bind(id).all(),
       db.prepare('select * from org_reports where user_id=? order by created_at desc limit 30').bind(id).all(),
       db.prepare('select * from org_sprints where org_id=? and user_id=? order by start_date limit 60').bind(org.id, id).all()
     ]);
 
     const st = studentStatus(slots.results || []);
     const pf = portfolio.results || [];
+    const tu = toUser(row);
+    const mentorRow = (cardRow && cardRow.mentor_id)
+      ? await db.prepare('select id,name from users where id=?').bind(cardRow.mentor_id).first()
+      : (org.manager_id ? await db.prepare('select id,name from users where id=?').bind(org.manager_id).first() : null);
     return json({
       ok: true,
-      user: adminUser(toUser(row)),
+      user: Object.assign(adminUser(tu), { portfolio: tu.portfolio || null }),
+      mentorName: mentorRow ? mentorRow.name : '',
       card: cardRow ? cardOf(cardRow) : { userId: id, tags: [], status: st.status },
       status: st.status, overdue: st.overdue, days: st.days || 0,
-      achievements: pf.filter((x) => x.kind === 'achievement').map((x) => ({ id: x.id, title: x.title, note: x.note || '', year: x.year || '', file: x.file_name || '', size: x.file_size || 0 })),
-      projects: pf.filter((x) => x.kind === 'project').map((x) => ({ id: x.id, title: x.title, note: x.note || '', year: x.year || '', file: x.file_name || '', size: x.file_size || 0 })),
-      certificates: pf.filter((x) => x.kind === 'certificate').map((x) => ({ id: x.id, title: x.title, note: x.note || '', year: x.year || '', file: x.file_name || '', size: x.file_size || 0 })),
+      achievements: pf.filter((x) => x.kind === 'achievement').map((x) => ({ id: x.id, title: x.title, note: x.note || '', year: x.year || '', file: x.file_name || '', size: x.file_size || 0, fileData: x.file_data || '' })),
+      projects: pf.filter((x) => x.kind === 'project').map((x) => ({ id: x.id, title: x.title, note: x.note || '', year: x.year || '', file: x.file_name || '', size: x.file_size || 0, fileData: x.file_data || '' })),
+      certificates: pf.filter((x) => x.kind === 'certificate').map((x) => ({ id: x.id, title: x.title, note: x.note || '', year: x.year || '', file: x.file_name || '', size: x.file_size || 0, fileData: x.file_data || '' })),
       slots: (slots.results || []).map((s) => ({
         id: s.id, title: s.title, note: s.note || '', date: s.date, kind: s.kind, done: !!s.done,
         studentId: s.student_id, importance: s.importance || 'middle', notify: !!s.notify
@@ -2295,16 +2687,18 @@ async function api(request, env, url, origin) {
   }
 
   if (path === '/org/student' && method === 'PATCH') {
-    const g = orgGuard(true); if (g) return g;
+    const g = orgGuard(false); if (g) return g;
     const org = await myOrgRow();
     if (!org) return json({ ok: false, error: 'Организация не найдена' }, 400, origin);
     const id = String(body.userId || '');
-    if (!(await canSeeStudent(org, id))) return json({ ok: false, error: 'Ученик не из этой организации' }, 404, origin);
+    if (!(await canSeeStudent(org, id))) return json({ ok: false, error: 'Нет доступа к карточке ученика' }, 403, origin);
 
     const cur = await db.prepare('select * from org_students where user_id=?').bind(id).first();
     const base = cur ? cardOf(cur) : { tags: [], gpa: '', sat: '', ielts: '', goal: '', mentorId: org.manager_id || null };
     const pick = (k, cur2) => (body[k] != null ? str(body[k], 200) : cur2);
     const tags = body.tags != null ? JSON.stringify((Array.isArray(body.tags) ? body.tags : []).slice(0, 20).map((t) => str(t, 40))) : JSON.stringify(base.tags);
+    const nextMentorId = isMentor() ? base.mentorId : (body.mentorId !== undefined ? (body.mentorId || null) : base.mentorId);
+    const nextTplId = isMentor() ? (base.templateId || null) : (body.templateId !== undefined ? (body.templateId || null) : (base.templateId || null));
 
     await db.prepare(
       `insert into org_students (user_id,mentor_id,tags,grade,gpa,gpa_note,sat,sat_note,ielts,ielts_note,goal,goal_note,status,template_id,updated_at)
@@ -2313,42 +2707,39 @@ async function api(request, env, url, origin) {
          gpa=excluded.gpa,gpa_note=excluded.gpa_note,sat=excluded.sat,sat_note=excluded.sat_note,
          ielts=excluded.ielts,ielts_note=excluded.ielts_note,goal=excluded.goal,goal_note=excluded.goal_note,
          template_id=excluded.template_id,updated_at=excluded.updated_at`
-    ).bind(id,
-      body.mentorId !== undefined ? (body.mentorId || null) : base.mentorId,
-      tags,
+    ).bind(id, nextMentorId, tags,
       pick('grade', base.grade || ''),
       pick('gpa', base.gpa), pick('gpaNote', base.gpaNote),
       pick('sat', base.sat), pick('satNote', base.satNote),
       pick('ielts', base.ielts), pick('ieltsNote', base.ieltsNote),
       pick('goal', base.goal), pick('goalNote', base.goalNote),
       body.status || base.status || 'plan',
-      body.templateId !== undefined ? (body.templateId || null) : (base.templateId || null),
-      nowISO()).run();
+      nextTplId, nowISO()).run();
 
     await audit(env, me.id, 'org.student.update', id, 'карточка ученика');
     return json({ ok: true }, 200, origin);
   }
 
   if (path === '/org/portfolio' && method === 'POST') {
-    const g = orgGuard(true); if (g) return g;
+    const g = orgGuard(false); if (g) return g;
     const org = await myOrgRow();
     if (!org) return json({ ok: false, error: 'Организация не найдена' }, 400, origin);
     const id = String(body.userId || '');
-    if (!(await canSeeStudent(org, id))) return json({ ok: false, error: 'Ученик не из этой организации' }, 404, origin);
+    if (!(await canSeeStudent(org, id))) return json({ ok: false, error: 'Нет доступа к карточке ученика' }, 403, origin);
     const kind = ['achievement', 'project', 'certificate'].includes(body.kind) ? body.kind : 'achievement';
     const title = str(body.title, 160).trim();
     if (!title) return json({ ok: false, error: 'Нужно название' }, 400, origin);
     const pid = uid('pf');
-    await db.prepare('insert into org_portfolio (id,user_id,kind,title,note,year,file_name,file_size,created_at) values (?,?,?,?,?,?,?,?,?)')
+    await db.prepare('insert into org_portfolio (id,user_id,kind,title,note,year,file_name,file_size,file_data,created_at) values (?,?,?,?,?,?,?,?,?,?)')
       .bind(pid, id, kind, title, str(body.note, 400), str(body.year, 40),
-        str(body.fileName, 160), Number(body.fileSize) || 0, nowISO()).run();
+        str(body.fileName, 160), Number(body.fileSize) || 0, str(body.fileData, 700000) || null, nowISO()).run();
     await audit(env, me.id, 'org.portfolio.add', pid, kind + ': ' + title);
     return json({ ok: true, id: pid }, 201, origin);
   }
 
   m = path.match(/^\/org\/portfolio\/([^/]+)$/);
   if (m) {
-    const g = orgGuard(); if (g) return g;
+    const g = orgGuard(false); if (g) return g;
     const org = await myOrgRow();
     const row = await db.prepare('select * from org_portfolio where id=?').bind(m[1]).first();
     if (!row || !(await canSeeStudent(org, row.user_id))) return json({ ok: false, error: 'Запись не найдена' }, 404, origin);
@@ -2478,7 +2869,7 @@ async function api(request, env, url, origin) {
 
   m = path.match(/^\/org\/templates\/([^/]+)(\/assign)?$/);
   if (m) {
-    const g = orgGuard(); if (g) return g;
+    const g = orgGuard(true); if (g) return g;
     const org = await myOrgRow();
     const row = await db.prepare('select * from roadmap_templates where id=? and org_id=?').bind(m[1], org.id).first();
     if (!row) return json({ ok: false, error: 'Шаблон не найден' }, 404, origin);
@@ -2525,11 +2916,11 @@ async function api(request, env, url, origin) {
   /* ── спринты проектов: подкалендарь команды ── */
 
   if (path === '/org/sprints' && method === 'POST') {
-    const g = orgGuard(true); if (g) return g;
+    const g = orgGuard(false); if (g) return g;
     const org = await myOrgRow();
     if (!org) return json({ ok: false, error: 'Организация не найдена' }, 400, origin);
     const sid = String(body.userId || '');
-    if (!(await canSeeStudent(org, sid))) return json({ ok: false, error: 'Ученик не из этой организации' }, 404, origin);
+    if (!(await canSeeStudent(org, sid))) return json({ ok: false, error: 'Нет доступа к ученику' }, 403, origin);
     const title = str(body.title, 160).trim();
     const start = String(body.startDate || '').slice(0, 10);
     const end = String(body.endDate || '').slice(0, 10) || start;
@@ -2545,10 +2936,12 @@ async function api(request, env, url, origin) {
 
   m = path.match(/^\/org\/sprints\/([^/]+)$/);
   if (m) {
-    const g = orgGuard(true); if (g) return g;
+    const g = orgGuard(false); if (g) return g;
     const org = await myOrgRow();
     const row = await db.prepare('select * from org_sprints where id=?').bind(m[1]).first();
-    if (!row || !org || row.org_id !== org.id) return json({ ok: false, error: 'Спринт не найден' }, 404, origin);
+    if (!row || !org || row.org_id !== org.id || !(await canSeeStudent(org, row.user_id))) {
+      return json({ ok: false, error: 'Спринт не найден' }, 404, origin);
+    }
     if (method === 'DELETE') {
       await db.prepare('delete from org_sprints where id=?').bind(row.id).run();
       return json({ ok: true }, 200, origin);
@@ -2566,7 +2959,7 @@ async function api(request, env, url, origin) {
   /* ── алерты кабинета: что горит в ближайшие 48 часов ── */
 
   if (path === '/org/alerts' && method === 'GET') {
-    const g = orgGuard(); if (g) return g;
+    const g = orgGuard(false); if (g) return g;
     const org = await myOrgRow();
     if (!org) return json({ ok: true, soon: [], overdue: [] }, 200, origin);
     const [members, slots, cards] = await Promise.all([
@@ -2574,11 +2967,10 @@ async function api(request, env, url, origin) {
       db.prepare('select * from org_slots where org_id=? order by date limit 2000').bind(org.id).all(),
       db.prepare('select * from org_students').all()
     ]);
-    const meRow = (members.results || []).find((u) => u.id === me.id);
     const cardMap = {}; (cards.results || []).forEach((c) => { cardMap[c.user_id] = c; });
-    const isMentor = me.orgRole === 'mentor' || (meRow && meRow.org_role === 'mentor');
-    const visible = (members.results || []).filter((u) => u.role === 'user' &&
-      (!isMentor ? true : (cardMap[u.id] || {}).mentor_id === me.id));
+    const mentorFlag = isMentor();
+    const visible = (members.results || []).filter((u) => u.role === 'student' && u.org_role !== 'mentor' &&
+      (!mentorFlag ? true : (cardMap[u.id] || {}).mentor_id === me.id));
     const visibleIds = new Set(visible.map((u) => u.id));
     const nameOf = {}; visible.forEach((u) => { nameOf[u.id] = u.name; });
 
@@ -2740,7 +3132,7 @@ async function api(request, env, url, origin) {
   }
 
   if (path === '/org/report' && method === 'POST') {
-    const g = orgGuard(true); if (g) return g;
+    const g = orgGuard(false); if (g) return g;
     const org = await myOrgRow();
     const id = String(body.userId || '');
     if (!(await canSeeStudent(org, id))) return json({ ok: false, error: 'Ученик не найден' }, 404, origin);
@@ -3189,8 +3581,14 @@ async function api(request, env, url, origin) {
     return json({ ok: true, log }, 200, origin);
   }
 
-  /* ── профиль другого пользователя (для чата/профиля) ── */
+  /* ── профиль пользователя (чтение с сертификатами / редактирование) ── */
   m = path.match(/^\/users\/([^/]+)$/);
+  if (m && method === 'GET') {
+    if (!me) return notAuth();
+    const cur = await db.prepare('select * from users where id=?').bind(m[1]).first();
+    if (!cur) return json({ ok: false, error: 'not found' }, 404, origin);
+    return json({ ok: true, user: publicUser(toUser(cur), true) }, 200, origin);
+  }
   if (m && method === 'PATCH') {
     if (!me) return notAuth();
     if (me.id !== m[1] && me.role === 'student') {
@@ -3199,8 +3597,11 @@ async function api(request, env, url, origin) {
     const cur = await db.prepare('select * from users where id=?').bind(m[1]).first();
     if (!cur) return json({ error: 'not found' }, 404, origin);
     const u = Object.assign(toUser(cur), body);
-    await db.prepare('update users set name=?,grade=?,school=?,city=?,skills=?,interests=? where id=?')
-      .bind(u.name, u.grade, u.school, u.city, K(u.skills), K(u.interests), m[1]).run();
+    const pf = body.portfolio !== undefined
+      ? (body.portfolio && typeof body.portfolio === 'object' ? str(JSON.stringify(body.portfolio), 1800000) : null)
+      : cur.portfolio;
+    await db.prepare('update users set name=?,grade=?,school=?,city=?,skills=?,interests=?,portfolio=? where id=?')
+      .bind(u.name, u.grade, u.school, u.city, K(u.skills), K(u.interests), pf, m[1]).run();
     return json({ ok: true }, 200, origin);
   }
 
