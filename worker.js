@@ -1,6 +1,6 @@
 /* ============================================================
    Student Hub — единый файл бэкенда для Cloudflare Workers
-   Сборка: 2026-11-20 21:08 · b16c42f2
+   Сборка: 2026-11-21 15:08 · 24aa9c3f
    Вставлять целиком в Dashboard → Edit code → Deploy.
    Переменные: DB (биндинг D1), GEMINI_KEYS (secret), ALLOW_ORIGIN
    ============================================================ */
@@ -286,7 +286,7 @@
 
 /* ───────────────────────── базовое ───────────────────────── */
 
-const BUILD = '2026-11-20 21:08 · b16c42f2';
+const BUILD = '2026-11-21 15:08 · 24aa9c3f';
 
 const CORS = (o) => ({
   'access-control-allow-origin': o,
@@ -1929,6 +1929,17 @@ async function api(request, env, url, origin) {
     if (cur.author_id !== me.id) return json({ ok: false, error: 'Можно менять только свои сообщения' }, 403, origin);
     await db.prepare('update messages set text=?, edited_at=? where id=?')
       .bind(str(body.text, 3000), nowISO(), m[1]).run();
+    return json({ ok: true }, 200, origin);
+  }
+
+  if (m && method === 'DELETE') {
+    if (!me) return notAuth();
+    const cur = await db.prepare('select * from messages where id=?').bind(m[1]).first();
+    if (!cur) return json({ ok: true }, 200, origin);
+    if (cur.author_id !== me.id && me.role !== 'root' && me.role !== 'admin') {
+      return json({ ok: false, error: 'Можно удалять только свои сообщения' }, 403, origin);
+    }
+    await db.prepare('delete from messages where id=?').bind(m[1]).run();
     return json({ ok: true }, 200, origin);
   }
 
