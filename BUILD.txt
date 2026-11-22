@@ -1,2 +1,2 @@
-build: 2026-11-21 15:08 · 24aa9c3f
-size: 218656 bytes
+build: 2026-11-22 11:29 · 572aa034
+size: 227520 bytes

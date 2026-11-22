@@ -1,6 +1,6 @@
 /* ============================================================
    Student Hub — единый файл бэкенда для Cloudflare Workers
-   Сборка: 2026-11-21 15:08 · 24aa9c3f
+   Сборка: 2026-11-22 11:29 · 572aa034
    Вставлять целиком в Dashboard → Edit code → Deploy.
    Переменные: DB (биндинг D1), GEMINI_KEYS (secret), ALLOW_ORIGIN
    ============================================================ */
@@ -286,7 +286,7 @@
 
 /* ───────────────────────── базовое ───────────────────────── */
 
-const BUILD = '2026-11-21 15:08 · 24aa9c3f';
+const BUILD = '2026-11-22 11:29 · 572aa034';
 
 const CORS = (o) => ({
   'access-control-allow-origin': o,
@@ -464,6 +464,9 @@ const COLUMNS = [
   ['users', 'portfolio', 'text'],
   ['teams', 'invite_code', 'text'],
   ['messages', 'attachment', 'text'],
+  ['messages', 'reactions', 'text'],
+  ['messages', 'updated_at', 'text'],
+  ['chats', 'pinned_msg_id', 'text'],
   ['plan_items', 'chat_id', 'text']
 ];
 
@@ -1138,7 +1141,8 @@ const toUser = (r) => ({
 });
 
 const publicUser = (u, keepBlobs) => ({
-  id: u.id, name: u.name, role: u.role, grade: u.grade, school: u.school, city: u.city,
+  id: u.id, name: u.name, email: keepBlobs ? (u.email || '') : undefined,
+  role: u.role, grade: u.grade, school: u.school, city: u.city,
   color: u.color, position: u.position, rating: u.rating, avatar: u.avatar,
   skills: u.skills, interests: u.interests,
   portfolio: keepBlobs ? (u.portfolio || null) : stripPortfolioBlobs(u.portfolio),
@@ -1279,7 +1283,7 @@ async function authRegister(request, env, origin, body) {
   const session = await createSession(env, id, request.headers.get('user-agent'));
   const user = await env.DB.prepare('select * from users where id=?').bind(id).first();
   await audit(env, id, 'register', id, name);
-  return json({ ok: true, token: session.token, expires: session.expires, user: publicUser(toUser(user)) }, 201, origin);
+  return json({ ok: true, token: session.token, expires: session.expires, user: publicUser(toUser(user), true) }, 201, origin);
 }
 
 async function authLogout(request, env, origin) {
@@ -1338,7 +1342,8 @@ async function bootstrap(env, origin, me) {
   messages.results.slice().reverse().forEach((m) => {
     (byChat[m.chat_id] = byChat[m.chat_id] || []).push({
       id: m.id, authorId: m.author_id, text: m.text, at: m.created_at,
-      editedAt: m.edited_at || null, attachment: P(m.attachment, null)
+      editedAt: m.edited_at || null, attachment: P(m.attachment, null),
+      reactions: P(m.reactions, null)
     });
   });
   Object.keys(byChat).forEach((k) => { byChat[k] = byChat[k].slice(-150); });
@@ -1379,7 +1384,8 @@ async function bootstrap(env, origin, me) {
     }),
     chats: chats.results.map((c) => ({
       id: c.id, title: c.title, kind: c.kind || 'group', unread: c.unread || 0,
-      lastAt: c.last_at, memberIds: memByChat[c.id] || [], messages: byChat[c.id] || []
+      lastAt: c.last_at, pinnedMsgId: c.pinned_msg_id || '',
+      memberIds: memByChat[c.id] || [], messages: byChat[c.id] || []
     })),
     saved: (saved.results || []).map((r) => r.event_id),
     plan: (planRows.results || []).map(toPlan),
@@ -1505,6 +1511,127 @@ async function api(request, env, url, origin) {
   if (path === '/auth/me') {
     if (!me) return json({ ok: false, error: 'Сессия истекла' }, 401, origin);
     return json({ ok: true, user: publicUser(me, true) }, 200, origin);
+  }
+
+  if (path === '/auth/password/send-code' && method === 'POST') {
+    if (!me) return notAuth();
+    const row = await db.prepare('select * from users where id=?').bind(me.id).first();
+    if (!row) return notAuth();
+
+    let targetEmail = str(body.email, 160).toLowerCase() || String(row.email || '').toLowerCase();
+    if (!targetEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
+      return json({ ok: false, error: 'Укажите корректную почту для получения кода' }, 400, origin);
+    }
+    if (!row.email && targetEmail) {
+      await db.prepare('update users set email=? where id=?').bind(targetEmail, me.id).run();
+    }
+
+    const codeNum = 100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000);
+    const code = String(codeNum);
+    const salt = newSalt();
+    const codeHash = await hashPassword(code, salt);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+    await db.prepare("update otp_codes set used=1 where user_id=? and used=0 and id like 'pwc_%'").bind(me.id).run();
+    await db.prepare('insert into otp_codes (id,user_id,code_hash,salt,expires_at,used) values (?,?,?,?,?,0)')
+      .bind(uid('pwc'), me.id, codeHash, salt, expiresAt).run();
+
+    let deliveredByEmail = false;
+    const htmlMail =
+      '<div style="font-family:-apple-system,Segoe UI,sans-serif;max-width:440px;margin:0 auto;padding:28px;background:#faf8f5;border-radius:18px">' +
+        '<div style="font-size:13px;font-weight:700;letter-spacing:.04em;color:#6E59F7;margin-bottom:8px">STUDENT HUB</div>' +
+        '<h2 style="margin:0 0 10px;font-size:20px;color:#14151a">Код подтверждения смены пароля</h2>' +
+        '<p style="margin:0 0 18px;font-size:14px;color:#525866;line-height:1.5">Введите этот 6-значный код в приложении, чтобы установить новый пароль. Код действует 10 минут.</p>' +
+        '<div style="font-size:32px;font-weight:800;letter-spacing:8px;text-align:center;padding:16px;background:#fff;border-radius:14px;color:#14151a;border:1px solid #e6e8ee">' + code + '</div>' +
+      '</div>';
+
+    if (env.RESEND_API_KEY) {
+      try {
+        const r = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer ' + env.RESEND_API_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: env.MAIL_FROM || 'Student Hub <onboarding@resend.dev>',
+            to: [targetEmail],
+            subject: code + ' — код смены пароля Student Hub',
+            html: htmlMail
+          })
+        });
+        if (r.ok) deliveredByEmail = true;
+      } catch (e) { /* ignore */ }
+    }
+
+    if (!deliveredByEmail && env.MAILCHANNELS_ENABLED === '1') {
+      try {
+        const r = await fetch('https://api.mailchannels.net/tx/v1/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            personalizations: [{ to: [{ email: targetEmail, name: row.name || 'Пользователь' }] }],
+            from: { email: env.MAIL_FROM_ADDRESS || 'noreply@studenthub.app', name: 'Student Hub' },
+            subject: code + ' — код смены пароля Student Hub',
+            content: [{ type: 'text/html', value: htmlMail }]
+          })
+        });
+        if (r.ok) deliveredByEmail = true;
+      } catch (e) { /* ignore */ }
+    }
+
+    // Дублируем код в Web Push на подписанные устройства пользователя
+    try {
+      const subs = await db.prepare('select * from push_subs where user_id=?').bind(me.id).all();
+      const payload = JSON.stringify({
+        title: 'Код подтверждения: ' + code,
+        body: 'Код для смены пароля в Student Hub (' + targetEmail + ')',
+        url: './#/profile'
+      });
+      for (const sub of (subs.results || [])) {
+        await sendPush(env, sub, payload);
+      }
+    } catch (e) { /* ignore */ }
+
+    await audit(env, me.id, 'password.code_sent', me.id, targetEmail);
+    return json({
+      ok: true,
+      email: targetEmail,
+      deliveredByEmail,
+      // Для демо-стенда без внешнего платного SMTP возвращаем код для входящего баннера
+      previewCode: deliveredByEmail ? undefined : code,
+      expiresInSec: 600
+    }, 200, origin);
+  }
+
+  if (path === '/auth/password/confirm' && method === 'POST') {
+    if (!me) return notAuth();
+    const code = String(body.code || '').replace(/\D+/g, '');
+    const next = String(body.next || '');
+    if (code.length !== 6) return json({ ok: false, error: 'Введите 6-значный код из письма' }, 400, origin);
+    if (next.length < 6) return json({ ok: false, error: 'Новый пароль минимум 6 символов' }, 400, origin);
+
+    const rows = await db.prepare(
+      "select * from otp_codes where user_id=? and used=0 and id like 'pwc_%' and expires_at > ? order by expires_at desc"
+    ).bind(me.id, nowISO()).all();
+
+    let matchedId = null;
+    for (const r of rows.results || []) {
+      if (safeEqual(await hashPassword(code, r.salt), r.code_hash)) {
+        matchedId = r.id;
+        break;
+      }
+    }
+    if (!matchedId) {
+      return json({ ok: false, error: 'Неверный или истёкший код подтверждения' }, 400, origin);
+    }
+
+    await db.prepare('update otp_codes set used=1 where id=?').bind(matchedId).run();
+    const salt = newSalt();
+    await db.prepare('update users set pass_hash=?, salt=?, pass=null where id=?')
+      .bind(await hashPassword(next, salt), salt, me.id).run();
+    await audit(env, me.id, 'password.change.code', me.id);
+    return json({ ok: true }, 200, origin);
   }
 
   if (path === '/auth/password' && method === 'POST') {
@@ -1710,6 +1837,17 @@ async function api(request, env, url, origin) {
     }
     await db.prepare('update post_comments set text=?, edited_at=? where id=?')
       .bind(str(body.text, 1500), nowISO(), m[1]).run();
+    return json({ ok: true }, 200, origin);
+  }
+
+  if (m && method === 'DELETE') {
+    if (!me) return notAuth();
+    const cur = await db.prepare('select * from post_comments where id=?').bind(m[1]).first();
+    if (!cur) return json({ ok: true }, 200, origin);
+    if (cur.author_id !== me.id && me.role === 'student') {
+      return json({ ok: false, error: 'Можно удалять только свой комментарий' }, 403, origin);
+    }
+    await db.prepare('delete from post_comments where id=?').bind(m[1]).run();
     return json({ ok: true }, 200, origin);
   }
 
@@ -1921,14 +2059,52 @@ async function api(request, env, url, origin) {
     return json({ ok: true, id, at }, 201, origin);
   }
 
+  m = path.match(/^\/messages\/([^/]+)\/react$/);
+  if (m && method === 'POST') {
+    if (!me) return notAuth();
+    const cur = await db.prepare('select * from messages where id=?').bind(m[1]).first();
+    if (!cur) return json({ error: 'not found' }, 404, origin);
+    const member = await db.prepare('select 1 from chat_members where chat_id=? and user_id=?')
+      .bind(cur.chat_id, me.id).first();
+    if (!member) return json({ ok: false, error: 'Нет доступа к чату' }, 403, origin);
+
+    const emoji = str(body.emoji, 16);
+    if (!emoji) return json({ ok: false, error: 'Пустая реакция' }, 400, origin);
+    const reactions = P(cur.reactions, {}) || {};
+    const had = Array.isArray(reactions[emoji]) && reactions[emoji].includes(me.id);
+    // как в Telegram (базовый режим): одна активная реакция от пользователя на сообщение
+    Object.keys(reactions).forEach((k) => {
+      reactions[k] = (reactions[k] || []).filter((uid) => uid !== me.id);
+      if (!reactions[k].length) delete reactions[k];
+    });
+    if (!had) {
+      reactions[emoji] = (reactions[emoji] || []).concat(me.id);
+    }
+    await db.prepare('update messages set reactions=?, updated_at=? where id=?')
+      .bind(Object.keys(reactions).length ? K(reactions) : null, nowISO(), m[1]).run();
+    return json({ ok: true, reactions }, 200, origin);
+  }
+
+  m = path.match(/^\/chats\/([^/]+)\/pin$/);
+  if (m && method === 'POST') {
+    if (!me) return notAuth();
+    const member = await db.prepare('select 1 from chat_members where chat_id=? and user_id=?')
+      .bind(m[1], me.id).first();
+    if (!member) return json({ ok: false, error: 'Нет доступа к чату' }, 403, origin);
+    const msgId = str(body.messageId, 64) || null;
+    await db.prepare('update chats set pinned_msg_id=? where id=?').bind(msgId, m[1]).run();
+    return json({ ok: true, pinnedMsgId: msgId || '' }, 200, origin);
+  }
+
   m = path.match(/^\/messages\/([^/]+)$/);
   if (m && method === 'PATCH') {
     if (!me) return notAuth();
     const cur = await db.prepare('select * from messages where id=?').bind(m[1]).first();
     if (!cur) return json({ error: 'not found' }, 404, origin);
     if (cur.author_id !== me.id) return json({ ok: false, error: 'Можно менять только свои сообщения' }, 403, origin);
-    await db.prepare('update messages set text=?, edited_at=? where id=?')
-      .bind(str(body.text, 3000), nowISO(), m[1]).run();
+    const ts = nowISO();
+    await db.prepare('update messages set text=?, edited_at=?, updated_at=? where id=?')
+      .bind(str(body.text, 3000), ts, ts, m[1]).run();
     return json({ ok: true }, 200, origin);
   }
 
@@ -1940,6 +2116,7 @@ async function api(request, env, url, origin) {
       return json({ ok: false, error: 'Можно удалять только свои сообщения' }, 403, origin);
     }
     await db.prepare('delete from messages where id=?').bind(m[1]).run();
+    await db.prepare('update chats set pinned_msg_id=null where id=? and pinned_msg_id=?').bind(cur.chat_id, m[1]).run();
     return json({ ok: true }, 200, origin);
   }
 

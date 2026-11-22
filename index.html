@@ -4752,28 +4752,192 @@ html[data-theme='dark'] .pf-cert-chip {
   color: #e7ddfb;
 }
 
-/* ── v1.14.1: фикс мобильной клавиатуры iOS/PWA + контекстное меню сообщений ── */
+/* ══════════════════════════════════════════════════════════════════
+   v1.14.2:
+   - Плавные переходы экранов/вкладок + тактильная spring-анимация кнопок (image-25)
+   - Полноэкранный чат/тред без щели снизу на iPhone с viewport-fit=cover (image-29)
+   - Ввод через contenteditable без серой панели форм iOS (^ v ✓) (image-28)
+   - Плавающее меню и быстрые реакции в стиле Telegram + закреп (image-27, image-30)
+   - Профиль без панелек по оригинальному макету kk. + код на почту (image-26, image-31)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* 1) Плавность экранов, вкладок, шторок и мини-анимации нажатия кнопок */
+.screen--enter {
+  animation: sh-screen-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.screen--chat.screen--enter {
+  animation: sh-chat-fade 0.2s ease-out both;
+}
+.pane-fade {
+  animation: sh-pane-fade 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes sh-screen-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.994);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes sh-chat-fade {
+  from { opacity: 0.01; }
+  to { opacity: 1; }
+}
+@keyframes sh-pane-fade {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.btn,
+.pill,
+.icon-btn,
+.tab,
+.kk-tab,
+.kk-nav__item,
+.chip-add,
+.chip-btn,
+.tg-row,
+.th-act,
+.th-compose-trigger,
+.card--tap,
+.rm-switch button,
+.pf-edit-pill,
+.pf-add-pill,
+.pf-flat-row,
+.tg-rx-chip {
+  transition:
+    transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.2s ease,
+    opacity 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active:not(:disabled),
+.pill:active:not(:disabled),
+.kk-tab:active:not(:disabled),
+.chip-add:active:not(:disabled),
+.chip-btn:active:not(:disabled),
+.rm-switch button:active:not(:disabled),
+.pf-edit-pill:active:not(:disabled),
+.pf-add-pill:active:not(:disabled),
+.tg-rx-chip:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.icon-btn:active:not(:disabled),
+.th-act:active:not(:disabled),
+.tg-bar-sticker:active:not(:disabled) {
+  transform: scale(0.90);
+}
+
+.tab:active:not(:disabled),
+.kk-nav__item:active:not(:disabled) {
+  transform: scale(0.93);
+}
+
+.card--tap:active,
+.tg-row:active,
+.th-compose-trigger:active,
+.pf-flat-row:not(.pf-flat-row--static):active {
+  transform: scale(0.986);
+}
+
+/* 2) Мобильный чат и тред: 0px щели снизу с закрытой клавиатурой + точный прижим с открытой */
+.th-detail-top {
+  padding-top: calc(var(--safe-t) + 12px);
+}
+@media (min-width: 900px) {
+  .th-detail-top { padding-top: 14px; }
+}
+
 @media (max-width: 899px) {
   .app.app--chat,
   html.pwa-standalone .app.app--chat {
     position: fixed !important;
-    top: var(--vvt, 0px) !important;
-    left: 0 !important;
-    right: 0 !important;
+    inset: 0 !important;
     width: 100% !important;
-    height: var(--vvh, 100dvh) !important;
-    max-height: var(--vvh, 100dvh) !important;
+    height: auto !important;
+    max-height: none !important;
     min-height: 0 !important;
     margin: 0 !important;
     overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
     z-index: 20;
+  }
+
+  html.kb-open .app.app--chat,
+  html.kb-open.pwa-standalone .app.app--chat {
+    top: var(--vvt, 0px) !important;
+    bottom: auto !important;
+    height: var(--vvh, 100dvh) !important;
+    max-height: var(--vvh, 100dvh) !important;
+  }
+
+  .app.app--chat > .screen.screen--chat,
+  html.pwa-standalone .app.app--chat > .screen.screen--chat {
+    flex: 1 1 auto !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    padding-bottom: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 }
 
-/* Когда клавиатура открыта, safe-area Home Indicator перекрыт клавиатурой — убираем лишний отступ */
 html.kb-open .tg-composer,
 html.kb-open .th-reply-bar {
   padding-bottom: 8px !important;
+}
+
+/* Поле ввода contenteditable без нативной серой панели форм iOS (^ v ✓) */
+.tg-ce {
+  display: block;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: 92px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  outline: none;
+  cursor: text;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  line-height: 1.35;
+}
+.tg-inp.tg-ce {
+  padding: 9px 0;
+  min-height: 38px;
+}
+.th-reply-inp.tg-ce {
+  height: auto;
+  min-height: 42px;
+  padding: 10px 15px;
+  border-radius: 21px;
+  display: flex;
+  align-items: center;
+}
+.tg-ce:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+  opacity: 0.78;
+  pointer-events: none;
+}
+.th-reply-inp.tg-ce:focus {
+  border-color: var(--primary);
+  background: var(--surface);
 }
 
 .chip-scroll {
@@ -4788,23 +4952,321 @@ html.kb-open .th-reply-bar {
   flex: 0 0 auto;
 }
 
-/* Зажатие сообщения и контекстное меню (Ответить / Копировать / Переслать / Изменить / Удалить) */
+/* 3) Сообщения, закреп, реакции и плавающее меню Telegram (image-27, image-30) */
 .tg-bubble,
 .tg-sticker-wrap {
   -webkit-touch-callout: none;
   user-select: none;
   -webkit-user-select: none;
-  transition: transform 0.14s ease, box-shadow 0.22s ease, filter 0.14s ease;
+  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, filter 0.14s ease;
   cursor: context-menu;
 }
 .tg-bubble.is-pressing,
 .tg-sticker-wrap.is-pressing {
-  transform: scale(0.975);
+  transform: scale(0.972);
   filter: brightness(0.95);
 }
 .tg-bubble.is-flash,
 .tg-sticker-wrap.is-flash {
   box-shadow: 0 0 0 3px #8b6cef !important;
+}
+
+/* Закреплённое сообщение под шапкой чата */
+.tg-pinbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 14px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.tg-pinbar__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.tg-pinbar__accent {
+  width: 3px;
+  height: 28px;
+  border-radius: 3px;
+  background: #6c5ce7;
+  flex: 0 0 3px;
+}
+.tg-pinbar__body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tg-pinbar__body b {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #6c5ce7;
+  line-height: 1.2;
+}
+html[data-theme='dark'] .tg-pinbar__body b { color: #b4a5ff; }
+html[data-theme='dark'] .tg-pinbar__accent { background: #b4a5ff; }
+.tg-pinbar__body span {
+  font-size: 12.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tg-pinbar__unpin {
+  width: 30px !important;
+  height: 30px !important;
+  flex: 0 0 30px;
+}
+
+/* Реакции внутри пузыря сообщения */
+.tg-rx-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+.tg-rx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 25px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(108, 92, 231, 0.18);
+  background: rgba(108, 92, 231, 0.09);
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.tg-rx-chip b {
+  font-size: 11.5px;
+  font-weight: 800;
+}
+.tg-rx-chip.is-mine {
+  background: #6c5ce7;
+  border-color: #6c5ce7;
+  color: #ffffff;
+}
+html[data-theme='dark'] .tg-rx-chip {
+  background: rgba(180, 165, 255, 0.14);
+  border-color: rgba(180, 165, 255, 0.25);
+}
+html[data-theme='dark'] .tg-rx-chip.is-mine {
+  background: #7d6bf2;
+  border-color: #7d6bf2;
+  color: #ffffff;
+}
+
+/* Плавающий оверлей контекстного меню Telegram */
+.tg-pop-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(15, 18, 28, 0.36);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  animation: tg-pop-bg-in 0.18s ease-out both;
+}
+.tg-pop-backdrop.is-closing {
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+@keyframes tg-pop-bg-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.tg-pop-stack {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(290px, calc(100vw - 24px));
+  opacity: 0;
+  transform: scale(0.92) translateY(6px);
+  transform-origin: top left;
+  transition: opacity 0.2s cubic-bezier(0.22, 1, 0.36, 1), transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.tg-pop-stack--right {
+  align-items: flex-end;
+  transform-origin: top right;
+}
+.tg-pop-stack--left {
+  align-items: flex-start;
+  transform-origin: top left;
+}
+.tg-pop-stack.is-ready {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+.tg-pop-backdrop.is-closing .tg-pop-stack {
+  opacity: 0;
+  transform: scale(0.94);
+}
+
+/* Плашка быстрых реакций сверху */
+.tg-pop-rx {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(30, 34, 46, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
+}
+.tg-pop-rx__btn {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  font-size: 21px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  animation: tg-rx-pop 0.26s cubic-bezier(0.22, 1.25, 0.36, 1) both;
+  transition: transform 0.14s cubic-bezier(0.22, 1.2, 0.36, 1), background-color 0.14s ease;
+}
+.tg-pop-rx__btn:hover,
+.tg-pop-rx__btn:active {
+  transform: scale(1.24);
+  background: rgba(255, 255, 255, 0.12);
+}
+.tg-pop-rx__btn.is-on {
+  background: rgba(125, 107, 242, 0.38);
+}
+@keyframes tg-rx-pop {
+  from { opacity: 0; transform: scale(0.45); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Подсвеченный пузырь выбранного сообщения между реакциями и меню */
+.tg-pop-FocusBubble {
+  max-width: 100%;
+}
+.tg-pop-bubble {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  max-width: 268px;
+  padding: 9px 13px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.38;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+}
+.tg-pop-bubble--own {
+  background: #e1ffc7;
+  color: #14161f;
+  border-bottom-right-radius: 5px;
+}
+.tg-pop-bubble--other {
+  background: #ffffff;
+  color: #14161f;
+  border-bottom-left-radius: 5px;
+}
+html[data-theme='dark'] .tg-pop-bubble--own {
+  background: #3d3373;
+  color: #f4f5f8;
+}
+html[data-theme='dark'] .tg-pop-bubble--other {
+  background: #252834;
+  color: #f4f5f8;
+}
+.tg-pop-bubble__txt {
+  word-break: break-word;
+}
+.tg-pop-bubble__time {
+  font-size: 11px;
+  opacity: 0.62;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+/* Компактная карточка контекстного меню Telegram */
+.tg-pop-card {
+  min-width: 214px;
+  max-width: 248px;
+  padding: 5px;
+  border-radius: 16px;
+  background: rgba(30, 34, 46, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.36);
+  display: flex;
+  flex-direction: column;
+}
+.tg-pop-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9.5px 12px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: #f5f6fa;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease, transform 0.12s ease;
+}
+.tg-pop-item:hover,
+.tg-pop-item:active {
+  background: rgba(255, 255, 255, 0.10);
+}
+.tg-pop-item:active {
+  transform: scale(0.98);
+}
+.tg-pop-item__ico {
+  width: 20px;
+  height: 20px;
+  display: inline-grid;
+  place-items: center;
+  opacity: 0.88;
+  flex: 0 0 20px;
+}
+.tg-pop-item--danger {
+  color: #ff6b6b;
+}
+.tg-pop-item--danger .tg-pop-item__ico {
+  color: #ff6b6b;
+  opacity: 1;
+}
+
+/* Компактная кнопка «⋯» у собственного ответа в треде */
+.th-reply__more {
+  width: 26px;
+  height: 26px;
+  margin-left: 4px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+.th-reply__more:hover,
+.th-reply__more:active {
+  background: var(--chip);
+  color: var(--text);
 }
 
 .tg-fwd-tag {
@@ -4904,70 +5366,441 @@ html[data-theme='dark'] .tg-compose-ctx__body {
   flex: 0 0 30px;
 }
 
-.tg-ctx-preview {
-  padding: 11px 14px;
-  margin-bottom: 12px;
-  border-radius: 16px;
-  background: var(--chip);
-  border: 1px solid var(--border);
+/* 4) Раздел «Профиль» без карточных панелек — оригинальный воздушный дизайн kk. (page_08.png) */
+.pf-canvas {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
 }
-.tg-ctx-preview__top {
+
+.pf-hero {
+  padding: calc(var(--safe-t) + 14px) 20px 20px;
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(255, 224, 172, 0.58) 0%, rgba(255, 236, 204, 0.26) 52%, transparent 100%),
+    radial-gradient(90% 90% at 100% 10%, rgba(231, 221, 251, 0.42) 0%, transparent 72%);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+html[data-theme='dark'] .pf-hero {
+  background:
+    radial-gradient(120% 100% at 0% 0%, rgba(92, 68, 36, 0.36) 0%, transparent 70%),
+    radial-gradient(90% 90% at 100% 10%, rgba(68, 52, 112, 0.34) 0%, transparent 75%);
+}
+@media (min-width: 900px) {
+  .pf-hero {
+    padding: 24px 28px 22px;
+  }
+}
+
+.pf-hero__topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 3px;
-  font-size: 12px;
+  gap: 10px;
+  margin-bottom: 18px;
 }
-.tg-ctx-preview__top b {
-  font-weight: 800;
+
+.pf-edit-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+  background: color-mix(in srgb, #ffffff 88%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+html[data-theme='dark'] .pf-edit-pill {
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text);
 }
-.tg-ctx-preview__top span {
-  color: var(--muted);
-}
-.tg-ctx-preview__text {
-  font-size: 13.5px;
-  color: var(--text);
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.tg-ctx-menu {
-  display: flex;
-  flex-direction: column;
-  border-radius: 18px;
-  background: var(--chip);
-  border: 1px solid var(--border);
-  overflow: hidden;
-}
-.tg-ctx-item {
+
+.pf-hero__identity {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+}
+.pf-hero__av {
+  flex: 0 0 auto;
+  border-radius: 50%;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 6px 18px rgba(20, 22, 31, 0.08);
+}
+html[data-theme='dark'] .pf-hero__av {
+  background: rgba(255, 255, 255, 0.14);
+}
+.pf-hero__av .avatar {
+  display: grid;
+}
+.pf-hero__meta {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.pf-hero__name {
+  font-family: Nunito, Manrope, sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.18;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pf-hero__sub {
+  margin-top: 3px;
+  font-size: 13.5px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.pf-hero__ach {
+  margin-top: 5px;
+  font-size: 12.5px;
+  font-weight: 750;
+  color: #b26a00;
+}
+html[data-theme='dark'] .pf-hero__ach {
+  color: #ffd57e;
+}
+
+.pf-body {
+  padding: 4px 20px calc(var(--nav-h) + var(--safe-b) + 28px);
+}
+html.pwa-standalone .pf-body {
+  padding-bottom: 28px;
+}
+@media (min-width: 900px) {
+  .pf-body {
+    padding: 8px 28px 36px;
+  }
+}
+
+.pf-support-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.pf-open-sec {
+  padding: 18px 0 4px;
+}
+.pf-open-sec + .pf-open-sec {
+  border-top: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+.pf-sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.pf-sec-title {
+  margin: 0;
+  font-family: Nunito, Manrope, sans-serif;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.pf-inline-act {
+  border: 0;
+  background: transparent;
+  padding: 2px 4px;
+  color: var(--primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+/* Пастельные теги навыков и интересов прямо на полотне (как Skills / Interests в page_08.png) */
+.pf-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 10px;
+}
+.pf-pastel-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 13px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 750;
+  color: #1b2234;
+  background: #dcebff;
+}
+.pf-pastel-pill--sky { background: #dcebff; color: #16325c; }
+.pf-pastel-pill--mint { background: #d9f5e3; color: #164429; }
+.pf-pastel-pill--sun { background: #fff0bd; color: #573d00; }
+.pf-pastel-pill--lav { background: #eae2ff; color: #362269; }
+.pf-pastel-pill--blush { background: #ffdcd6; color: #641e18; }
+
+html[data-theme='dark'] .pf-pastel-pill--sky { background: rgba(96, 165, 250, 0.2); color: #cbe3ff; }
+html[data-theme='dark'] .pf-pastel-pill--mint { background: rgba(74, 222, 128, 0.18); color: #c7f9d9; }
+html[data-theme='dark'] .pf-pastel-pill--sun { background: rgba(250, 204, 21, 0.18); color: #fde68a; }
+html[data-theme='dark'] .pf-pastel-pill--lav { background: rgba(167, 139, 250, 0.22); color: #e7ddfb; }
+html[data-theme='dark'] .pf-pastel-pill--blush { background: rgba(248, 113, 113, 0.2); color: #fecaca; }
+
+.pf-pill-del {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  opacity: 0.6;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 0 0 2px;
+  cursor: pointer;
+}
+.pf-pill-del:hover { opacity: 1; }
+
+.pf-add-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px dashed color-mix(in srgb, var(--muted) 55%, transparent);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Открытые академические показатели без белых боксов-панелек */
+.pf-open-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  padding-bottom: 10px;
+}
+.pf-open-metrics--compact {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.pf-open-stat {
+  padding: 6px 16px 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pf-open-stat + .pf-open-stat {
+  padding-left: 16px;
+  border-left: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+@media (max-width: 680px) {
+  .pf-open-metrics,
+  .pf-open-metrics--compact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pf-open-stat {
+    padding: 10px 0;
+  }
+  .pf-open-stat + .pf-open-stat {
+    padding-left: 0;
+    border-left: 0;
+    border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  }
+}
+
+.pf-open-stat__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.pf-open-stat__lbl {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pf-open-stat__val {
+  font-family: Nunito, Manrope, sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  line-height: 1.15;
+  color: var(--text);
+}
+.pf-open-stat__scale {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--muted);
+}
+.pf-open-stat__empty {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+/* Два открытых столбца Honors и Extracurriculars без панельных рамок */
+.pf-open-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+}
+.pf-open-cols > .pf-open-sec + .pf-open-sec {
+  border-top: 0;
+}
+@media (max-width: 740px) {
+  .pf-open-cols {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .pf-open-cols > .pf-open-sec + .pf-open-sec {
+    border-top: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  }
+}
+
+.pf-flat-entries {
+  display: flex;
+  flex-direction: column;
+}
+.pf-flat-entry {
+  padding: 11px 0;
+}
+.pf-flat-entry + .pf-flat-entry {
+  border-top: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+}
+.pf-entry-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex: 0 0 9px;
+}
+.pf-entry-dot--sun { background: #f59e0b; }
+.pf-entry-dot--mint { background: #10b981; }
+
+.pf-open-empty {
+  padding: 6px 0 14px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* Открытые строки списков в Профиле (Уведомления, Избранное, Настройки) без карточек */
+.pf-flat-list {
+  display: flex;
+  flex-direction: column;
+}
+.pf-flat-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
   width: 100%;
-  padding: 13px 16px;
+  padding: 12px 2px;
   border: 0;
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 14.5px;
-  font-weight: 650;
   text-align: left;
   cursor: pointer;
-  transition: background 0.12s ease;
 }
-.tg-ctx-item + .tg-ctx-item {
-  border-top: 1px solid var(--border);
+.pf-flat-row--static {
+  cursor: default;
 }
-.tg-ctx-item:hover,
-.tg-ctx-item:active {
-  background: color-mix(in srgb, var(--text) 6%, transparent);
+.pf-flat-row + .pf-flat-row {
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
-.tg-ctx-item--danger {
-  color: var(--danger, #d92d20);
+.pf-flat-row__ico {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 36px;
+  color: #182033;
+  background: #dcebff;
+}
+.pf-flat-row__ico--sky { background: #dcebff; color: #16325c; }
+.pf-flat-row__ico--mint { background: #d9f5e3; color: #164429; }
+.pf-flat-row__ico--sun { background: #fff0bd; color: #573d00; }
+.pf-flat-row__ico--lav { background: #eae2ff; color: #362269; }
+.pf-flat-row__ico--blush { background: #ffdcd6; color: #641e18; }
+
+html[data-theme='dark'] .pf-flat-row__ico--sky { background: rgba(96, 165, 250, 0.18); color: #cbe3ff; }
+html[data-theme='dark'] .pf-flat-row__ico--mint { background: rgba(74, 222, 128, 0.18); color: #c7f9d9; }
+html[data-theme='dark'] .pf-flat-row__ico--sun { background: rgba(250, 204, 21, 0.18); color: #fde68a; }
+html[data-theme='dark'] .pf-flat-row__ico--lav { background: rgba(167, 139, 250, 0.2); color: #e7ddfb; }
+html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 113, 0.2); color: #fecaca; }
+
+.pf-flat-row__title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Шторка смены пароля через 6-значный код с почты (image-26) */
+.pw-mail-sent {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: var(--chip);
+}
+.pw-mail-sent__ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #d9f5e3;
+  color: #164429;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 34px;
+}
+.pw-mail-preview {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 13px;
+  border-radius: 14px;
+  border: 1px dashed var(--primary);
+  background: color-mix(in srgb, var(--primary) 7%, transparent);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.pw-code-inp {
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important;
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  letter-spacing: 8px;
+  height: 52px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen--enter,
+  .pane-fade,
+  .tg-pop-rx__btn,
+  .tg-pop-backdrop {
+    animation: none !important;
+  }
+  .btn, .pill, .icon-btn, .tab, .tg-row, .card--tap, .pf-flat-row {
+    transition: none !important;
+  }
 }
 
 
@@ -5325,7 +6158,9 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     forward: '<path d="m15 17 5-5-5-5"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/>',
     paperclip: '<path d="m21.4 11.1-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/>',
     filter: '<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
-    refresh: '<path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1"/><path d="M21 3v5h-5"/>'
+    refresh: '<path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1"/><path d="M21 3v5h-5"/>',
+    pin: '<path d="M12 17v5"/><path d="M9 10.8a2 2 0 0 1-1.1 1.8l-1.8.9A2 2 0 0 0 5 15.2V17h14v-1.8a2 2 0 0 0-1.1-1.7l-1.8-.9A2 2 0 0 1 15 10.8V6a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m3.8 7 8.2 5.6L20.2 7"/>'
   };
 
   SH.icon = function (name, size) {
@@ -5506,6 +6341,12 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     changePassword(current, next) {
       return this.request('POST', '/api/auth/password', { current, next });
     },
+    requestPasswordCode(email) {
+      return this.request('POST', '/api/auth/password/send-code', { email: email || '' });
+    },
+    confirmPasswordCode(code, next) {
+      return this.request('POST', '/api/auth/password/confirm', { code, next });
+    },
     saveProfile(patch) {
       return this.request('PATCH', '/api/auth/profile', patch);
     },
@@ -5536,10 +6377,19 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     deleteMessage(id) {
       return this.request('DELETE', '/api/messages/' + id);
     },
+    reactMessage(id, emoji) {
+      return this.request('POST', '/api/messages/' + id + '/react', { emoji });
+    },
+    pinMessage(chatId, messageId) {
+      return this.request('POST', '/api/chats/' + chatId + '/pin', { messageId: messageId || '' });
+    },
 
     /* ── комментарии ── */
     addComment(postId, text) {
       return this.request('POST', '/api/comments', { postId, text });
+    },
+    deleteComment(id) {
+      return this.request('DELETE', '/api/comments/' + id);
     },
 
     /* ── админка ── */
@@ -6138,6 +6988,54 @@ html[data-theme='dark'] .tg-compose-ctx__body {
         .catch((err) => ({ ok: false, error: err.message }));
     },
 
+    deleteComment(postId, commentId) {
+      const p = state.posts.find((x) => x.id === postId);
+      if (!p) return Promise.resolve({ ok: false });
+      p.comments = (p.comments || []).filter((c) => c.id !== commentId);
+      emit('posts');
+      if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true });
+      return SH.api.deleteComment(commentId)
+        .then(() => ({ ok: true }))
+        .catch((err) => ({ ok: false, error: err.message }));
+    },
+
+    toggleReaction(chatId, messageId, emoji) {
+      const u = store.currentUser;
+      const c = state.chats.find((x) => x.id === chatId);
+      const m = c && (c.messages || []).find((x) => x.id === messageId);
+      if (!u || !m || !emoji) return Promise.resolve({ ok: false });
+      const rx = Object.assign({}, m.reactions || {});
+      const had = Array.isArray(rx[emoji]) && rx[emoji].includes(u.id);
+      Object.keys(rx).forEach((k) => {
+        rx[k] = (rx[k] || []).filter((id) => id !== u.id);
+        if (!rx[k].length) delete rx[k];
+      });
+      if (!had) rx[emoji] = (rx[emoji] || []).concat(u.id);
+      m.reactions = Object.keys(rx).length ? rx : null;
+      emit('chats');
+      if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true, reactions: m.reactions });
+      return SH.api.reactMessage(messageId, emoji)
+        .then((res) => {
+          if (res && res.reactions !== undefined) {
+            m.reactions = Object.keys(res.reactions || {}).length ? res.reactions : null;
+            emit('chats');
+          }
+          return { ok: true };
+        })
+        .catch((err) => ({ ok: false, error: err.message }));
+    },
+
+    pinChatMessage(chatId, messageId) {
+      const c = state.chats.find((x) => x.id === chatId);
+      if (!c) return Promise.resolve({ ok: false });
+      c.pinnedMsgId = messageId || '';
+      emit('chats');
+      if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true });
+      return SH.api.pinMessage(chatId, messageId || '')
+        .then(() => ({ ok: true }))
+        .catch((err) => ({ ok: false, error: err.message }));
+    },
+
     editMessage(chatId, messageId, text) {
       const c = state.chats.find((x) => x.id === chatId);
       const m = c && c.messages.find((x) => x.id === messageId);
@@ -6156,6 +7054,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
       const c = state.chats.find((x) => x.id === chatId);
       if (!c) return Promise.resolve({ ok: false });
       c.messages = (c.messages || []).filter((x) => x.id !== messageId);
+      if (c.pinnedMsgId === messageId) c.pinnedMsgId = '';
       c.preview = null;
       if (c.messages.length) c.lastAt = c.messages[c.messages.length - 1].at;
       emit('chats');
@@ -6286,6 +7185,10 @@ html[data-theme='dark'] .tg-compose-ctx__body {
           c.memberIds = row.memberIds; changed = true;
         }
         if (row.title && c.title !== row.title) { c.title = row.title; changed = true; }
+        if (row.pinnedMsgId !== undefined && (c.pinnedMsgId || '') !== (row.pinnedMsgId || '')) {
+          c.pinnedMsgId = row.pinnedMsgId || '';
+          changed = true;
+        }
         if ((c.unread || 0) !== (row.unread || 0)) { c.unread = row.unread || 0; changed = true; }
         if (row.lastAt && c.lastAt !== row.lastAt) {
           c.lastAt = row.lastAt; changed = true;
@@ -6310,6 +7213,11 @@ html[data-theme='dark'] .tg-compose-ctx__body {
           ex.text = m.text;
           ex.editedAt = m.editedAt || '';
           c.preview = null;
+          fresh.push(ex);
+        }
+        if (JSON.stringify(m.reactions || null) !== JSON.stringify(ex.reactions || null)) {
+          ex.reactions = m.reactions || null;
+          fresh.push(ex);
         }
         if (m.attachment && !ex.attachment) ex.attachment = m.attachment;
       });
@@ -6758,6 +7666,129 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     if (openSheet) openSheet.destroy();
   }
 
+  /* ── плавающее контекстное меню в стиле Telegram (реакции + компактный список) ── */
+  let openPop = null;
+  function popMenu(opts) {
+    closePopMenu();
+    const o = opts || {};
+    const anchorRect = o.anchorEl && o.anchorEl.getBoundingClientRect
+      ? o.anchorEl.getBoundingClientRect()
+      : null;
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'tg-pop-backdrop';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'tg-pop-stack tg-pop-stack--' + (o.align === 'right' ? 'right' : 'left');
+    wrap.setAttribute('role', 'menu');
+
+    const rxHtml = Array.isArray(o.reactions) && o.reactions.length
+      ? '<div class="tg-pop-rx">' +
+          o.reactions.map((em, idx) =>
+            '<button type="button" class="tg-pop-rx__btn' + (o.myReaction === em ? ' is-on' : '') + '" data-rx="' + esc(em) + '" style="animation-delay:' + (idx * 18) + 'ms">' +
+              esc(em) +
+            '</button>'
+          ).join('') +
+        '</div>'
+      : '';
+
+    const bubbleHtml = o.bubbleHtml
+      ? '<div class="tg-pop-FocusBubble">' + o.bubbleHtml + '</div>'
+      : '';
+
+    const items = (o.items || []).filter(Boolean);
+    const menuHtml =
+      '<div class="tg-pop-card">' +
+        items.map((it, i) =>
+          '<button type="button" class="tg-pop-item' + (it.danger ? ' tg-pop-item--danger' : '') + '" data-item-idx="' + i + '">' +
+            (it.icon ? '<span class="tg-pop-item__ico">' + SH.icon(it.icon, 18) + '</span>' : '') +
+            '<span class="tg-pop-item__lbl">' + esc(it.label) + '</span>' +
+          '</button>'
+        ).join('') +
+      '</div>';
+
+    wrap.innerHTML = rxHtml + bubbleHtml + menuHtml;
+    backdrop.appendChild(wrap);
+    document.body.appendChild(backdrop);
+
+    // Позиционируем рядом с сообщением с защитой от выхода за края экрана
+    const vw = window.innerWidth || 390;
+    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight || 800;
+    const vt = (window.visualViewport && window.visualViewport.offsetTop) || 0;
+    const pad = 12;
+
+    requestAnimationFrame(() => {
+      const naturalW = wrap.offsetWidth || 244;
+      const naturalH = wrap.offsetHeight || 280;
+      const w = Math.min(naturalW, vw - pad * 2);
+      const h = naturalH;
+
+      let left = pad;
+      let top = vt + Math.max(pad, (vh - h) / 2);
+
+      if (anchorRect) {
+        if (o.align === 'right') {
+          left = Math.min(vw - w - pad, Math.max(pad, anchorRect.right - w));
+        } else {
+          left = Math.max(pad, Math.min(vw - w - pad, anchorRect.left));
+        }
+        const rxH = rxHtml ? 54 : 0;
+        const desiredTop = anchorRect.top - rxH;
+        const minTop = vt + pad + 8;
+        const maxTop = vt + vh - h - pad - 4;
+        top = Math.max(minTop, Math.min(Math.max(minTop, maxTop), desiredTop));
+      }
+
+      wrap.style.left = Math.round(left) + 'px';
+      wrap.style.top = Math.round(top) + 'px';
+      wrap.classList.add('is-ready');
+    });
+
+    function onKey(ev) {
+      if (ev.key === 'Escape') destroy();
+    }
+    document.addEventListener('keydown', onKey);
+
+    function destroy() {
+      if (!openPop) return;
+      document.removeEventListener('keydown', onKey);
+      backdrop.classList.add('is-closing');
+      const ref = backdrop;
+      openPop = null;
+      setTimeout(() => { ref.remove(); }, 180);
+    }
+
+    backdrop.addEventListener('click', (ev) => {
+      if (ev.target === backdrop) destroy();
+    });
+
+    wrap.querySelectorAll('[data-rx]').forEach((btn) => {
+      btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const em = btn.getAttribute('data-rx');
+        destroy();
+        if (typeof o.onReact === 'function') o.onReact(em);
+      });
+    });
+
+    wrap.querySelectorAll('[data-item-idx]').forEach((btn) => {
+      btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        const idx = Number(btn.getAttribute('data-item-idx'));
+        const item = items[idx];
+        destroy();
+        if (item && typeof item.onClick === 'function') item.onClick();
+      });
+    });
+
+    openPop = { el: backdrop, destroy };
+    return openPop;
+  }
+
+  function closePopMenu() {
+    if (openPop) openPop.destroy();
+  }
+
   function confirmSheet(title, text, confirmLabel, onConfirm) {
     sheet({
       title: title,
@@ -6831,7 +7862,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
 
   SH.ui = {
     esc, plural, relTime, shortDate, deadlineInfo, initials, avatar, cover,
-    toast, sheet, closeSheet, confirmSheet, field, select, empty, tag, skeletonList, debounce,
+    toast, sheet, closeSheet, popMenu, closePopMenu, confirmSheet, field, select, empty, tag, skeletonList, debounce,
     MONTHS
   };
 })(window.SH = window.SH || {});
@@ -7027,6 +8058,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
   const e = ui.esc;
 
   let filter = 'forYou';
+  let filterAnim = false;
   let query = '';
   let freeOnly = false;
 
@@ -7120,6 +8152,8 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     const picked = list.slice(0, 3);
     const popular = list.slice(0, 8);
     const trending = list.slice().sort((a, b) => (b.ev.views) - (a.ev.views)).slice(0, 5);
+    const fadeCls = filterAnim ? 'pane-fade' : '';
+    filterAnim = false;
 
     return (
       '<div class="screen">' +
@@ -7152,6 +8186,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
           pill('competitions', 'trophy', 'Конкурсы') +
         '</div>' +
 
+        '<div class="' + fadeCls + '">' +
         (list.length === 0
           ? ui.empty('search', 'Ничего не нашлось', 'Попробуй другой запрос или сбрось фильтр.')
           : '' +
@@ -7166,6 +8201,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
             (trending.length ? '<div class="card" style="padding:4px 16px">' + trending.map(trendRow).join('') + '</div>' : '') +
             '<div style="height:8px"></div>'
         ) +
+        '</div>' +
       '</div>'
     );
   }
@@ -7277,7 +8313,10 @@ html[data-theme='dark'] .tg-compose-ctx__body {
 
   /* ── действия ── */
   const actions = {
-    setFilter(f) { filter = f; SH.app.render(); },
+    setFilter(f) {
+      if (filter !== f) { filter = f; filterAnim = true; }
+      SH.app.render();
+    },
     openFilters() {
       ui.sheet({
         title: 'Фильтры',
@@ -7459,6 +8498,29 @@ html[data-theme='dark'] .tg-compose-ctx__body {
   const e = ui.esc;
 
   let tab = 'team';
+  let tabAnim = false;
+  /* Контекст редактирования комментария в нижней панели треда: { postId, commentId, previewText, draft, autoFocus } */
+  let editCommentCtx = null;
+
+  function ceRead(el) {
+    if (!el) return '';
+    if (typeof el.value === 'string') return el.value;
+    return String(el.innerText || el.textContent || '').replace(/\u00a0/g, ' ').replace(/\r/g, '');
+  }
+
+  function ceFocusEnd(el) {
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    try {
+      const sel = window.getSelection();
+      if (!sel) return;
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } catch (err) {}
+  }
 
   /* ───────────────────────── команды ───────────────────────── */
 
@@ -7715,6 +8777,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     const me = store.currentUser || {};
     const comments = p.comments || [];
     const liked = !!p.liked;
+    const ctx = editCommentCtx && editCommentCtx.postId === p.id ? editCommentCtx : null;
 
     return (
       '<div class="screen screen--chat screen--flush th-detail-screen">' +
@@ -7728,7 +8791,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
             : '') +
         '</div>' +
 
-        '<div class="th-detail-scroll">' +
+        '<div class="th-detail-scroll" data-post-scroll="' + e(p.id) + '">' +
           '<article class="th-root">' +
             '<div class="row" style="gap:12px;margin-bottom:12px">' +
               '<button class="avatar-btn" onclick="SH.app.go(\'#/user/' + e(p.authorId) + '\')">' + ui.avatar(author, 42) + '</button>' +
@@ -7759,13 +8822,28 @@ html[data-theme='dark'] .tg-compose-ctx__body {
           '</div>' +
         '</div>' +
 
+        (ctx
+          ? '<div class="tg-compose-ctx">' +
+              '<span class="tg-compose-ctx__ico">' + icon('edit', 16) + '</span>' +
+              '<div class="tg-compose-ctx__body">' +
+                '<div class="tg-compose-ctx__title">Редактирование комментария</div>' +
+                '<div class="tg-compose-ctx__sub">' + e(ctx.previewText || '') + '</div>' +
+              '</div>' +
+              '<button class="icon-btn icon-btn--plain tg-compose-ctx__close" onclick="SH.views.community.cancelCommentEdit()" aria-label="Отменить">' +
+                icon('close', 16) +
+              '</button>' +
+            '</div>'
+          : '') +
+
         '<div class="th-reply-bar">' +
           ui.avatar(me, 32) +
-          '<input id="cm-detail-' + e(p.id) + '" class="th-reply-inp" placeholder="Написать комментарий…" autocomplete="off" ' +
-            'onkeydown="if(event.key===\'Enter\'){event.preventDefault();SH.views.community.sendDetailComment(\'' + e(p.id) + '\')}">' +
+          '<div id="cm-detail-' + e(p.id) + '" class="th-reply-inp tg-ce" contenteditable="true" role="textbox" aria-multiline="false" enterkeyhint="send" spellcheck="true" data-placeholder="' +
+            (ctx ? 'Измените комментарий…' : 'Написать комментарий…') + '">' +
+            e(ctx && ctx.draft ? ctx.draft : '') +
+          '</div>' +
           '<button class="icon-btn icon-btn--brand" style="width:40px;height:40px;flex:0 0 auto;border-radius:50%" ' +
-            'onclick="SH.views.community.sendDetailComment(\'' + e(p.id) + '\')" aria-label="Отправить">' +
-            icon('send', 17) +
+            'onclick="SH.views.community.sendDetailComment(\'' + e(p.id) + '\')" aria-label="' + (ctx ? 'Сохранить' : 'Отправить') + '">' +
+            icon(ctx ? 'check' : 'send', 17) +
           '</button>' +
         '</div>' +
       '</div>'
@@ -7776,9 +8854,10 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     const a = store.userById(c.authorId);
     const me = store.currentUser || {};
     const own = c.authorId === me.id;
+    const canManage = own || me.role === 'root' || me.role === 'admin';
 
     return (
-      '<div class="th-reply">' +
+      '<div class="th-reply" data-comment="' + e(c.id) + '" data-post="' + e(postId) + '">' +
         '<div class="th-post__rail">' +
           '<button class="avatar-btn" onclick="SH.app.go(\'#/user/' + e(c.authorId) + '\')">' + ui.avatar(a, 34) + '</button>' +
         '</div>' +
@@ -7787,14 +8866,14 @@ html[data-theme='dark'] .tg-compose-ctx__body {
             '<button class="link-name th-post__author" onclick="SH.app.go(\'#/user/' + e(c.authorId) + '\')">' + e(a.name) + '</button>' +
             '<span class="spacer"></span>' +
             '<span class="th-post__time">' + e(ui.relTime(c.editedAt || c.createdAt)) + '</span>' +
+            (canManage
+              ? '<button type="button" class="th-reply__more" onclick="event.stopPropagation();SH.views.community.openCommentMenu(\'' +
+                  e(postId) + '\',\'' + e(c.id) + '\',this)" aria-label="Действия">' + icon('more', 16) + '</button>'
+              : '') +
           '</div>' +
           '<div class="th-post__text" style="margin-top:4px">' + e(c.text) +
             (c.editedAt ? ' <span class="edited">изменено</span>' : '') +
           '</div>' +
-          (own
-            ? '<div style="margin-top:6px"><button class="link-btn small" onclick="SH.views.community.editComment(\'' +
-                e(postId) + '\',\'' + e(c.id) + '\')">Изменить</button></div>'
-            : '') +
         '</div>' +
       '</div>'
     );
@@ -7816,6 +8895,8 @@ html[data-theme='dark'] .tg-compose-ctx__body {
   function html() {
     const teams = store.teams();
     const posts = store.posts();
+    const fadeCls = tabAnim ? ' pane-fade' : '';
+    tabAnim = false;
 
     return (
       '<div class="screen">' +
@@ -7835,18 +8916,20 @@ html[data-theme='dark'] .tg-compose-ctx__body {
             icon('message') + 'Обсуждения</button>' +
         '</div>' +
 
-        (tab === 'team'
-          ? '<button class="btn btn--brand btn--block" onclick="SH.views.community.newTeam()">' +
-              icon('plus') + 'Собрать команду</button>' +
-            '<div class="list mt-16">' +
-              (teams.length ? teams.map(teamCard).join('') :
-                ui.empty('users', 'Пока нет открытых команд', 'Создай первую — ребята напишут тебе в личку.')) +
-            '</div>'
-          : composerTrigger() +
-            '<div class="th-feed mt-8">' +
-              (posts.length ? posts.map(threadRow).join('') :
-                ui.empty('message', 'Пока тихо', 'Опубликуйте первый тред — поделитесь вопросом или идеей.')) +
-            '</div>') +
+        '<div class="' + fadeCls.trim() + '">' +
+          (tab === 'team'
+            ? '<button class="btn btn--brand btn--block" onclick="SH.views.community.newTeam()">' +
+                icon('plus') + 'Собрать команду</button>' +
+              '<div class="list mt-16">' +
+                (teams.length ? teams.map(teamCard).join('') :
+                  ui.empty('users', 'Пока нет открытых команд', 'Создай первую — ребята напишут тебе в личку.')) +
+              '</div>'
+            : composerTrigger() +
+              '<div class="th-feed mt-8">' +
+                (posts.length ? posts.map(threadRow).join('') :
+                  ui.empty('message', 'Пока тихо', 'Опубликуйте первый тред — поделитесь вопросом или идеей.')) +
+              '</div>') +
+        '</div>' +
       '</div>'
     );
   }
@@ -7854,7 +8937,10 @@ html[data-theme='dark'] .tg-compose-ctx__body {
   /* ───────────────────────── действия ───────────────────────── */
 
   const actions = {
-    setTab(t) { tab = t; SH.app.render(); },
+    setTab(t) {
+      if (tab !== t) { tab = t; tabAnim = true; }
+      SH.app.render();
+    },
 
     /* Чистая форма создания треда без лишней системы хештегов */
     openNewPost() {
@@ -7904,28 +8990,93 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     sendDetailComment(postId) {
       if (!store.isAuthed) { SH.app.go('#/auth'); return; }
       const el = document.getElementById('cm-detail-' + postId);
-      const text = el ? el.value.trim() : '';
+      const text = ceRead(el).trim();
       if (!text) return;
-      el.value = '';
+
+      if (editCommentCtx && editCommentCtx.postId === postId && editCommentCtx.commentId) {
+        const cid = editCommentCtx.commentId;
+        editCommentCtx = null;
+        if (el) el.textContent = '';
+        store.editComment(postId, cid, text).then((res) => {
+          if (!res || !res.ok) { ui.toast((res && res.error) || 'Не сохранено'); return; }
+          ui.toast('Комментарий изменён');
+          SH.app.render();
+        });
+        return;
+      }
+
+      if (el) el.textContent = '';
       store.addComment(postId, text).then((res) => {
         if (!res.ok) { ui.toast(res.error || 'Не отправлено'); return; }
         SH.app.render();
         const again = document.getElementById('cm-detail-' + postId);
-        if (again) again.focus({ preventScroll: true });
+        if (again) ceFocusEnd(again);
+      });
+    },
+
+    openCommentMenu(postId, commentId, anchorEl) {
+      const p = store.posts({ includeHidden: true }).find((x) => x.id === postId);
+      const c = p && (p.comments || []).find((x) => x.id === commentId);
+      if (!c) return;
+      const me = store.currentUser || {};
+      const own = c.authorId === me.id;
+      const canDelete = own || me.role === 'root' || me.role === 'admin';
+      const rowEl = anchorEl || document.querySelector('[data-comment="' + commentId + '"]');
+
+      ui.popMenu({
+        anchorEl: rowEl,
+        align: anchorEl ? 'right' : 'left',
+        items: [
+          {
+            icon: 'copy',
+            label: 'Скопировать',
+            onClick: () => {
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(c.text || '').then(() => ui.toast('Скопировано')).catch(() => {});
+              } else {
+                ui.toast('Скопировано');
+              }
+            }
+          },
+          own ? {
+            icon: 'edit',
+            label: 'Изменить',
+            onClick: () => SH.views.community.editComment(postId, c.id)
+          } : null,
+          canDelete ? {
+            icon: 'trash',
+            label: 'Удалить',
+            danger: true,
+            onClick: () => {
+              store.deleteComment(postId, c.id).then((res) => {
+                if (!res || !res.ok) { ui.toast((res && res.error) || 'Не удалось удалить'); return; }
+                ui.toast('Комментарий удалён');
+                SH.app.render();
+              });
+            }
+          } : null
+        ]
       });
     },
 
     editComment(postId, commentId) {
+      ui.closePopMenu();
       const p = store.posts({ includeHidden: true }).find((x) => x.id === postId);
       const c = p && (p.comments || []).find((x) => x.id === commentId);
       if (!c) return;
+      editCommentCtx = {
+        postId,
+        commentId: c.id,
+        previewText: c.text || '',
+        draft: c.text || '',
+        autoFocus: true
+      };
+      SH.app.render();
+    },
 
-      ui.sheet({
-        title: 'Изменить комментарий',
-        body: ui.field('cm-edit', '', { textarea: true, value: c.text }) +
-          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.community.saveComment(\'' +
-            e(postId) + '\',\'' + e(commentId) + '\')">Сохранить</button>'
-      });
+    cancelCommentEdit() {
+      editCommentCtx = null;
+      SH.app.render();
     },
 
     saveComment(postId, commentId) {
@@ -8110,8 +9261,83 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     } catch (err) { /* ignore */ }
   }
 
+  function mountPostDetail(root, postId) {
+    const inp = root && root.querySelector('#cm-detail-' + postId);
+    if (inp) {
+      inp.addEventListener('input', () => {
+        if (!ceRead(inp).trim() && inp.textContent === '') inp.innerHTML = '';
+        if (editCommentCtx && editCommentCtx.postId === postId) editCommentCtx.draft = ceRead(inp);
+      });
+      inp.addEventListener('paste', (ev) => {
+        ev.preventDefault();
+        const plain = ((ev.clipboardData || window.clipboardData) && (ev.clipboardData || window.clipboardData).getData('text/plain')) || '';
+        const clean = plain.replace(/\r?\n/g, ' ');
+        if (!clean) return;
+        if (document.queryCommandSupported && document.queryCommandSupported('insertText')) {
+          document.execCommand('insertText', false, clean);
+        } else {
+          inp.textContent = ceRead(inp) + clean;
+          ceFocusEnd(inp);
+        }
+      });
+      inp.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' && !ev.shiftKey) {
+          ev.preventDefault();
+          SH.views.community.sendDetailComment(postId);
+        } else if (ev.key === 'Escape' && editCommentCtx) {
+          ev.preventDefault();
+          SH.views.community.cancelCommentEdit();
+        }
+      });
+      if (editCommentCtx && editCommentCtx.postId === postId && editCommentCtx.autoFocus) {
+        editCommentCtx.autoFocus = false;
+        ceFocusEnd(inp);
+      }
+    }
+
+    const scroller = root && root.querySelector('[data-post-scroll]');
+    if (scroller && !scroller.__gesturesBound) {
+      scroller.__gesturesBound = true;
+      let lpTimer = null;
+      let sx = 0, sy = 0;
+
+      const clearLp = () => { if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; } };
+
+      scroller.addEventListener('contextmenu', (ev) => {
+        const row = ev.target && ev.target.closest('[data-comment]');
+        if (!row) return;
+        ev.preventDefault();
+        clearLp();
+        SH.views.community.openCommentMenu(postId, row.getAttribute('data-comment'), row);
+      });
+
+      scroller.addEventListener('touchstart', (ev) => {
+        if (!ev.touches || ev.touches.length !== 1) return;
+        if (ev.target && ev.target.closest('button, a')) return;
+        const row = ev.target && ev.target.closest('[data-comment]');
+        if (!row) return;
+        sx = ev.touches[0].clientX;
+        sy = ev.touches[0].clientY;
+        const cid = row.getAttribute('data-comment');
+        lpTimer = setTimeout(() => {
+          lpTimer = null;
+          try { if (navigator.vibrate) navigator.vibrate(12); } catch (err) {}
+          SH.views.community.openCommentMenu(postId, cid, row);
+        }, 360);
+      }, { passive: true });
+
+      scroller.addEventListener('touchmove', (ev) => {
+        if (!lpTimer || !ev.touches || !ev.touches[0]) return;
+        if (Math.abs(ev.touches[0].clientX - sx) > 10 || Math.abs(ev.touches[0].clientY - sy) > 10) clearLp();
+      }, { passive: true });
+
+      scroller.addEventListener('touchend', clearLp, { passive: true });
+      scroller.addEventListener('touchcancel', clearLp, { passive: true });
+    }
+  }
+
   SH.views = SH.views || {};
-  SH.views.community = Object.assign({ html, teamDetail, teamInvite, mountInvite, postDetail }, actions);
+  SH.views.community = Object.assign({ html, teamDetail, teamInvite, mountInvite, postDetail, mountPostDetail }, actions);
   SH.views.community.getTab = () => tab;
 })(window.SH = window.SH || {});
 
@@ -8523,7 +9749,6 @@ html[data-theme='dark'] .tg-compose-ctx__body {
       '</div>' +
       '<button class="btn btn--brand btn--block rm-cta" onclick="SH.views.roadmap.addItem()">' +
         icon('plus', 18) + '<span>Добавить дедлайн или марафон</span></button>' +
-      (activeChatId ? '' : goalsSection()) +
     '</div>';
   }
 
@@ -9271,8 +10496,8 @@ html[data-theme='dark'] .tg-compose-ctx__body {
 })(window.SH = window.SH || {});
 
 /* Чаты в стиле Telegram: плоский список, ровные аватарки, мем-стикеры,
-   отправка фото и документов, контекстное меню по зажатию сообщения
-   (Ответить, Копировать, Переслать, Изменить, Удалить) и общий роадмап группы */
+   отправка фото и документов, плавающее контекстное меню с быстрыми реакциями,
+   закреп сообщения, inline-редактирование и ввод без системной панели форм iOS */
 (function (SH) {
   'use strict';
   const { ui, store, icon } = SH;
@@ -9281,8 +10506,10 @@ html[data-theme='dark'] .tg-compose-ctx__body {
   let listQuery = '';
   let stickerOpen = false;
   let viewportListener = null;
-  /* Активный контекст полосы ввода: { chatId, mode: 'reply'|'edit', msgId, authorName, previewText, draft } */
+  /* Активный контекст полосы ввода: { chatId, mode: 'reply'|'edit', msgId, authorName, previewText, draft, autoFocus } */
   let composerCtx = null;
+
+  const QUICK_REACTIONS = ['👍', '❤️', '😎', '👏', '🤔', '🔥', '👎'];
 
   /* ── Встроенный пак мем-стикеров ── */
   const MEME_STICKERS = [
@@ -9295,6 +10522,37 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     { id: 'maket', emoji: '👀', top: 'А ГДЕ', bot: 'МАКЕТЫ?!', bg1: '#FFE082', bg2: '#FFAB91', fg: '#4E260E' },
     { id: 'chill', emoji: '🧋', top: 'СПОКОЙНО', bot: 'ЧИЛЛИМ', bg1: '#C8E6C9', bg2: '#B2EBF2', fg: '#103B3A' }
   ];
+
+  function ceRead(el) {
+    if (!el) return '';
+    if (typeof el.value === 'string') return el.value;
+    return String(el.innerText || el.textContent || '').replace(/\u00a0/g, ' ').replace(/\r/g, '');
+  }
+
+  function ceWrite(el, text) {
+    if (!el) return;
+    if (typeof el.value === 'string') { el.value = text || ''; return; }
+    el.textContent = text || '';
+  }
+
+  function ceFocusEnd(el) {
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    if (typeof el.setSelectionRange === 'function') {
+      const len = (el.value || '').length;
+      try { el.setSelectionRange(len, len); } catch (err) {}
+      return;
+    }
+    try {
+      const sel = window.getSelection();
+      if (!sel) return;
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } catch (err) {}
+  }
 
   function stickerSvg(st, size) {
     const s = size || 144;
@@ -9469,6 +10727,26 @@ html[data-theme='dark'] .tg-compose-ctx__body {
 
   /* ───────────────────────── экран переписки (стиль Telegram) ───────────────────────── */
 
+  function pinnedBannerHtml(c) {
+    if (!c || !c.pinnedMsgId) return '';
+    const pm = (c.messages || []).find((x) => x.id === c.pinnedMsgId);
+    if (!pm) return '';
+    return (
+      '<div class="tg-pinbar">' +
+        '<button type="button" class="tg-pinbar__main" onclick="SH.views.chats.jumpToMsg(\'' + e(pm.id) + '\')">' +
+          '<span class="tg-pinbar__accent"></span>' +
+          '<span class="tg-pinbar__body">' +
+            '<b>Закреплённое сообщение</b>' +
+            '<span>' + e(messageSummary(pm)) + '</span>' +
+          '</span>' +
+        '</button>' +
+        '<button type="button" class="icon-btn icon-btn--plain tg-pinbar__unpin" onclick="SH.views.chats.togglePin(\'' + e(c.id) + '\',\'\')" aria-label="Открепить">' +
+          icon('close', 15) +
+        '</button>' +
+      '</div>'
+    );
+  }
+
   function thread(id) {
     const c = store.chat(id);
     if (!c) {
@@ -9515,6 +10793,8 @@ html[data-theme='dark'] .tg-compose-ctx__body {
           '</div>' +
         '</header>' +
 
+        pinnedBannerHtml(c) +
+
         '<div class="chat-scroll tg-scroll grow" data-chat-id="' + e(c.id) + '">' +
           (c.messages.length
             ? c.messages.map((m) => messageRow(c, m, me)).join('')
@@ -9553,13 +10833,14 @@ html[data-theme='dark'] .tg-compose-ctx__body {
           : '') +
 
         '<div class="composer tg-composer">' +
-          '<input type="file" id="chat-photo-inp" accept="image/*" hidden>' +
-          '<input type="file" id="chat-doc-inp" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.csv,application/*,text/*" hidden>' +
           '<button class="icon-btn icon-btn--plain tg-bar-btn" onclick="SH.views.chats.openAttachMenu(\'' + e(c.id) + '\')" title="Прикрепить фото или документ" aria-label="Прикрепить">' +
             icon('paperclip', 20) +
           '</button>' +
           '<div class="tg-inp-wrap">' +
-            '<input id="msg-input" class="tg-inp" value="' + e(ctx && ctx.draft ? ctx.draft : '') + '" placeholder="' + (ctx && ctx.mode === 'edit' ? 'Измените текст сообщения…' : 'Сообщение…') + '" autocomplete="off">' +
+            '<div id="msg-input" class="tg-inp tg-ce" contenteditable="true" role="textbox" aria-multiline="false" enterkeyhint="send" spellcheck="true" data-placeholder="' +
+              (ctx && ctx.mode === 'edit' ? 'Измените текст сообщения…' : 'Сообщение…') + '">' +
+              e(ctx && ctx.draft ? ctx.draft : '') +
+            '</div>' +
             '<button class="tg-bar-sticker' + (stickerOpen ? ' is-on' : '') + '" onclick="SH.views.chats.toggleStickers()" title="Мем-стикеры" aria-label="Стикеры">🎭</button>' +
           '</div>' +
           '<button class="icon-btn icon-btn--brand tg-send-btn" onclick="SH.views.chats.send(\'' + e(c.id) + '\')" aria-label="' + (ctx && ctx.mode === 'edit' ? 'Сохранить' : 'Отправить') + '">' +
@@ -9626,6 +10907,28 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     return out;
   }
 
+  function renderReactionsBar(chatId, m, meId) {
+    const rx = m && m.reactions;
+    if (!rx || typeof rx !== 'object') return '';
+    const entries = Object.keys(rx).filter((k) => Array.isArray(rx[k]) && rx[k].length);
+    if (!entries.length) return '';
+    return (
+      '<div class="tg-rx-row" data-rx-box="1">' +
+        entries.map((em) => {
+          const users = rx[em] || [];
+          const mine = meId && users.includes(meId);
+          return (
+            '<button type="button" class="tg-rx-chip' + (mine ? ' is-mine' : '') + '" ' +
+              'onclick="event.stopPropagation();SH.views.chats.react(\'' + e(chatId) + '\',\'' + e(m.id) + '\',\'' + e(em) + '\')">' +
+              '<span>' + e(em) + '</span>' +
+              '<b>' + users.length + '</b>' +
+            '</button>'
+          );
+        }).join('') +
+      '</div>'
+    );
+  }
+
   function messageRow(c, m, me) {
     const own = m.authorId === me.id;
     const author = store.userById(m.authorId);
@@ -9633,6 +10936,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     const att = m.attachment || null;
     const hasMeta = !!(att && (att.replyTo || att.forwardedFrom));
     const isStickerOnly = att && att.kind === 'sticker' && !m.text && !hasMeta;
+    const rxBar = renderReactionsBar(c.id, m, me.id);
 
     return (
       '<div class="msg-line tg-line tg-line--' + (own ? 'own' : 'other') + '" data-msg="' + e(m.id) + '" data-chat="' + e(c.id) + '">' +
@@ -9646,6 +10950,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
             ? '<div class="tg-sticker-wrap" data-msg-surface="1">' +
                 (!own && isGroup ? '<div class="tg-sender">' + e(author.name.split(' ')[0]) + '</div>' : '') +
                 renderAttachment(att) +
+                rxBar +
                 '<div class="tg-sticker-time">' +
                   e(msgClock(m.editedAt || m.at)) +
                   (own ? ' <span class="chat-flag' + (m.failed ? ' chat-flag--fail' : (m.pending ? ' chat-flag--wait' : '')) + '">' +
@@ -9657,6 +10962,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
                 renderQuoteAndForward(att) +
                 (att ? renderAttachment(att) : '') +
                 (m.text ? '<span class="chat-text tg-text">' + e(m.text) + '</span>' : '') +
+                rxBar +
                 '<span class="tg-meta">' +
                   '<span class="chat-time">' + e(msgClock(m.editedAt || m.at)) + (m.editedAt ? ' · изм.' : '') + '</span>' +
                   (own
@@ -9729,7 +11035,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     rows.forEach((el) => {
       const id_ = el.getAttribute('data-msg');
       const m = (c.messages || []).find((x) => x.id === id_);
-      if (!m) return;
+      if (!m) { el.remove(); return; }
       const flag = el.querySelector('.chat-flag');
       if (flag) {
         const st = m.failed ? 'fail' : (m.pending ? 'wait' : '');
@@ -9742,6 +11048,19 @@ html[data-theme='dark'] .tg-compose-ctx__body {
       if (timeEl) {
         const nextClock = msgClock(m.editedAt || m.at) + (m.editedAt ? ' · изм.' : '');
         if (timeEl.textContent !== nextClock) timeEl.textContent = nextClock;
+      }
+      // Обновляем реакции без ререндера всего экрана
+      const surface = el.querySelector('[data-msg-surface]');
+      if (surface) {
+        const nextRx = renderReactionsBar(id, m, me.id);
+        const curRx = surface.querySelector('[data-rx-box]');
+        if (!nextRx && curRx) curRx.remove();
+        else if (nextRx && curRx && curRx.outerHTML !== nextRx) curRx.outerHTML = nextRx;
+        else if (nextRx && !curRx) {
+          const meta = surface.querySelector('.tg-meta, .tg-sticker-time');
+          if (meta) meta.insertAdjacentHTML('beforebegin', nextRx);
+          else surface.insertAdjacentHTML('beforeend', nextRx);
+        }
       }
     });
 
@@ -9811,7 +11130,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     });
   }
 
-  /* Жесты сообщений: зажатие (long-press ~360мс на телефоне) и правый клик на ПК */
+  /* Жесты сообщений: зажатие (long-press ~340мс на телефоне) и правый клик на ПК */
   function bindMessageGestures(scroller, chatId) {
     if (!scroller || scroller.__gesturesBound) return;
     scroller.__gesturesBound = true;
@@ -9834,11 +11153,12 @@ html[data-theme='dark'] .tg-compose-ctx__body {
       if (!row) return;
       ev.preventDefault();
       clearPress();
-      SH.views.chats.openMsgMenu(chatId, row.getAttribute('data-msg'));
+      SH.views.chats.openMsgMenu(chatId, row.getAttribute('data-msg'), surface);
     });
 
     scroller.addEventListener('touchstart', (ev) => {
       if (!ev.touches || ev.touches.length !== 1) return;
+      if (ev.target && ev.target.closest('.tg-rx-chip')) return;
       const surface = ev.target && ev.target.closest('[data-msg-surface]');
       if (!surface) return;
       const row = surface.closest('[data-msg]');
@@ -9854,9 +11174,9 @@ html[data-theme='dark'] .tg-compose-ctx__body {
         lpTimer = null;
         if (pressedEl) { pressedEl.classList.remove('is-pressing'); pressedEl = null; }
         suppressClickUntil = Date.now() + 650;
-        try { if (navigator.vibrate) navigator.vibrate(12); } catch (e) {}
-        SH.views.chats.openMsgMenu(chatId, msgId);
-      }, 360);
+        try { if (navigator.vibrate) navigator.vibrate(12); } catch (err) {}
+        SH.views.chats.openMsgMenu(chatId, msgId, surface);
+      }, 340);
     }, { passive: true });
 
     scroller.addEventListener('touchmove', (ev) => {
@@ -9884,73 +11204,52 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     });
   }
 
+  function wireContentEditable(input, onSend, onEscape, onChange) {
+    if (!input) return;
+    input.addEventListener('input', () => {
+      if (!ceRead(input).trim() && input.innerHTML && input.innerHTML !== '') {
+        if (input.textContent === '') input.innerHTML = '';
+      }
+      if (onChange) onChange(ceRead(input));
+    });
+    input.addEventListener('paste', (ev) => {
+      ev.preventDefault();
+      const plain = ((ev.clipboardData || window.clipboardData) && (ev.clipboardData || window.clipboardData).getData('text/plain')) || '';
+      const clean = plain.replace(/\r?\n/g, ' ');
+      if (!clean) return;
+      if (document.queryCommandSupported && document.queryCommandSupported('insertText')) {
+        document.execCommand('insertText', false, clean);
+      } else {
+        input.textContent = (ceRead(input) + clean);
+        ceFocusEnd(input);
+      }
+      if (onChange) onChange(ceRead(input));
+    });
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' && !ev.shiftKey) {
+        ev.preventDefault();
+        onSend();
+      } else if (ev.key === 'Escape' && onEscape) {
+        ev.preventDefault();
+        onEscape();
+      }
+    });
+  }
+
   function mountThread(root, id) {
     const input = root.querySelector('#msg-input');
     if (input) {
-      input.addEventListener('input', () => {
-        if (composerCtx && composerCtx.chatId === id) composerCtx.draft = input.value;
-      });
-      input.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter' && !ev.shiftKey) {
-          ev.preventDefault();
-          SH.views.chats.send(id);
-        } else if (ev.key === 'Escape' && composerCtx) {
-          ev.preventDefault();
-          SH.views.chats.cancelComposeCtx();
-        }
-      });
+      wireContentEditable(
+        input,
+        () => SH.views.chats.send(id),
+        () => { if (composerCtx) SH.views.chats.cancelComposeCtx(); },
+        (txt) => { if (composerCtx && composerCtx.chatId === id) composerCtx.draft = txt; }
+      );
       const touch = window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
       if ((!touch && !stickerOpen) || (composerCtx && composerCtx.chatId === id && composerCtx.autoFocus)) {
         if (composerCtx) composerCtx.autoFocus = false;
-        input.focus({ preventScroll: true });
-        const len = input.value.length;
-        try { input.setSelectionRange(len, len); } catch (e) {}
+        ceFocusEnd(input);
       }
-    }
-
-    const photoInp = root.querySelector('#chat-photo-inp');
-    if (photoInp) {
-      photoInp.addEventListener('change', async (ev) => {
-        const file = ev.target.files && ev.target.files[0];
-        ev.target.value = '';
-        if (!file) return;
-        try {
-          const dataUrl = await compressImageFile(file);
-          const att = withActiveReply(id, {
-            kind: 'image',
-            name: file.name || 'photo.jpg',
-            size: dataUrl.length,
-            dataUrl
-          });
-          await store.sendMessage(id, '', att);
-          SH.app.render();
-        } catch (err) {
-          ui.toast(err.message || 'Не удалось прикрепить фото');
-        }
-      });
-    }
-
-    const docInp = root.querySelector('#chat-doc-inp');
-    if (docInp) {
-      docInp.addEventListener('change', async (ev) => {
-        const file = ev.target.files && ev.target.files[0];
-        ev.target.value = '';
-        if (!file) return;
-        try {
-          const dataUrl = await readDocFile(file);
-          const att = withActiveReply(id, {
-            kind: 'file',
-            name: file.name || 'document',
-            size: file.size || 0,
-            mime: file.type || 'application/octet-stream',
-            dataUrl
-          });
-          await store.sendMessage(id, '', att);
-          SH.app.render();
-        } catch (err) {
-          ui.toast(err.message || 'Не удалось прикрепить документ');
-        }
-      });
     }
 
     const scroller = root.querySelector('.chat-scroll');
@@ -9995,21 +11294,32 @@ html[data-theme='dark'] .tg-compose-ctx__body {
       document.execCommand('copy');
       ta.remove();
       ui.toast('Скопировано');
-    } catch (e) {
+    } catch (err) {
       ui.toast('Не удалось скопировать');
     }
+  }
+
+  function downloadDataUrl(dataUrl, filename) {
+    if (!dataUrl) { ui.toast('Файл недоступен'); return; }
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = filename || 'file';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 
   const actions = {
     send(id) {
       const input = document.getElementById('msg-input');
-      if (!input || !input.value.trim()) return;
-      const val = input.value.trim();
+      const val = ceRead(input).trim();
+      if (!val) return;
       stickerOpen = false;
 
       if (composerCtx && composerCtx.chatId === id && composerCtx.mode === 'edit') {
         const msgId = composerCtx.msgId;
         composerCtx = null;
+        ceWrite(input, '');
         store.editMessage(id, msgId, val).then((res) => {
           if (!res || !res.ok) { ui.toast((res && res.error) || 'Не сохранено'); return; }
           ui.toast('Сообщение изменено');
@@ -10019,13 +11329,14 @@ html[data-theme='dark'] .tg-compose-ctx__body {
       }
 
       const att = withActiveReply(id, null);
+      ceWrite(input, '');
       const sent = store.sendMessage(id, val, att);
       SH.app.render();
       if (sent && sent.then) {
         sent.then((res) => { if (res && res.queued) ui.toast('Нет связи: сообщение уйдёт при подключении'); });
       }
       const again = document.getElementById('msg-input');
-      if (again) again.focus({ preventScroll: true });
+      if (again) ceFocusEnd(again);
       const scroller = document.querySelector('.chat-scroll');
       if (scroller) scroller.scrollTop = scroller.scrollHeight;
     },
@@ -10048,17 +11359,17 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     },
 
     /* Меню вложений (только реальные файлы: фото и документ) */
-    openAttachMenu() {
+    openAttachMenu(chatId) {
       ui.sheet({
         title: 'Вложение',
         subtitle: 'Отправить в чат',
         body:
           '<div class="list" style="gap:10px">' +
-            '<button class="item card--tap" style="width:100%;text-align:left" onclick="SH.views.chats.triggerFile(\'photo\')">' +
+            '<button class="item card--tap" style="width:100%;text-align:left" onclick="SH.views.chats.triggerFile(\'' + e(chatId || '') + '\',\'photo\')">' +
               '<span class="empty__icon" style="width:42px;height:42px;border-radius:14px;background:var(--sky);color:#14161f">' + icon('image', 20) + '</span>' +
               '<div class="grow"><b>Фото или изображение</b><div class="small muted">JPG, PNG, WEBP — сожмётся автоматически</div></div>' +
             '</button>' +
-            '<button class="item card--tap" style="width:100%;text-align:left" onclick="SH.views.chats.triggerFile(\'doc\')">' +
+            '<button class="item card--tap" style="width:100%;text-align:left" onclick="SH.views.chats.triggerFile(\'' + e(chatId || '') + '\',\'doc\')">' +
               '<span class="empty__icon" style="width:42px;height:42px;border-radius:14px;background:var(--lavender);color:#14161f">' + icon('file', 20) + '</span>' +
               '<div class="grow"><b>Документ или презентация</b><div class="small muted">PDF, DOCX, PPTX, TXT, ZIP (до 480 КБ)</div></div>' +
             '</button>' +
@@ -10066,59 +11377,145 @@ html[data-theme='dark'] .tg-compose-ctx__body {
       });
     },
 
-    triggerFile(which) {
+    triggerFile(chatId, which) {
       ui.closeSheet();
-      const inp = document.getElementById(which === 'photo' ? 'chat-photo-inp' : 'chat-doc-inp');
-      if (inp) inp.click();
+      const targetChat = chatId || ((location.hash.match(/^#\/chat\/([^/]+)/) || [])[1]) || '';
+      if (!targetChat) return;
+      // Создаём временный input вне DOM чата, чтобы на iOS не включалась панель навигации форм (^ v ✓)
+      const inp = document.createElement('input');
+      inp.type = 'file';
+      inp.accept = which === 'photo'
+        ? 'image/*'
+        : '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.csv,application/*,text/*';
+      inp.addEventListener('change', async () => {
+        const file = inp.files && inp.files[0];
+        if (!file) return;
+        try {
+          if (which === 'photo') {
+            const dataUrl = await compressImageFile(file);
+            const att = withActiveReply(targetChat, {
+              kind: 'image',
+              name: file.name || 'photo.jpg',
+              size: dataUrl.length,
+              dataUrl
+            });
+            await store.sendMessage(targetChat, '', att);
+          } else {
+            const dataUrl = await readDocFile(file);
+            const att = withActiveReply(targetChat, {
+              kind: 'file',
+              name: file.name || 'document',
+              size: file.size || 0,
+              mime: file.type || 'application/octet-stream',
+              dataUrl
+            });
+            await store.sendMessage(targetChat, '', att);
+          }
+          SH.app.render();
+        } catch (err) {
+          ui.toast(err.message || 'Не удалось прикрепить файл');
+        }
+      });
+      inp.click();
     },
 
-    /* ── Контекстное меню сообщения (по зажатию на телефоне / правому клику на ПК) ── */
-    openMsgMenu(chatId, messageId) {
+    react(chatId, messageId, emoji) {
+      store.toggleReaction(chatId, messageId, emoji).then(() => {
+        syncOpen(chatId);
+      });
+    },
+
+    togglePin(chatId, messageId) {
+      store.pinChatMessage(chatId, messageId || '').then((res) => {
+        if (!res || !res.ok) { ui.toast('Не удалось обновить закреп'); return; }
+        ui.toast(messageId ? 'Сообщение закреплено' : 'Сообщение откреплено');
+        SH.app.render();
+      });
+    },
+
+    /* ── Плавающее контекстное меню сообщения в стиле Telegram (image-27) ── */
+    openMsgMenu(chatId, messageId, surfaceEl) {
       const c = store.chat(chatId);
       const m = c && (c.messages || []).find((x) => x.id === messageId);
       if (!m) return;
       const me = store.currentUser || {};
       const own = m.authorId === me.id;
-      const author = store.userById(m.authorId);
-      const preview = messageSummary(m);
+      const canDelete = own || me.role === 'root' || me.role === 'admin';
+      const anchor = surfaceEl || document.querySelector('[data-msg="' + messageId + '"] [data-msg-surface]');
+      const isPinned = c.pinnedMsgId === m.id;
+      const att = m.attachment || null;
 
-      ui.sheet({
-        title: 'Сообщение',
-        body:
-          '<div class="tg-ctx-preview">' +
-            '<div class="tg-ctx-preview__top">' +
-              '<b>' + e(author.name || 'Участник') + '</b>' +
-              '<span>' + e(msgClock(m.editedAt || m.at)) + '</span>' +
-            '</div>' +
-            '<div class="tg-ctx-preview__text">' + e(preview) + '</div>' +
-          '</div>' +
-          '<div class="tg-ctx-menu">' +
-            '<button class="tg-ctx-item" onclick="SH.views.chats.replyToMsg(\'' + e(chatId) + '\',\'' + e(m.id) + '\')">' +
-              icon('reply', 19) + '<span>Ответить</span>' +
-            '</button>' +
-            (m.text
-              ? '<button class="tg-ctx-item" onclick="SH.views.chats.copyMsg(\'' + e(chatId) + '\',\'' + e(m.id) + '\')">' +
-                  icon('copy', 19) + '<span>Копировать текст</span>' +
-                '</button>'
-              : '') +
-            '<button class="tg-ctx-item" onclick="SH.views.chats.forwardMsgPrompt(\'' + e(chatId) + '\',\'' + e(m.id) + '\')">' +
-              icon('forward', 19) + '<span>Переслать</span>' +
-            '</button>' +
-            (own && m.text
-              ? '<button class="tg-ctx-item" onclick="SH.views.chats.startEditMsg(\'' + e(chatId) + '\',\'' + e(m.id) + '\')">' +
-                  icon('edit', 19) + '<span>Изменить</span>' +
-                '</button>'
-              : '') +
-            (own
-              ? '<button class="tg-ctx-item tg-ctx-item--danger" onclick="SH.views.chats.removeMsg(\'' + e(chatId) + '\',\'' + e(m.id) + '\')">' +
-                  icon('trash', 19) + '<span>Удалить сообщение</span>' +
-                '</button>'
-              : '') +
-          '</div>'
+      let myReaction = '';
+      if (m.reactions && typeof m.reactions === 'object') {
+        Object.keys(m.reactions).forEach((em) => {
+          if (Array.isArray(m.reactions[em]) && m.reactions[em].includes(me.id)) myReaction = em;
+        });
+      }
+
+      const previewText = messageSummary(m);
+      const bubbleHtml =
+        '<div class="tg-pop-bubble tg-pop-bubble--' + (own ? 'own' : 'other') + '">' +
+          '<span class="tg-pop-bubble__txt">' + e(previewText.length > 140 ? previewText.slice(0, 140) + '…' : previewText) + '</span>' +
+          '<span class="tg-pop-bubble__time">' + e(msgClock(m.editedAt || m.at)) + '</span>' +
+        '</div>';
+
+      const items = [
+        {
+          icon: 'reply',
+          label: 'Ответить',
+          onClick: () => SH.views.chats.replyToMsg(chatId, m.id)
+        },
+        m.text ? {
+          icon: 'copy',
+          label: 'Скопировать',
+          onClick: () => SH.views.chats.copyMsg(chatId, m.id)
+        } : null,
+        (att && att.kind === 'image' && att.dataUrl) ? {
+          icon: 'download',
+          label: 'Сохранить фото',
+          onClick: () => downloadDataUrl(att.dataUrl, att.name || 'photo.jpg')
+        } : null,
+        (att && att.kind === 'file' && att.dataUrl) ? {
+          icon: 'download',
+          label: 'Скачать файл',
+          onClick: () => downloadDataUrl(att.dataUrl, att.name || 'document')
+        } : null,
+        (own && m.text) ? {
+          icon: 'edit',
+          label: 'Изменить',
+          onClick: () => SH.views.chats.startEditMsg(chatId, m.id)
+        } : null,
+        {
+          icon: 'pin',
+          label: isPinned ? 'Открепить' : 'Закрепить',
+          onClick: () => SH.views.chats.togglePin(chatId, isPinned ? '' : m.id)
+        },
+        {
+          icon: 'forward',
+          label: 'Переслать',
+          onClick: () => SH.views.chats.forwardMsgPrompt(chatId, m.id)
+        },
+        canDelete ? {
+          icon: 'trash',
+          label: 'Удалить',
+          danger: true,
+          onClick: () => SH.views.chats.removeMsg(chatId, m.id)
+        } : null
+      ];
+
+      ui.popMenu({
+        anchorEl: anchor,
+        align: own ? 'right' : 'left',
+        reactions: QUICK_REACTIONS,
+        myReaction,
+        onReact: (emoji) => SH.views.chats.react(chatId, m.id, emoji),
+        bubbleHtml,
+        items
       });
     },
 
     replyToMsg(chatId, messageId) {
+      ui.closePopMenu();
       ui.closeSheet();
       const c = store.chat(chatId);
       const m = c && (c.messages || []).find((x) => x.id === messageId);
@@ -10131,13 +11528,14 @@ html[data-theme='dark'] .tg-compose-ctx__body {
         msgId: m.id,
         authorName: author.name || 'Участник',
         previewText: messageSummary(m),
-        draft: currentInput ? currentInput.value : '',
+        draft: ceRead(currentInput),
         autoFocus: true
       };
       SH.app.render();
     },
 
     startEditMsg(chatId, messageId) {
+      ui.closePopMenu();
       ui.closeSheet();
       const c = store.chat(chatId);
       const m = c && (c.messages || []).find((x) => x.id === messageId);
@@ -10160,6 +11558,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     },
 
     copyMsg(chatId, messageId) {
+      ui.closePopMenu();
       ui.closeSheet();
       const c = store.chat(chatId);
       const m = c && (c.messages || []).find((x) => x.id === messageId);
@@ -10168,6 +11567,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     },
 
     forwardMsgPrompt(fromChatId, messageId) {
+      ui.closePopMenu();
       const c = store.chat(fromChatId);
       const m = c && (c.messages || []).find((x) => x.id === messageId);
       if (!m) return;
@@ -10226,6 +11626,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     },
 
     removeMsg(chatId, messageId) {
+      ui.closePopMenu();
       ui.closeSheet();
       store.deleteMessage(chatId, messageId).then((res) => {
         if (!res || !res.ok) { ui.toast((res && res.error) || 'Не удалось удалить'); return; }
@@ -10330,7 +11731,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
           ).join('') + '</div>' +
           (isGroup
             ? '<p class="small muted mt-16" style="margin-bottom:0">Все участники группового чата могут смотреть и редактировать общий роадмап команды и получают от него общие уведомления.</p>'
-            : '<p class="small muted mt-16" style="margin-bottom:0">Зажмите сообщение, чтобы ответить, скопировать или переслать.</p>')
+            : '<p class="small muted mt-16" style="margin-bottom:0">Зажмите сообщение, чтобы поставить реакцию, ответить, закрепить или переслать.</p>')
       });
     },
 
@@ -10366,6 +11767,8 @@ html[data-theme='dark'] .tg-compose-ctx__body {
       .catch(() => { mentorCard = null; });
   }
 
+  const PASTEL_TONES = ['sky', 'mint', 'sun', 'lav'];
+
   function mentorCardBlock() {
     if (!mentorCard || !mentorCard.card) return '';
     const c = mentorCard.card;
@@ -10376,16 +11779,23 @@ html[data-theme='dark'] .tg-compose-ctx__body {
       ['Цель', c.goal, c.goalNote]
     ].filter((r) => r[1]);
     if (!rows.length) return '';
-    return '<div class="pane" style="margin-bottom:16px">' +
-      '<header class="pane__h"><h2>Заметки ментора</h2>' +
-        (mentorCard.mentor ? '<span class="mu">' + e(mentorCard.mentor.name) + '</span>' : '') + '</header>' +
-      '<div class="inds inds--grid">' + rows.map(([k, v, n]) =>
-        '<div class="ind"><span class="ind__k">' + e(k) + '</span><span class="ind__v">' + e(v) + '</span>' +
-        (n ? '<span class="ind__n">' + e(n) + '</span>' : '') + '</div>').join('') + '</div>' +
-      (c.tags && c.tags.length ? '<div class="mini__meta" style="margin-top:10px">' + c.tags.map((t) => '<span class="hash">#' + e(t) + '</span>').join('') + '</div>' : '') +
-      '<p class="hint">' + e(mentorCard.org ? mentorCard.org.name : 'Организация') +
-        ' ведёт сопровождение вашего трека.</p>' +
-    '</div>';
+    return '<section class="pf-open-sec">' +
+      '<div class="pf-sec-head">' +
+        '<h2 class="pf-sec-title">Сопровождение ментора</h2>' +
+        (mentorCard.mentor ? '<span class="small muted">' + e(mentorCard.mentor.name) + '</span>' : '') +
+      '</div>' +
+      '<div class="pf-open-metrics pf-open-metrics--compact">' +
+        rows.map(([k, v, n]) =>
+          '<div class="pf-open-stat">' +
+            '<div class="pf-open-stat__lbl">' + e(k) + '</div>' +
+            '<div class="pf-open-stat__val" style="font-size:18px">' + e(v) + '</div>' +
+            (n ? '<div class="small muted">' + e(n) + '</div>' : '') +
+          '</div>'
+        ).join('') +
+      '</div>' +
+      '<div class="small muted" style="margin-top:6px">' + e(mentorCard.org ? mentorCard.org.name : 'Организация') +
+        ' ведёт сопровождение вашего трека.</div>' +
+    '</section>';
   }
 
   function portfolioOf(u) {
@@ -10456,25 +11866,40 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     const p = SH.push;
     if (!p) return '';
     const st = p.state();
-    const rowHtml = (label, hint, action) =>
-      '<div class="pushrow"><div class="pushrow__t"><b>' + label + '</b><span class="small muted">' + hint + '</span></div>' + action + '</div>';
-    let body = '';
+    let sub = '';
+    let act = '';
     if (st === 'unsupported') {
-      body = '<p class="small muted">Этот браузер не поддерживает push. Установите приложение на главный экран — уведомления заработают.</p>';
+      sub = 'Установите приложение на главный экран — push-уведомления заработают';
     } else if (st === 'denied') {
-      body = '<p class="small muted">Уведомления запрещены в настройках браузера. Разрешите их для сайта.</p>';
+      sub = 'Уведомления запрещены в настройках браузера — разрешите их для сайта';
     } else if (st === 'on') {
-      body = rowHtml('Включены', 'Напоминания о дедлайнах и общем роадмапе команд',
-          '<button class="btn btn--soft btn--sm" onclick="SH.push.test()">Проверить</button>' +
-          '<button class="btn btn--ghost btn--sm" onclick="SH.views.profile.pushOff()">Выключить</button>');
+      sub = 'Включены · напоминания о дедлайнах и общем роадмапе команд';
+      act = '<div class="row" style="gap:6px">' +
+        '<button class="btn btn--soft btn--xs" onclick="SH.push.test()">Проверить</button>' +
+        '<button class="btn btn--ghost btn--xs" onclick="SH.views.profile.pushOff()">Выкл.</button>' +
+      '</div>';
     } else {
-      body = rowHtml('Выключены', 'Напомним о дедлайнах за 48 часов',
-          '<button class="btn btn--brand btn--sm" onclick="SH.views.profile.pushOn()">Включить</button>');
+      sub = 'Напомним о дедлайнах и планах за 48 часов';
+      act = '<button class="btn btn--brand btn--xs" onclick="SH.views.profile.pushOn()">Включить</button>';
     }
-    return '<div class="card pushcard"><div class="section-head"><span class="h2">Уведомления</span></div>' + body + '</div>';
+    return (
+      '<section class="pf-open-sec">' +
+        '<div class="pf-sec-head"><h2 class="pf-sec-title">Уведомления</h2></div>' +
+        '<div class="pf-flat-list">' +
+          '<div class="pf-flat-row pf-flat-row--static">' +
+            '<span class="pf-flat-row__ico pf-flat-row__ico--sun">' + icon('bell', 18) + '</span>' +
+            '<div class="grow" style="min-width:0">' +
+              '<div class="pf-flat-row__title">Push-уведомления</div>' +
+              '<div class="small muted">' + e(sub) + '</div>' +
+            '</div>' +
+            act +
+          '</div>' +
+        '</div>' +
+      '</section>'
+    );
   }
 
-  /* ── Блок академического портфолио (для своего и чужого профиля) ── */
+  /* ── Блок академического портфолио на чистом открытом полотне без карточных панелек ── */
   function academicPortfolioHtml(u, editable) {
     const pf = portfolioOf(u);
     const avgGpa = calcAvgGpa(pf.gpa);
@@ -10490,89 +11915,96 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     const hasSat = !!String(pf.sat.total || '').trim();
 
     return (
-      '<div class="section-head"><span class="h2">Академические показатели</span></div>' +
-      '<div class="pf-metrics">' +
-        /* GPA */
-        '<div class="pf-metric">' +
-          '<div class="pf-metric__top">' +
-            '<span class="pf-metric__lbl">GPA · с 8/9 класса</span>' +
-            (editable ? '<button class="link-btn small" onclick="SH.views.profile.editGpa()">' + (gpaGrades.length ? 'Изменить' : '+ Указать') + '</button>' : '') +
+      '<section class="pf-open-sec">' +
+        '<div class="pf-sec-head"><h2 class="pf-sec-title">Академические показатели</h2></div>' +
+        '<div class="pf-open-metrics">' +
+          /* GPA */
+          '<div class="pf-open-stat">' +
+            '<div class="pf-open-stat__top">' +
+              '<span class="pf-open-stat__lbl">GPA · с 8/9 класса</span>' +
+              (editable ? '<button class="pf-inline-act" onclick="SH.views.profile.editGpa()">' + (gpaGrades.length ? 'Изменить' : '+ Указать') + '</button>' : '') +
+            '</div>' +
+            '<div class="pf-open-stat__val">' +
+              (avgGpa ? e(avgGpa) + ' <span class="pf-open-stat__scale">/ ' + e(pf.gpaScale) + '</span>' : '<span class="pf-open-stat__empty">Не указан</span>') +
+            '</div>' +
+            (gpaGrades.length
+              ? '<div class="pf-gpa-pills">' +
+                  gpaGrades.map(([k, lbl]) => '<span class="pf-gpa-pill">' + lbl + ' <b>' + e(pf.gpa[k]) + '</b></span>').join('') +
+                '</div>'
+              : '<div class="small muted">Оценки за 8, 9, 10, 11–12 классы</div>') +
           '</div>' +
-          '<div class="pf-metric__val">' +
-            (avgGpa ? e(avgGpa) + ' <span class="pf-metric__scale">/ ' + e(pf.gpaScale) + '</span>' : '<span class="muted" style="font-size:15px;font-weight:600">Не указан</span>') +
-          '</div>' +
-          (gpaGrades.length
-            ? '<div class="pf-gpa-pills">' +
-                gpaGrades.map(([k, lbl]) => '<span class="pf-gpa-pill">' + lbl + ': <b>' + e(pf.gpa[k]) + '</b></span>').join('') +
-              '</div>'
-            : '<div class="small muted">Оценки за 8, 9, 10, 11–12 классы</div>') +
-        '</div>' +
 
-        /* IELTS / TOEFL / эквиваленты */
-        '<div class="pf-metric">' +
-          '<div class="pf-metric__top">' +
-            '<span class="pf-metric__lbl">IELTS / TOEFL / экв.</span>' +
-            (editable ? '<button class="link-btn small" onclick="SH.views.profile.editEnglish()">' + (hasEng ? 'Изменить' : '+ Указать') + '</button>' : '') +
+          /* IELTS / TOEFL / эквиваленты */
+          '<div class="pf-open-stat">' +
+            '<div class="pf-open-stat__top">' +
+              '<span class="pf-open-stat__lbl">IELTS / TOEFL / экв.</span>' +
+              (editable ? '<button class="pf-inline-act" onclick="SH.views.profile.editEnglish()">' + (hasEng ? 'Изменить' : '+ Указать') + '</button>' : '') +
+            '</div>' +
+            '<div class="pf-open-stat__val">' +
+              (hasEng
+                ? '<span class="pf-pastel-pill pf-pastel-pill--mint" style="vertical-align:middle;margin-right:6px">' + e(pf.english.type) + '</span>' + e(pf.english.score)
+                : '<span class="pf-open-stat__empty">Не указан</span>') +
+            '</div>' +
+            '<div class="small muted">' +
+              (pf.english.details ? e(pf.english.details) : 'IELTS, TOEFL iBT, Duolingo DET, Cambridge') +
+            '</div>' +
+            (pf.english.certName
+              ? '<button class="pf-cert-chip" onclick="SH.views.profile.openUserCert(\'' + e(u.id) + '\',\'english\',\'\')">' +
+                  icon('file', 13) + '<span>' + e(pf.english.certName) + '</span></button>'
+              : '') +
           '</div>' +
-          '<div class="pf-metric__val">' +
-            (hasEng
-              ? '<span class="tag tag--mint" style="vertical-align:middle;margin-right:6px">' + e(pf.english.type) + '</span>' + e(pf.english.score)
-              : '<span class="muted" style="font-size:15px;font-weight:600">Не указан</span>') +
-          '</div>' +
-          '<div class="small muted">' +
-            (pf.english.details ? e(pf.english.details) : 'IELTS, TOEFL iBT, Duolingo DET, Cambridge') +
-          '</div>' +
-          (pf.english.certName
-            ? '<button class="pf-cert-chip" onclick="SH.views.profile.openUserCert(\'' + e(u.id) + '\',\'english\',\'\')">' +
-                icon('file', 13) + '<span>' + e(pf.english.certName) + '</span></button>'
-            : '') +
-        '</div>' +
 
-        /* SAT (опционально) */
-        '<div class="pf-metric">' +
-          '<div class="pf-metric__top">' +
-            '<span class="pf-metric__lbl">SAT <span class="pf-opt-badge">опционально</span></span>' +
-            (editable ? '<button class="link-btn small" onclick="SH.views.profile.editSat()">' + (hasSat ? 'Изменить' : '+ Указать') + '</button>' : '') +
+          /* SAT (опционально) */
+          '<div class="pf-open-stat">' +
+            '<div class="pf-open-stat__top">' +
+              '<span class="pf-open-stat__lbl">SAT <span class="pf-opt-badge">опционально</span></span>' +
+              (editable ? '<button class="pf-inline-act" onclick="SH.views.profile.editSat()">' + (hasSat ? 'Изменить' : '+ Указать') + '</button>' : '') +
+            '</div>' +
+            '<div class="pf-open-stat__val">' +
+              (hasSat ? e(pf.sat.total) + ' <span class="pf-open-stat__scale">/ 1600</span>' : '<span class="pf-open-stat__empty">—</span>') +
+            '</div>' +
+            '<div class="small muted">' +
+              (hasSat && (pf.sat.math || pf.sat.ebrw)
+                ? e([pf.sat.math ? 'Math ' + pf.sat.math : '', pf.sat.ebrw ? 'RW ' + pf.sat.ebrw : ''].filter(Boolean).join(' · '))
+                : 'Заполняется при наличии экзамена') +
+            '</div>' +
+            (pf.sat.certName
+              ? '<button class="pf-cert-chip" onclick="SH.views.profile.openUserCert(\'' + e(u.id) + '\',\'sat\',\'\')">' +
+                  icon('file', 13) + '<span>' + e(pf.sat.certName) + '</span></button>'
+              : '') +
           '</div>' +
-          '<div class="pf-metric__val">' +
-            (hasSat ? e(pf.sat.total) + ' <span class="pf-metric__scale">/ 1600</span>' : '<span class="muted" style="font-size:15px;font-weight:600">—</span>') +
-          '</div>' +
-          '<div class="small muted">' +
-            (hasSat && (pf.sat.math || pf.sat.ebrw)
-              ? e([pf.sat.math ? 'Math ' + pf.sat.math : '', pf.sat.ebrw ? 'RW ' + pf.sat.ebrw : ''].filter(Boolean).join(' · '))
-              : 'Заполняется при наличии экзамена') +
-          '</div>' +
-          (pf.sat.certName
-            ? '<button class="pf-cert-chip" onclick="SH.views.profile.openUserCert(\'' + e(u.id) + '\',\'sat\',\'\')">' +
-                icon('file', 13) + '<span>' + e(pf.sat.certName) + '</span></button>'
-            : '') +
         '</div>' +
-      '</div>' +
+      '</section>' +
 
-      /* Два отдельных столбца: Honors и Extracurricular Activities */
-      '<div class="pf-columns">' +
+      /* Два открытых столбца: Honors и Extracurricular Activities (без рамок и панелек) */
+      '<div class="pf-open-cols">' +
         /* Столбец 1: Honors */
-        '<section class="pf-col">' +
-          '<div class="pf-col__head">' +
+        '<section class="pf-open-sec">' +
+          '<div class="pf-sec-head">' +
             '<div>' +
-              '<h3 class="pf-col__title">' + icon('trophy', 17) + 'Honors</h3>' +
+              '<h3 class="pf-sec-title">' + icon('trophy', 17) + 'Honors</h3>' +
               '<div class="small muted">Олимпиады, награды и достижения</div>' +
             '</div>' +
             (editable
-              ? '<button class="btn btn--brand btn--xs" onclick="SH.views.profile.openPortfolioForm(\'honors\',\'\')">' +
+              ? '<button class="pf-add-pill" onclick="SH.views.profile.openPortfolioForm(\'honors\',\'\')">' +
                   icon('plus', 14) + 'Добавить</button>'
               : '') +
           '</div>' +
           (pf.honors.length
-            ? '<div class="pf-col__list">' +
+            ? '<div class="pf-flat-entries">' +
                 pf.honors.map((h) =>
-                  '<div class="pf-entry">' +
-                    '<div class="row" style="gap:6px;align-items:flex-start">' +
+                  '<div class="pf-flat-entry">' +
+                    '<div class="row" style="gap:8px;align-items:flex-start">' +
+                      '<span class="pf-entry-dot pf-entry-dot--sun"></span>' +
                       '<div class="grow" style="min-width:0">' +
                         '<div class="pf-entry__title">' + e(h.title) + '</div>' +
                         '<div class="pf-entry__sub">' +
                           e([h.level, h.place, h.year].filter(Boolean).join(' · ')) +
                         '</div>' +
+                        (h.certName
+                          ? '<button class="pf-cert-chip" onclick="SH.views.profile.openUserCert(\'' + e(u.id) + '\',\'honors\',\'' + e(h.id) + '\')">' +
+                              icon('file', 13) + '<span>Сертификат: ' + e(h.certName) + '</span></button>'
+                          : '') +
                       '</div>' +
                       (editable
                         ? '<button class="icon-btn icon-btn--plain" style="width:28px;height:28px" ' +
@@ -10580,41 +12012,42 @@ html[data-theme='dark'] .tg-compose-ctx__body {
                             icon('edit', 14) + '</button>'
                         : '') +
                     '</div>' +
-                    (h.certName
-                      ? '<button class="pf-cert-chip" onclick="SH.views.profile.openUserCert(\'' + e(u.id) + '\',\'honors\',\'' + e(h.id) + '\')">' +
-                          icon('file', 13) + '<span>Сертификат: ' + e(h.certName) + '</span></button>'
-                      : '') +
                   '</div>'
                 ).join('') +
               '</div>'
-            : '<div class="pf-col__empty">' +
+            : '<div class="pf-open-empty">' +
                 (editable ? 'Добавьте дипломы олимпиад, конкурсов и стипендии вместе с сертификатами.' : 'Пока не заполнено.') +
               '</div>') +
         '</section>' +
 
         /* Столбец 2: Extracurricular Activities */
-        '<section class="pf-col">' +
-          '<div class="pf-col__head">' +
+        '<section class="pf-open-sec">' +
+          '<div class="pf-sec-head">' +
             '<div>' +
-              '<h3 class="pf-col__title">' + icon('sparkles', 17) + 'Extracurricular Activities</h3>' +
+              '<h3 class="pf-sec-title">' + icon('sparkles', 17) + 'Extracurricular Activities</h3>' +
               '<div class="small muted">Проекты, клубы, волонтёрство, лидерство</div>' +
             '</div>' +
             (editable
-              ? '<button class="btn btn--brand btn--xs" onclick="SH.views.profile.openPortfolioForm(\'extracurriculars\',\'\')">' +
+              ? '<button class="pf-add-pill" onclick="SH.views.profile.openPortfolioForm(\'extracurriculars\',\'\')">' +
                   icon('plus', 14) + 'Добавить</button>'
               : '') +
           '</div>' +
           (pf.extracurriculars.length
-            ? '<div class="pf-col__list">' +
+            ? '<div class="pf-flat-entries">' +
                 pf.extracurriculars.map((ac) =>
-                  '<div class="pf-entry">' +
-                    '<div class="row" style="gap:6px;align-items:flex-start">' +
+                  '<div class="pf-flat-entry">' +
+                    '<div class="row" style="gap:8px;align-items:flex-start">' +
+                      '<span class="pf-entry-dot pf-entry-dot--mint"></span>' +
                       '<div class="grow" style="min-width:0">' +
                         '<div class="pf-entry__title">' + e(ac.title) + '</div>' +
                         '<div class="pf-entry__sub">' +
                           e([ac.role, ac.period, ac.hours].filter(Boolean).join(' · ')) +
                         '</div>' +
                         (ac.description ? '<div class="pf-entry__desc">' + e(ac.description) + '</div>' : '') +
+                        (ac.certName
+                          ? '<button class="pf-cert-chip" onclick="SH.views.profile.openUserCert(\'' + e(u.id) + '\',\'extracurriculars\',\'' + e(ac.id) + '\')">' +
+                              icon('file', 13) + '<span>Сертификат: ' + e(ac.certName) + '</span></button>'
+                          : '') +
                       '</div>' +
                       (editable
                         ? '<button class="icon-btn icon-btn--plain" style="width:28px;height:28px" ' +
@@ -10622,14 +12055,10 @@ html[data-theme='dark'] .tg-compose-ctx__body {
                             icon('edit', 14) + '</button>'
                         : '') +
                     '</div>' +
-                    (ac.certName
-                      ? '<button class="pf-cert-chip" onclick="SH.views.profile.openUserCert(\'' + e(u.id) + '\',\'extracurriculars\',\'' + e(ac.id) + '\')">' +
-                          icon('file', 13) + '<span>Сертификат: ' + e(ac.certName) + '</span></button>'
-                      : '') +
                   '</div>'
                 ).join('') +
               '</div>'
-            : '<div class="pf-col__empty">' +
+            : '<div class="pf-open-empty">' +
                 (editable ? 'Добавьте проекты, стажировки, волонтёрство и прикрепите благодарности/сертификаты.' : 'Пока не заполнено.') +
               '</div>') +
         '</section>' +
@@ -10637,32 +12066,51 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     );
   }
 
-  /* Объединённый блок «Навыки и интересы» */
+  /* Объединённый блок «Навыки и интересы» — пастельные теги прямо на полотне, как на макете kk. */
   function unifiedTags(u, editable) {
     const merged = [];
     (u.skills || []).forEach((s) => { if (s && !merged.includes(s)) merged.push(s); });
     (u.interests || []).forEach((s) => { if (s && !merged.includes(s)) merged.push(s); });
 
-    if (!editable) {
-      if (!merged.length) return '';
-      return '<div class="section-head"><span class="h2">Навыки и интересы</span></div>' +
-        '<div class="wrap">' + merged.map((s) => ui.tag(s)).join('') + '</div>';
-    }
+    if (!editable && !merged.length) return '';
 
     return (
-      '<div class="section-head"><span class="h2">Навыки и интересы</span></div>' +
-      '<div class="wrap">' +
-        merged.map((v) =>
-          '<span class="tag">' + e(v) +
-            '<button class="chip-remove" onclick="SH.views.profile.removeUnifiedChip(\'' + e(v) + '\')" aria-label="Убрать">×</button>' +
-          '</span>'
-        ).join('') +
-        '<button class="chip-add" onclick="SH.views.profile.addUnifiedChip()">' + icon('plus', 13) + 'Добавить</button>' +
-      '</div>'
+      '<section class="pf-open-sec">' +
+        '<div class="pf-sec-head">' +
+          '<h2 class="pf-sec-title">Навыки и интересы</h2>' +
+          (editable
+            ? '<button class="pf-inline-act" onclick="SH.views.profile.addUnifiedChip()">+ Добавить</button>'
+            : '') +
+        '</div>' +
+        '<div class="pf-pills">' +
+          merged.map((v, idx) => {
+            const tone = PASTEL_TONES[idx % PASTEL_TONES.length];
+            return (
+              '<span class="pf-pastel-pill pf-pastel-pill--' + tone + '">' +
+                e(v) +
+                (editable
+                  ? '<button class="pf-pill-del" onclick="SH.views.profile.removeUnifiedChip(\'' + e(v) + '\')" aria-label="Убрать">×</button>'
+                  : '') +
+              '</span>'
+            );
+          }).join('') +
+          (!merged.length && editable
+            ? '<button class="pf-add-pill" onclick="SH.views.profile.addUnifiedChip()">' + icon('plus', 13) + 'Указать навыки и интересы</button>'
+            : '') +
+        '</div>' +
+      '</section>'
     );
   }
 
-  /* ─────────────────────────── свой профиль ─────────────────────────── */
+  function countAchievements(u) {
+    const pf = portfolioOf(u);
+    let n = (pf.honors ? pf.honors.length : 0) + (pf.extracurriculars ? pf.extracurriculars.length : 0);
+    if (String(pf.english.score || '').trim()) n += 1;
+    if (String(pf.sat.total || '').trim()) n += 1;
+    return n;
+  }
+
+  /* ─────────────────────────── свой профиль (без панелек, по макету kk.) ─────────────────────────── */
 
   function html() {
     if (!store.isAuthed) {
@@ -10677,63 +12125,84 @@ html[data-theme='dark'] .tg-compose-ctx__body {
 
     const u = store.currentUser;
     const saved = store.savedEvents();
+    const achCount = countAchievements(u);
     loadMentorCard();
 
     return (
-      '<div class="screen">' +
-        '<div class="screen-head">' +
-          '<h1 class="screen-title grow">Профиль</h1>' +
-          '<button class="icon-btn icon-btn--plain" onclick="SH.views.profile.settings()" aria-label="Настройки">' +
-            icon('settings', 21) + '</button>' +
-        '</div>' +
-
-        (store.hasAdminBackup()
-          ? '<div class="ai-note" style="margin-bottom:16px">' + icon('shield') +
-              '<div class="grow"><b>Открыт аккаунт пользователя.</b><br>' +
-                'Это режим поддержки — вы вошли сюда из админки.' +
-                '<div style="margin-top:8px"><button class="btn btn--soft btn--sm" ' +
-                  'onclick="SH.views.profile.backToAdmin()">Вернуться в админку</button></div>' +
-              '</div></div>'
-          : '') +
-
-        '<div class="card" style="padding:16px;margin-bottom:16px">' +
-          '<div class="row" style="gap:14px">' +
-            ui.avatar(u, 56) +
-            '<div class="grow" style="min-width:0">' +
-              '<div class="h2" style="font-size:19px">' + e(u.name) + '</div>' +
-              '<div class="small muted">' + e([u.grade, u.school, u.city].filter(Boolean).join(' · ') || 'Заполните школу и класс') + '</div>' +
-              (u.role === 'admin' || u.role === 'root'
-                ? '<span class="tag tag--lav" style="margin-top:6px">' + (u.role === 'root' ? 'Владелец' : 'Администратор') + '</span>'
-                : '') +
+      '<div class="screen screen--flush pf-canvas">' +
+        /* Тёплая безрамочная шапка профиля, как в оригинальном макете My Profile (kk.) */
+        '<header class="pf-hero">' +
+          '<div class="pf-hero__topbar">' +
+            '<h1 class="screen-title" style="margin:0">Профиль</h1>' +
+            '<div class="row" style="gap:8px">' +
+              '<button class="pf-edit-pill" onclick="SH.views.profile.editProfile()">' +
+                icon('edit', 14) + '<span>Изменить</span>' +
+              '</button>' +
+              '<button class="icon-btn icon-btn--plain" onclick="SH.views.profile.settings()" aria-label="Тема">' +
+                icon('settings', 20) +
+              '</button>' +
             '</div>' +
-            '<button class="btn btn--soft btn--xs" onclick="SH.views.profile.editProfile()">' + icon('edit', 14) + 'Изменить</button>' +
           '</div>' +
-        '</div>' +
 
-        mentorCardBlock() +
+          '<div class="pf-hero__identity">' +
+            '<div class="pf-hero__av">' + ui.avatar(u, 68) + '</div>' +
+            '<div class="pf-hero__meta">' +
+              '<div class="pf-hero__name">' +
+                e(u.name) +
+                (u.role === 'admin' || u.role === 'root'
+                  ? ' <span class="pf-pastel-pill pf-pastel-pill--lav">' + (u.role === 'root' ? 'Владелец' : 'Администратор') + '</span>'
+                  : '') +
+              '</div>' +
+              '<div class="pf-hero__sub">' +
+                e([u.school, u.grade, u.city].filter(Boolean).join(' · ') || 'Укажите школу, класс и город') +
+              '</div>' +
+              '<div class="pf-hero__ach">★ ' +
+                (achCount
+                  ? achCount + ' ' + ui.plural(achCount, 'достижение', 'достижения', 'достижений') + ' в портфолио'
+                  : 'Добавьте первые достижения ниже') +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+        '</header>' +
 
-        unifiedTags(u, true) +
-
-        academicPortfolioHtml(u, true) +
-
-        pushCard() +
-
-        '<div class="section-head"><span class="h2">Избранные события</span>' +
-          (saved.length ? '<span class="section-link" onclick="SH.app.go(\'#/explore\')">Найти ещё</span>' : '') + '</div>' +
-        (saved.length
-          ? '<div class="list">' + saved.map(savedRow).join('') + '</div>'
-          : ui.empty('bookmark', 'Пока ничего нет в избранном',
-              'Откройте карточку события в Explore и нажмите на кнопку закладки рядом с переходом на сайт.')) +
-
-        '<div class="section-head"><span class="h2">Настройки</span></div>' +
-        '<div class="list">' +
-          row('install', 'Установить приложение', 'Иконка на главном экране', "SH.app.go('#/install')") +
-          ((u.role === 'admin' || u.role === 'root')
-            ? row('shield', 'Админ-панель', 'События, пользователи, модерация', "SH.app.go('#/admin')", 'tag--lav')
+        '<div class="pf-body">' +
+          (store.hasAdminBackup()
+            ? '<div class="pf-support-strip">' + icon('shield', 18) +
+                '<div class="grow"><b>Режим поддержки:</b> открыт аккаунт пользователя.' +
+                  ' <button class="pf-inline-act" onclick="SH.views.profile.backToAdmin()">Вернуться в админку →</button>' +
+                '</div></div>'
             : '') +
-          row('moon', 'Тема оформления', themeLabel(), 'SH.views.profile.themeSheet()') +
-          row('lock', 'Пароль', 'Сменить пароль от аккаунта', 'SH.views.profile.passwordSheet()') +
-          row('logout', 'Выйти', 'Завершить сессию', 'SH.views.profile.logout()') +
+
+          mentorCardBlock() +
+
+          unifiedTags(u, true) +
+
+          academicPortfolioHtml(u, true) +
+
+          pushCard() +
+
+          '<section class="pf-open-sec">' +
+            '<div class="pf-sec-head">' +
+              '<h2 class="pf-sec-title">Избранные события</h2>' +
+              '<button class="pf-inline-act" onclick="SH.app.go(\'#/explore\')">Найти ещё</button>' +
+            '</div>' +
+            (saved.length
+              ? '<div class="pf-flat-list">' + saved.map(savedRow).join('') + '</div>'
+              : '<div class="pf-open-empty">Пока нет сохранённых событий — нажимайте на закладку в разделе Explore.</div>') +
+          '</section>' +
+
+          '<section class="pf-open-sec">' +
+            '<div class="pf-sec-head"><h2 class="pf-sec-title">Настройки</h2></div>' +
+            '<div class="pf-flat-list">' +
+              row('install', 'Установить приложение', 'Иконка на главном экране', "SH.app.go('#/install')", '', 'sky') +
+              ((u.role === 'admin' || u.role === 'root')
+                ? row('shield', 'Админ-панель', 'События, пользователи, модерация', "SH.app.go('#/admin')", 'pf-pastel-pill--lav', 'lav')
+                : '') +
+              row('moon', 'Тема оформления', themeLabel(), 'SH.views.profile.themeSheet()', '', 'sun') +
+              row('mail', 'Сменить пароль', 'Подтверждение кодом по почте', 'SH.views.profile.passwordSheet()', '', 'mint') +
+              row('logout', 'Выйти из аккаунта', 'Завершить текущую сессию', 'SH.views.profile.logout()', '', 'blush') +
+            '</div>' +
+          '</section>' +
         '</div>' +
       '</div>'
     );
@@ -10749,34 +12218,34 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     const days = Math.ceil((new Date(ev.deadlineDate) - Date.now()) / 864e5);
     const soon = days >= 0 && days <= 5;
     return (
-      '<div class="item card--tap" onclick="SH.app.go(\'#/event/' + ev.id + '\')" style="cursor:pointer">' +
-        '<span class="empty__icon" style="width:40px;height:40px;border-radius:13px;background:var(--primary-soft);color:var(--primary)">' +
-          icon((store.CATEGORIES[ev.category] || store.CATEGORIES.event).glyph, 19) + '</span>' +
+      '<button type="button" class="pf-flat-row" onclick="SH.app.go(\'#/event/' + ev.id + '\')">' +
+        '<span class="pf-flat-row__ico pf-flat-row__ico--lav">' +
+          icon((store.CATEGORIES[ev.category] || store.CATEGORIES.event).glyph, 18) + '</span>' +
         '<div class="grow" style="min-width:0">' +
-          '<div class="ellipsis" style="font-weight:650;font-size:13.5px">' + e(ev.title) + '</div>' +
+          '<div class="pf-flat-row__title ellipsis">' + e(ev.title) + '</div>' +
           '<div class="small muted">' + e(dl.label) + '</div>' +
         '</div>' +
-        '<span class="tag tag--' + (soon ? 'sun' : 'mint') + '">' + e(ui.shortDate(ev.deadlineDate)) + '</span>' +
-      '</div>'
+        '<span class="pf-pastel-pill pf-pastel-pill--' + (soon ? 'sun' : 'mint') + '">' + e(ui.shortDate(ev.deadlineDate)) + '</span>' +
+      '</button>'
     );
   }
 
-  function row(ico, title, sub, action, tone) {
+  function row(ico, title, sub, action, pillTone, icoTone) {
     return (
-      '<button class="item" style="width:100%;text-align:left" onclick="' + action + '">' +
-        '<span class="empty__icon" style="width:38px;height:38px;border-radius:12px;background:var(--chip);color:var(--text);margin:0">' +
+      '<button type="button" class="pf-flat-row" onclick="' + action + '">' +
+        '<span class="pf-flat-row__ico pf-flat-row__ico--' + (icoTone || 'sky') + '">' +
           icon(ico, 18) + '</span>' +
         '<div class="grow" style="min-width:0">' +
-          '<div style="font-weight:650;font-size:14px">' + e(title) + '</div>' +
+          '<div class="pf-flat-row__title">' + e(title) + '</div>' +
           '<div class="small muted">' + e(sub) + '</div>' +
         '</div>' +
-        (tone ? '<span class="tag ' + tone + '">admin</span>' : '') +
+        (pillTone ? '<span class="pf-pastel-pill ' + pillTone + '">admin</span>' : '') +
         '<span class="muted">' + icon('chevronRight', 17) + '</span>' +
       '</button>'
     );
   }
 
-  /* ─────────────────────────── чужой профиль ─────────────────────────── */
+  /* ─────────────────────────── чужой профиль (тоже без панелек) ─────────────────────────── */
 
   let loadedUserDetail = '';
   function user(id) {
@@ -10799,47 +12268,76 @@ html[data-theme='dark'] .tg-compose-ctx__body {
 
     const me = store.currentUser || {};
     const own = u.id === me.id;
+    const achCount = countAchievements(u);
     const posts = store.posts().filter((p) => p.authorId === u.id).slice(0, 3);
     const teams = store.teams().filter((t) => (t.members || []).includes(u.id));
 
     return (
-      '<div class="screen">' +
-        '<div class="screen-head" style="gap:8px">' +
-          '<button class="icon-btn icon-btn--plain" onclick="SH.app.back()" aria-label="Назад">' + icon('arrowLeft', 21) + '</button>' +
-          '<h1 class="screen-title grow" style="font-size:20px">Профиль</h1>' +
-        '</div>' +
-
-        '<div class="row" style="gap:14px;margin-bottom:16px">' +
-          ui.avatar(u, 60) +
-          '<div class="grow" style="min-width:0">' +
-            '<div class="h2" style="font-size:20px">' + e(u.name) + '</div>' +
-            '<div class="small muted">' + e([u.grade, u.school, u.city].filter(Boolean).join(' · ') || 'ученик') + '</div>' +
+      '<div class="screen screen--flush pf-canvas">' +
+        '<header class="pf-hero">' +
+          '<div class="pf-hero__topbar">' +
+            '<div class="row" style="gap:8px">' +
+              '<button class="icon-btn icon-btn--plain" onclick="SH.app.back()" aria-label="Назад">' + icon('arrowLeft', 21) + '</button>' +
+              '<h1 class="screen-title" style="font-size:22px;margin:0">Профиль</h1>' +
+            '</div>' +
+            (own
+              ? '<button class="pf-edit-pill" onclick="SH.app.go(\'#/profile\')">' + icon('edit', 14) + '<span>Редактировать</span></button>'
+              : '<button class="btn btn--brand btn--sm" onclick="SH.views.chats.openWith(\'' + e(u.id) + '\')">' +
+                  icon('message', 16) + '<span>Написать</span></button>') +
           '</div>' +
+
+          '<div class="pf-hero__identity">' +
+            '<div class="pf-hero__av">' + ui.avatar(u, 68) + '</div>' +
+            '<div class="pf-hero__meta">' +
+              '<div class="pf-hero__name">' + e(u.name) + '</div>' +
+              '<div class="pf-hero__sub">' + e([u.school, u.grade, u.city].filter(Boolean).join(' · ') || 'Ученик') + '</div>' +
+              (achCount
+                ? '<div class="pf-hero__ach">★ ' + achCount + ' ' + ui.plural(achCount, 'достижение', 'достижения', 'достижений') + '</div>'
+                : '') +
+            '</div>' +
+          '</div>' +
+        '</header>' +
+
+        '<div class="pf-body">' +
+          unifiedTags(u, false) +
+
+          academicPortfolioHtml(u, false) +
+
+          (teams.length
+            ? '<section class="pf-open-sec">' +
+                '<div class="pf-sec-head"><h2 class="pf-sec-title">Команды</h2></div>' +
+                '<div class="pf-flat-list">' +
+                  teams.map((t) =>
+                    '<button type="button" class="pf-flat-row" onclick="SH.app.go(\'#/team/' + e(t.id) + '\')">' +
+                      '<span class="pf-flat-row__ico pf-flat-row__ico--mint">' + icon('users', 17) + '</span>' +
+                      '<div class="grow" style="min-width:0">' +
+                        '<div class="pf-flat-row__title">' + e(t.title) + '</div>' +
+                        '<div class="small muted">' + e(t.type) + '</div>' +
+                      '</div>' +
+                      '<span class="muted">' + icon('chevronRight', 17) + '</span>' +
+                    '</button>'
+                  ).join('') +
+                '</div>' +
+              '</section>'
+            : '') +
+
+          (posts.length
+            ? '<section class="pf-open-sec">' +
+                '<div class="pf-sec-head"><h2 class="pf-sec-title">Публикации</h2></div>' +
+                '<div class="pf-flat-list">' +
+                  posts.map((p) =>
+                    '<button type="button" class="pf-flat-row" onclick="SH.app.go(\'#/post/' + e(p.id) + '\')">' +
+                      '<div class="grow" style="min-width:0">' +
+                        '<div class="pf-flat-row__title" style="font-weight:500;line-height:1.45">' + e(p.text) + '</div>' +
+                        '<div class="small muted" style="margin-top:3px">' + e(ui.relTime(p.createdAt)) + '</div>' +
+                      '</div>' +
+                      '<span class="muted">' + icon('chevronRight', 17) + '</span>' +
+                    '</button>'
+                  ).join('') +
+                '</div>' +
+              '</section>'
+            : '') +
         '</div>' +
-
-        (own
-          ? '<button class="btn btn--soft btn--block" onclick="SH.app.go(\'#/profile\')">Это ваш профиль — редактировать</button>'
-          : '<button class="btn btn--brand btn--block" onclick="SH.views.chats.openWith(\'' + e(u.id) + '\')">' +
-              icon('message', 17) + 'Написать сообщение</button>') +
-
-        unifiedTags(u, false) +
-
-        academicPortfolioHtml(u, false) +
-
-        (teams.length
-          ? '<div class="section-head"><span class="h2">Команды</span></div><div class="list">' +
-            teams.map((t) =>
-              '<div class="item card--tap" onclick="SH.app.go(\'#/team/' + e(t.id) + '\')" style="cursor:pointer">' +
-                '<span class="empty__icon" style="width:38px;height:38px;border-radius:12px;background:var(--primary-soft);color:var(--primary);margin:0">' +
-                icon('users', 17) + '</span><div class="grow"><div style="font-weight:650;font-size:13.5px">' + e(t.title) + '</div>' +
-                '<div class="small muted">' + e(t.type) + '</div></div></div>').join('') + '</div>' : '') +
-
-        (posts.length
-          ? '<div class="section-head"><span class="h2">Публикации</span></div><div class="list">' +
-            posts.map((p) =>
-              '<div class="card card--tap" style="padding:12px;cursor:pointer" onclick="SH.app.go(\'#/post/' + e(p.id) + '\')">' +
-              '<p class="small" style="margin:0 0 6px;line-height:1.5">' + e(p.text) + '</p>' +
-              '<div class="small muted">' + e(ui.relTime(p.createdAt)) + '</div></div>').join('') + '</div>' : '') +
       '</div>'
     );
   }
@@ -11261,33 +12759,123 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     setTheme(t) { store.setTheme(t); ui.closeSheet(); SH.app.render(); },
 
     passwordSheet() {
+      const u = store.currentUser || {};
+      const defaultEmail = (u.email && u.email.includes('@')) ? u.email : '';
       ui.sheet({
         title: 'Сменить пароль',
-        subtitle: 'После смены останетесь в текущей сессии',
+        subtitle: 'Отправим 6-значный код подтверждения на вашу почту',
         body:
-          ui.field('pw-current', 'Текущий пароль', { type: 'password', autocomplete: 'current-password' }) +
-          ui.field('pw-next', 'Новый пароль', { type: 'password', autocomplete: 'new-password', style: 'margin-top:12px' }) +
-          ui.field('pw-next2', 'Повторите новый', { type: 'password', autocomplete: 'new-password', style: 'margin-top:12px' }) +
-          '<div id="pw-error"></div>' +
-          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.profile.savePassword()">Сохранить</button>'
+          '<div id="pw-step-box">' +
+            ui.field('pw-email', 'Почта для получения кода', {
+              type: 'email',
+              value: defaultEmail,
+              placeholder: 'name@school.ru',
+              autocomplete: 'email'
+            }) +
+            '<p class="small muted" style="margin:10px 0 0;line-height:1.5">' +
+              'Мы отправим одноразовый 6-значный код на указанный адрес. Старый пароль вводить не нужно.' +
+            '</p>' +
+            '<div id="pw-error"></div>' +
+            '<button class="btn btn--brand btn--block mt-16" id="pw-send-btn" onclick="SH.views.profile.sendPasswordCode()">' +
+              icon('mail', 17) + 'Получить код на почту' +
+            '</button>' +
+          '</div>'
       });
     },
 
-    async savePassword() {
+    async sendPasswordCode(reuseEmail) {
+      const emailEl = document.getElementById('pw-email');
+      const email = String(reuseEmail || (emailEl ? emailEl.value : '') || (store.currentUser && store.currentUser.email) || '').trim().toLowerCase();
+      const errBox = document.getElementById('pw-error');
+      const fail = (msg) => { if (errBox) errBox.innerHTML = '<p class="field-error">' + e(msg) + '</p>'; };
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return fail('Введите корректный адрес электронной почты');
+      }
+
+      const btn = document.getElementById('pw-send-btn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Отправляю письмо…'; }
+
+      try {
+        let res = { ok: true, email, previewCode: '482910' };
+        if (SH.api && SH.api.enabled()) {
+          res = await SH.api.requestPasswordCode(email);
+        }
+        if (store.currentUser && !store.currentUser.email) store.currentUser.email = email;
+
+        const stepBox = document.getElementById('pw-step-box');
+        if (!stepBox) return;
+
+        stepBox.innerHTML =
+          '<div class="pw-mail-sent">' +
+            '<span class="pw-mail-sent__ico">' + icon('mail', 18) + '</span>' +
+            '<div class="grow" style="min-width:0">' +
+              '<b>Код отправлен на ' + e(res.email || email) + '</b>' +
+              '<div class="small muted">Проверьте входящие · код действует 10 минут</div>' +
+            '</div>' +
+          '</div>' +
+          (res.previewCode
+            ? '<button type="button" class="pw-mail-preview" onclick="SH.views.profile.fillDemoCode(\'' + e(res.previewCode) + '\')">' +
+                '<div class="small muted">✉️ Входящее письмо · Student Hub</div>' +
+                '<div style="font-size:14px;margin-top:2px">Ваш код подтверждения: <b style="letter-spacing:2px;font-size:16px">' + e(res.previewCode) + '</b> <span class="pf-inline-act">(вставить)</span></div>' +
+              '</button>'
+            : '') +
+          '<div class="field" style="margin-top:12px">' +
+            '<label class="field-label" for="pw-code">Код подтверждения из письма</label>' +
+            '<input id="pw-code" class="pw-code-inp" type="text" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code">' +
+          '</div>' +
+          ui.field('pw-next', 'Новый пароль', { type: 'password', placeholder: 'Минимум 6 символов', autocomplete: 'new-password', style: 'margin-top:12px' }) +
+          ui.field('pw-next2', 'Повторите новый пароль', { type: 'password', placeholder: 'Повторите пароль', autocomplete: 'new-password', style: 'margin-top:12px' }) +
+          '<div id="pw-error"></div>' +
+          '<button class="btn btn--brand btn--block mt-16" id="pw-confirm-btn" onclick="SH.views.profile.confirmPasswordByCode()">' +
+            icon('check', 17) + 'Подтвердить и сменить пароль' +
+          '</button>' +
+          '<button class="btn btn--ghost btn--block" style="margin-top:8px" onclick="SH.views.profile.sendPasswordCode(\'' + e(res.email || email) + '\')">' +
+            'Отправить код повторно' +
+          '</button>';
+
+        const codeInp = document.getElementById('pw-code');
+        if (codeInp) codeInp.focus();
+      } catch (err) {
+        if (btn) { btn.disabled = false; btn.innerHTML = icon('mail', 17) + 'Получить код на почту'; }
+        fail(err.message || 'Не удалось отправить код');
+      }
+    },
+
+    fillDemoCode(code) {
+      const inp = document.getElementById('pw-code');
+      if (inp) {
+        inp.value = code;
+        const next = document.getElementById('pw-next');
+        if (next) next.focus();
+      }
+    },
+
+    async confirmPasswordByCode() {
       const v = (id) => (document.getElementById(id) || {}).value || '';
       const box = document.getElementById('pw-error');
       const fail = (msg) => { if (box) box.innerHTML = '<p class="field-error">' + e(msg) + '</p>'; };
 
-      if (!v('pw-current')) return fail('Введите текущий пароль');
-      if (v('pw-next').length < 6) return fail('Новый пароль минимум 6 символов');
-      if (v('pw-next') !== v('pw-next2')) return fail('Пароли не совпадают');
+      const code = v('pw-code').replace(/\D+/g, '');
+      const next = v('pw-next');
+      const next2 = v('pw-next2');
+
+      if (code.length !== 6) return fail('Введите 6-значный код из письма');
+      if (next.length < 6) return fail('Новый пароль минимум 6 символов');
+      if (next !== next2) return fail('Пароли не совпадают');
+
+      const btn = document.getElementById('pw-confirm-btn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Проверяю код…'; }
 
       try {
-        await SH.api.changePassword(v('pw-current'), v('pw-next'));
+        if (SH.api && SH.api.enabled()) {
+          await SH.api.confirmPasswordCode(code, next);
+        }
         ui.closeSheet();
-        ui.toast('Пароль обновлён');
+        ui.toast('Пароль успешно изменён');
       } catch (err) {
-        fail(err.message);
+        if (btn) { btn.disabled = false; btn.innerHTML = icon('check', 17) + 'Подтвердить и сменить пароль'; }
+        fail(err.message || 'Неверный код подтверждения');
       }
     },
 
@@ -14830,6 +16418,10 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     return { name: parts[0], params: parts.slice(1) };
   }
 
+  function isTextControl(el) {
+    return !!(el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable));
+  }
+
   function isTab(name) { return tabsList().some(([id]) => id === name); }
 
   /* какой пункт меню подсветить на «вложенном» экране */
@@ -14854,7 +16446,10 @@ html[data-theme='dark'] .tg-compose-ctx__body {
         html: SH.views.community.teamInvite(p1, p2),
         mount: (root) => SH.views.community.mountInvite(root, p1, p2)
       };
-      case 'post': return { html: SH.views.community.postDetail(p1) };
+      case 'post': return {
+        html: SH.views.community.postDetail(p1),
+        mount: (root) => SH.views.community.mountPostDetail && SH.views.community.mountPostDetail(root, p1)
+      };
       case 'roadmap': return { html: SH.views.roadmap.html(p1, p2, p3, p4), mount: (root) => SH.views.roadmap.mount(root) };
       case 'chats': return { html: SH.views.chats.html(), mount: (root) => SH.views.chats.mountList(root) };
       case 'chat': return { html: SH.views.chats.thread(p1), mount: (root) => SH.views.chats.mountThread(root, p1) };
@@ -14961,10 +16556,11 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     }
 
     if (routeChanged) {
+      if (ui.closePopMenu) ui.closePopMenu();
       // уходя с экрана, закрываем клавиатуру — иначе поле ввода остаётся
       // активным, а вернувшийся экран оказывается сдвинутым
       const active = document.activeElement;
-      if (active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) active.blur();
+      if (isTextControl(active)) active.blur();
       // на десктопе скроллится колонка контента, на мобильном — окно
       const scroller = root.querySelector('.screen');
       if (scroller) scroller.scrollTop = 0;
@@ -15020,7 +16616,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
     // Перерисовку бережём: пока в фокусе поле ввода или открыт лист,
     // данные обновляем молча, иначе введённый текст и позиция курсора умрут.
     const focused = document.activeElement;
-    const busy = (focused && /^(INPUT|TEXTAREA)$/.test(focused.tagName)) || !!document.querySelector('.sheet, .modal');
+    const busy = isTextControl(focused) || !!document.querySelector('.sheet, .modal, .tg-pop-backdrop');
 
     const snapshot = await SH.api.bootstrap();
     if (!snapshot) return false;
@@ -15072,7 +16668,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
       const apply = () => {
         const winH = window.innerHeight || document.documentElement.clientHeight || 0;
         const active = document.activeElement;
-        const inputFocused = !!(active && /^(INPUT|TEXTAREA)$/.test(active.tagName));
+        const inputFocused = isTextControl(active);
         if (!inputFocused && winH > baseH) baseH = winH;
         const refH = Math.max(baseH, winH);
 
@@ -15106,7 +16702,7 @@ html[data-theme='dark'] .tg-compose-ctx__body {
         vv.addEventListener('scroll', apply);
       }
       document.addEventListener('focusin', (ev) => {
-        if (ev.target && /^(INPUT|TEXTAREA)$/.test(ev.target.tagName)) burstApply();
+        if (isTextControl(ev.target)) burstApply();
       });
       document.addEventListener('focusout', () => {
         setTimeout(() => {
@@ -15186,8 +16782,8 @@ html[data-theme='dark'] .tg-compose-ctx__body {
             if (!hadController || reloading) return;
             const attempt = () => {
               const f = document.activeElement;
-              const busy = (f && /^(INPUT|TEXTAREA)$/.test(f.tagName)) ||
-                document.querySelector('.sheet, .modal');
+              const busy = isTextControl(f) ||
+                document.querySelector('.sheet, .modal, .tg-pop-backdrop');
               if (busy) { setTimeout(attempt, 15000); return; }
               reloading = true;
               location.reload();
