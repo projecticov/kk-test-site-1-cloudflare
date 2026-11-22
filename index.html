@@ -4763,13 +4763,14 @@ html[data-theme='dark'] .pf-cert-chip {
 
 /* 1) Плавность экранов, вкладок, шторок и мини-анимации нажатия кнопок */
 .screen--enter {
-  animation: sh-screen-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: sh-screen-enter 0.24s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.screen--chat.screen--enter {
-  animation: sh-chat-fade 0.2s ease-out both;
+.screen--chat.screen--enter,
+.screen--event-detail.screen--enter {
+  animation: sh-chat-fade 0.2s ease-out;
 }
 .pane-fade {
-  animation: sh-pane-fade 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: sh-pane-fade 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes sh-screen-enter {
@@ -5821,10 +5822,34 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     overflow: hidden !important;
     height: 100% !important;
     overscroll-behavior: none !important;
+    background: var(--surface) !important;
+    background-image: none !important;
   }
 
-  .app.app--chat,
-  html.pwa-standalone .app.app--chat,
+  html:has(.app--chat) body::before,
+  html:has(.app--chat) body::after {
+    display: none !important;
+  }
+
+  /* Закрытая клавиатура: inset:0 растягивает чат до самого физического низа iPhone (включая Home Indicator, без пустой полосы) */
+  html:not(.kb-open) .app.app--chat,
+  html.pwa-standalone:not(.kb-open) .app.app--chat {
+    position: fixed !important;
+    inset: 0 !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    transform: translate3d(0, 0, 0);
+  }
+
+  /* Открытая клавиатура: жёсткая привязка к visualViewport прямо над клавиатурой */
   html.kb-open .app.app--chat,
   html.kb-open.pwa-standalone .app.app--chat {
     position: fixed !important;
@@ -5845,10 +5870,15 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     padding-top: calc(var(--safe-t) + 10px) !important;
   }
 
+  .tg-composer,
+  .th-reply-bar {
+    box-shadow: 0 120px 0 0 var(--surface);
+  }
+
   html.kb-open .tg-composer,
   html.kb-open .th-reply-bar {
     padding-bottom: 6px !important;
-    box-shadow: 0 96px 0 0 var(--surface);
+    box-shadow: 0 120px 0 0 var(--surface);
   }
 }
 
@@ -6213,6 +6243,437 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
   white-space: nowrap;
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   v1.17.0:
+   - Нижняя панель карточки события (.event-cta--dock) вне скролла/transform (image-36)
+   - Точное правое выравнивание Дата + Время в шторке дедлайна (image-37)
+   - Полная высота PWA без цветной щели снизу в чате и других экранах (image-38)
+   - Блочная шапка «Переслано от ...» строго над текстом сообщения (image-39)
+   - Фото-аватарки пользователей + загрузка/кроп/цвет в Профиле (image-40)
+   - Живые тактильные микро-анимации нажатия и отклика всех кнопок (image-40)
+   ══════════════════════════════════════════════════════════════════ */
+
+/* 1) На iOS Home Screen PWA 100lvh закрывает физический низ экрана за Home Indicator */
+@media (max-width: 899px) {
+  html.pwa-standalone {
+    height: 100%;
+    height: 100lvh;
+  }
+}
+
+/* 2) Панель действий карточки события (#/event/:id): всегда прибита к низу экрана на телефоне */
+@media (max-width: 899px) {
+  .event-cta--inline {
+    display: none !important;
+  }
+  .event-cta--dock {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    max-width: 540px !important;
+    margin: 0 auto !important;
+    padding: 12px 20px calc(12px + var(--safe-b)) !important;
+    background: linear-gradient(to top, var(--bg) 0%, var(--bg) 78%, rgba(247, 247, 250, 0)) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    z-index: 48 !important;
+    transform: translate3d(0, 0, 0);
+  }
+  html[data-theme='dark'] .event-cta--dock {
+    background: linear-gradient(to top, #121317 0%, #121317 78%, rgba(18, 19, 23, 0)) !important;
+  }
+  .app > .screen.screen--event-detail,
+  html.pwa-standalone .app > .screen.screen--event-detail {
+    padding-bottom: calc(108px + var(--safe-b)) !important;
+  }
+}
+
+@media (min-width: 900px) {
+  .event-cta--dock {
+    display: none !important;
+  }
+  .event-cta--inline {
+    position: static !important;
+    display: flex !important;
+    max-width: none !important;
+    margin: 22px 20px 0 !important;
+    padding: 0 !important;
+    background: none !important;
+  }
+}
+
+/* 3) Шторка «Новый дедлайн» / формы с датой и временем: идеальное выравнивание правого края на iOS */
+.form-grid {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.form-grid > * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.rm-datetime-grid {
+  display: grid !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  gap: 10px !important;
+  box-sizing: border-box !important;
+  align-items: end;
+}
+.rm-datetime-grid--dt {
+  grid-template-columns: minmax(0, 1.32fr) minmax(0, 0.88fr) !important;
+}
+.rm-datetime-grid--equal {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+}
+.rm-dt-col,
+.rm-datetime-grid > div,
+.rm-datetime-grid .field {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.field input[type='date'],
+.field input[type='time'] {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  -webkit-appearance: none;
+  appearance: none;
+  padding-left: 12px !important;
+  padding-right: 10px !important;
+  margin: 0 !important;
+  font-size: 16px !important;
+  text-align: left !important;
+}
+.field input[type='date']::-webkit-date-and-time-value,
+.field input[type='time']::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+
+/* 4) Плашка «Переслано от ...» в чатах: отдельной строкой сверху с аккуратным отступом */
+.tg-fwd-tag {
+  display: flex !important;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  margin: 0 0 6px !important;
+  padding-bottom: 4px;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  font-size: 11.5px;
+  font-weight: 750;
+  line-height: 1.25;
+}
+.tg-fwd-tag svg {
+  flex: 0 0 auto;
+}
+.tg-fwd-tag span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tg-bubble {
+  display: flow-root;
+}
+.tg-bubble .tg-rx-row {
+  display: inline-flex;
+  vertical-align: middle;
+  max-width: 100%;
+  margin-right: 8px;
+}
+.tg-bubble .tg-rx-row + .tg-meta {
+  margin-top: 10px;
+}
+
+/* 5) Фото-аватарка везде + загрузка на экране Профиля */
+.avatar {
+  position: relative;
+  overflow: hidden;
+}
+.avatar__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  display: block;
+  z-index: 1;
+}
+
+.pf-av-btn {
+  position: relative;
+  display: inline-flex;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 50%;
+  -webkit-tap-highlight-color: transparent;
+}
+.pf-av-btn__badge {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #ffffff;
+  border: 2.5px solid var(--surface);
+  display: grid;
+  place-items: center;
+  z-index: 2;
+  box-shadow: 0 3px 10px rgba(15, 18, 28, 0.22);
+}
+html[data-theme='dark'] .pf-av-btn__badge {
+  background: #ffffff;
+  color: #14161f;
+  border-color: #1d1f27;
+}
+.pf-av-btn__badge--sm {
+  width: 21px;
+  height: 21px;
+  border-width: 2px;
+}
+
+.pf-av-sheet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding-top: 4px;
+}
+.pf-av-sheet__preview {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border-radius: 50%;
+  box-shadow: 0 10px 28px rgba(15, 18, 28, 0.12);
+}
+.pf-av-sheet__actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pf-av-sheet__colors {
+  width: 100%;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+.pf-av-swatches {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pf-av-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid rgba(20, 22, 31, 0.12);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease;
+}
+.pf-av-swatch.is-sel {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 2.5px var(--surface), 0 0 0 4.5px var(--primary);
+}
+.pf-edit-av-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  border-radius: 16px;
+  background: var(--chip);
+}
+
+/* 6) Живые тактильные микро-анимации нажатий и взаимодействия (iOS/Android/Desktop) */
+.btn,
+.icon-btn,
+.pill,
+.tab,
+.tab__ico,
+.tab__orb,
+.pf-edit-pill,
+.pf-av-btn,
+.pf-sec-add,
+.pf-cert-chip,
+.pf-flat-row,
+.rm-pick__row,
+.rm-seg__btn,
+.rm-view-btn,
+.segmented__item,
+.tg-row,
+.tg-rx-chip,
+.tg-pop-rx__btn,
+.tg-pop-item,
+.th-act-btn,
+.th-compose-trigger,
+.card--tap,
+.avatar-btn,
+.switch {
+  -webkit-tap-highlight-color: transparent;
+  will-change: transform;
+  transition:
+    transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.16s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+/* Фаза удержания пальца (.is-pressing — гарантированно видна даже при тапе 40мс на iOS) */
+.btn.is-pressing,
+a.btn.is-pressing,
+.pill.is-pressing,
+.pf-edit-pill.is-pressing,
+.pf-sec-add.is-pressing,
+.pf-cert-chip.is-pressing,
+.segmented__item.is-pressing,
+.rm-seg__btn.is-pressing,
+.rm-view-btn.is-pressing,
+.tg-pop-item.is-pressing {
+  transform: scale(0.945) !important;
+  filter: brightness(0.95);
+  transition-duration: 0.055s !important;
+}
+
+.icon-btn.is-pressing,
+.tg-rx-chip.is-pressing,
+.tg-pop-rx__btn.is-pressing,
+.th-act-btn.is-pressing,
+.pf-av-btn.is-pressing,
+.avatar-btn.is-pressing,
+.switch.is-pressing {
+  transform: scale(0.88) !important;
+  transition-duration: 0.055s !important;
+}
+
+.tab.is-pressing .tab__ico {
+  transform: scale(0.84) !important;
+  transition-duration: 0.055s !important;
+}
+.tab.is-pressing .tab__orb {
+  transform: translateY(-1px) scale(0.88) !important;
+  transition-duration: 0.055s !important;
+}
+
+.card--tap.is-pressing,
+.tg-row.is-pressing,
+.pf-flat-row.is-pressing,
+.rm-pick__row.is-pressing,
+.th-compose-trigger.is-pressing {
+  transform: scale(0.982) !important;
+  transition-duration: 0.06s !important;
+}
+
+/* Пружинный отскок при отпускании пальца (.is-releasing) */
+.btn.is-releasing,
+a.btn.is-releasing,
+.pill.is-releasing,
+.pf-edit-pill.is-releasing,
+.pf-sec-add.is-releasing,
+.pf-cert-chip.is-releasing,
+.segmented__item.is-releasing,
+.rm-seg__btn.is-releasing,
+.rm-view-btn.is-releasing {
+  animation: sh-spring-btn 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.icon-btn.is-releasing,
+.tg-rx-chip.is-releasing,
+.th-act-btn.is-releasing,
+.pf-av-btn.is-releasing,
+.avatar-btn.is-releasing {
+  animation: sh-spring-ico 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tab.is-releasing .tab__ico,
+.tab.is-releasing .tab__orb {
+  animation: sh-spring-ico 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Отклик переключения после ререндера (.is-just-activated) */
+.tab.is-just-activated .tab__ico {
+  animation: sh-activate-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.tab.is-just-activated .tab__orb {
+  animation: sh-orb-pop 0.34s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.pill.is-just-activated,
+.segmented__item.is-just-activated,
+.rm-seg__btn.is-just-activated,
+.rm-view-btn.is-just-activated {
+  animation: sh-spring-btn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.event-cta__act.is-just-activated svg,
+.th-act-btn.is-just-activated svg,
+.tg-rx-chip.is-just-activated {
+  animation: sh-activate-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tg-line--fresh {
+  animation: sh-msg-pop 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes sh-spring-btn {
+  0%   { transform: scale(0.945); }
+  58%  { transform: scale(1.028); }
+  100% { transform: scale(1); }
+}
+
+@keyframes sh-spring-ico {
+  0%   { transform: scale(0.88); }
+  55%  { transform: scale(1.09); }
+  100% { transform: scale(1); }
+}
+
+@keyframes sh-activate-pop {
+  0%   { transform: scale(0.82); }
+  55%  { transform: scale(1.16); }
+  100% { transform: scale(1); }
+}
+
+@keyframes sh-orb-pop {
+  0%   { transform: translateY(0) scale(0.86); }
+  55%  { transform: translateY(-4px) scale(1.09); }
+  100% { transform: translateY(-2px) scale(1); }
+}
+
+@keyframes sh-msg-pop {
+  0%   { opacity: 0; transform: translateY(8px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-pressing,
+  .is-releasing,
+  .is-just-activated,
+  .tg-line--fresh {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+
 
 
 
@@ -6563,6 +7024,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
     file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
     image: '<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m21 15-4.5-4.5L7 20"/>',
+    camera: '<path d="M14.5 4.5h-5L7.5 7H4.5A2.2 2.2 0 0 0 2.3 9.2v8.6A2.2 2.2 0 0 0 4.5 20h15a2.2 2.2 0 0 0 2.2-2.2V9.2A2.2 2.2 0 0 0 19.5 7h-3z"/><circle cx="12" cy="13" r="3.3"/>',
     link: '<path d="M10 13a5 5 0 0 0 7.1 0l2.8-2.8a5 5 0 0 0-7.1-7.1L11.2 4.7"/><path d="M14 11a5 5 0 0 0-7.1 0l-2.8 2.8a5 5 0 0 0 7.1 7.1l1.6-1.6"/>',
     copy: '<rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
     reply: '<path d="m9 17-5-5 5-5"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>',
@@ -7423,17 +7885,24 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       });
       if (!had) rx[emoji] = (rx[emoji] || []).concat(u.id);
       m.reactions = Object.keys(rx).length ? rx : null;
+      m._rxLock = Date.now() + 4500;
+      persist();
       emit('chat-messages');
       if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true, reactions: m.reactions });
       return SH.api.reactMessage(messageId, emoji)
         .then((res) => {
+          m._rxLock = 0;
           if (res && res.reactions !== undefined) {
             m.reactions = Object.keys(res.reactions || {}).length ? res.reactions : null;
+            persist();
             emit('chat-messages');
           }
           return { ok: true };
         })
-        .catch((err) => ({ ok: false, error: err.message }));
+        .catch((err) => {
+          m._rxLock = 0;
+          return { ok: false, error: err.message };
+        });
     },
 
     pinChatMessage(chatId, messageId) {
@@ -7626,9 +8095,11 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
           c.preview = null;
           fresh.push(ex);
         }
-        if (JSON.stringify(m.reactions || null) !== JSON.stringify(ex.reactions || null)) {
-          ex.reactions = m.reactions || null;
-          fresh.push(ex);
+        if (m.reactions !== undefined && !(ex._rxLock && Date.now() < ex._rxLock)) {
+          if (JSON.stringify(m.reactions || null) !== JSON.stringify(ex.reactions || null)) {
+            ex.reactions = m.reactions || null;
+            fresh.push(ex);
+          }
         }
         if (m.attachment && !ex.attachment) ex.attachment = m.attachment;
       });
@@ -7852,9 +8323,16 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       // Сообщения, которые ещё не доехали до сервера, живут только на устройстве.
       // Их нельзя стирать ответом сервера — иначе «отправил» превращается в «пропало».
       const pending = {};
+      const rxLocked = {};
+      const nowMs = Date.now();
       (state.chats || []).forEach((c) => {
         const mine = (c.messages || []).filter((m) => m && m.pending && !m.failed);
         if (mine.length) pending[c.id] = mine;
+        (c.messages || []).forEach((m) => {
+          if (m && m._rxLock && nowMs < m._rxLock) {
+            rxLocked[m.id] = { reactions: m.reactions, _rxLock: m._rxLock };
+          }
+        });
       });
       const fresh = ['users', 'events', 'posts', 'teams', 'goals', 'tasks', 'saved', 'orgs', 'plan'];
       fresh.forEach((f) => {
@@ -7871,8 +8349,11 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
           (c.messages || []).some((m) => m && m.pending));
         state.chats = remote.chats.map((c) => {
           const add = pending[c.id];
-          if (!add) return c;
-          const msgs = (c.messages || []).slice();
+          const baseMsgs = (c.messages || []).map((m) =>
+            rxLocked[m.id] ? Object.assign({}, m, rxLocked[m.id]) : m
+          );
+          if (!add) return Object.assign({}, c, { messages: baseMsgs });
+          const msgs = baseMsgs.slice();
           add.forEach((m) => { if (!msgs.some((x) => x.id === m.id)) msgs.push(m); });
           msgs.sort((a, b) => String(a.at).localeCompare(String(b.at)));
           return Object.assign({}, c, { messages: msgs });
@@ -7993,7 +8474,9 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     const fs = Math.max(9.5, Math.round(s * 0.35 * 10) / 10);
     const bg = AVATAR_BG[u.color] || AVATAR_BG.sun;
     const fg = u.color === 'brand' ? '#fff' : '#14151a';
-    return '<span class="avatar avatar--' + s + '" style="width:' + s + 'px;height:' + s + 'px;min-width:' + s + 'px;min-height:' + s + 'px;font-size:' + fs + 'px;background:' + bg + ';color:' + fg + '">' +
+    const src = u.avatar && /^(data:image\/|https?:\/\/)/i.test(String(u.avatar)) ? String(u.avatar) : '';
+    return '<span class="avatar' + (src ? ' avatar--photo' : '') + ' avatar--' + s + '" style="width:' + s + 'px;height:' + s + 'px;min-width:' + s + 'px;min-height:' + s + 'px;font-size:' + fs + 'px;background:' + bg + ';color:' + fg + '">' +
+      (src ? '<img class="avatar__img" src="' + esc(src) + '" alt="" loading="lazy" onerror="this.remove()">' : '') +
       esc(initials(u.name)) + '</span>';
   }
 
@@ -8271,9 +8754,189 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     };
   }
 
+  /* Сжатие и квадратный центр-кроп фото для аватарки (256x256 JPEG ~15-25 КБ) */
+  function readAvatarFile(file) {
+    return new Promise((resolve, reject) => {
+      if (!file) { reject(new Error('Файл не выбран')); return; }
+      if (!/^image\//i.test(file.type || '') && !/\.(jpe?g|png|webp|gif|heic|heif|avif)$/i.test(file.name || '')) {
+        reject(new Error('Выберите изображение (JPG, PNG, WEBP)'));
+        return;
+      }
+      if (file.size > 15 * 1024 * 1024) {
+        reject(new Error('Фото слишком большое (макс. 15 МБ)'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('Формат фото не поддерживается браузером'));
+        img.onload = () => {
+          const w = img.naturalWidth || img.width || 256;
+          const h = img.naturalHeight || img.height || 256;
+          const side = Math.min(w, h);
+          const sx = Math.max(0, Math.round((w - side) / 2));
+          const sy = Math.max(0, Math.round((h - side) / 2));
+          const OUT = 256;
+          const canvas = document.createElement('canvas');
+          canvas.width = OUT;
+          canvas.height = OUT;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, OUT, OUT);
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, OUT, OUT);
+          resolve(canvas.toDataURL('image/jpeg', 0.86));
+        };
+        img.src = String(reader.result || '');
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* ── Тактильный отклик кнопок на iOS/Android и десктопе (даже при мгновенных тапах и ререндере) ── */
+  const TAP_SEL = [
+    'button:not(:disabled)',
+    'a.btn',
+    '.btn:not(:disabled)',
+    '.icon-btn:not(:disabled)',
+    '.pill:not(:disabled)',
+    '.tab',
+    '.card--tap',
+    '.tg-row',
+    '.pf-flat-row:not(.pf-flat-row--static)',
+    '.rm-pick__row',
+    '.tg-rx-chip',
+    '.tg-pop-rx__btn',
+    '.tg-pop-item',
+    '.th-act-btn',
+    '.th-compose-trigger',
+    '.pf-av-btn',
+    '.pf-edit-pill',
+    '.pf-sec-add',
+    '.pf-cert-chip',
+    '.avatar-btn',
+    '.segmented__item',
+    '.rm-seg__btn',
+    '.rm-view-btn',
+    '.switch'
+  ].join(',');
+
+  let lastTap = null;
+  let tactileReady = false;
+
+  function initTactile() {
+    if (tactileReady || typeof document === 'undefined') return;
+    tactileReady = true;
+
+    let activeEl = null;
+    let downX = 0;
+    let downY = 0;
+    let downTs = 0;
+    let releaseTimer = 0;
+
+    const cancelPress = () => {
+      if (!activeEl) return;
+      const el = activeEl;
+      activeEl = null;
+      clearTimeout(releaseTimer);
+      el.classList.remove('is-pressing');
+    };
+
+    const finishPress = () => {
+      if (!activeEl) return;
+      const el = activeEl;
+      activeEl = null;
+      const elapsed = Date.now() - downTs;
+      const hold = Math.max(0, 105 - elapsed);
+      clearTimeout(releaseTimer);
+      releaseTimer = setTimeout(() => {
+        if (!el.isConnected) return;
+        el.classList.remove('is-pressing');
+        el.classList.remove('is-releasing');
+        void el.offsetWidth;
+        el.classList.add('is-releasing');
+        setTimeout(() => { el.classList.remove('is-releasing'); }, 250);
+      }, hold);
+    };
+
+    document.addEventListener('pointerdown', (ev) => {
+      if (ev.button != null && ev.button !== 0) return;
+      const el = ev.target && ev.target.closest ? ev.target.closest(TAP_SEL) : null;
+      if (!el || el.disabled || el.getAttribute('aria-disabled') === 'true') return;
+      cancelPress();
+      activeEl = el;
+      downX = ev.clientX || 0;
+      downY = ev.clientY || 0;
+      downTs = Date.now();
+      el.classList.remove('is-releasing');
+      el.classList.add('is-pressing');
+
+      // Запоминаем сигнатуру нажатия, чтобы после мгновенного SH.app.render() отыграть pop-отклик
+      let kind = 'generic';
+      if (el.classList.contains('tab')) kind = 'tab';
+      else if (el.classList.contains('pill')) kind = 'pill';
+      else if (el.classList.contains('event-cta__act')) kind = 'cta-act';
+      else if (el.classList.contains('th-act-btn')) kind = 'th-act';
+      else if (el.classList.contains('segmented__item') || el.classList.contains('rm-seg__btn') || el.classList.contains('rm-view-btn')) kind = 'seg';
+      lastTap = {
+        kind,
+        ts: downTs,
+        onclick: el.getAttribute('onclick') || '',
+        label: (el.textContent || '').trim().slice(0, 40)
+      };
+    }, { passive: true });
+
+    document.addEventListener('pointermove', (ev) => {
+      if (!activeEl) return;
+      const dx = Math.abs((ev.clientX || 0) - downX);
+      const dy = Math.abs((ev.clientY || 0) - downY);
+      if (dx > 10 || dy > 10) cancelPress();
+    }, { passive: true });
+
+    document.addEventListener('pointerup', finishPress, { passive: true });
+    document.addEventListener('pointercancel', cancelPress, { passive: true });
+    window.addEventListener('scroll', cancelPress, { passive: true });
+  }
+
+  function afterRender(root) {
+    if (!lastTap || !root || Date.now() - lastTap.ts > 260) return;
+    const tap = lastTap;
+    lastTap = null;
+    let target = null;
+    if (tap.kind === 'tab') {
+      target = root.querySelector('.tab[aria-selected="true"]');
+    } else if (tap.kind === 'pill') {
+      const pills = root.querySelectorAll('.pill[aria-pressed="true"]');
+      pills.forEach((p) => {
+        if ((p.textContent || '').trim().slice(0, 40) === tap.label) target = p;
+      });
+      if (!target && pills.length === 1) target = pills[0];
+    } else if (tap.kind === 'seg') {
+      const segs = root.querySelectorAll('.segmented__item.is-active, .rm-seg__btn.is-on, .rm-view-btn.is-on');
+      segs.forEach((s) => {
+        if ((s.textContent || '').trim().slice(0, 40) === tap.label) target = s;
+      });
+    } else if (tap.onclick) {
+      const candidates = root.querySelectorAll('button[onclick], a[onclick]');
+      for (let i = 0; i < candidates.length; i++) {
+        if (candidates[i].getAttribute('onclick') === tap.onclick) {
+          target = candidates[i];
+          break;
+        }
+      }
+    }
+    if (target) {
+      target.classList.add('is-just-activated');
+      setTimeout(() => { target.classList.remove('is-just-activated'); }, 340);
+    }
+  }
+
   SH.ui = {
-    esc, plural, relTime, shortDate, deadlineInfo, initials, avatar, cover,
+    esc, plural, relTime, shortDate, deadlineInfo, initials, avatar, readAvatarFile, cover,
     toast, sheet, closeSheet, popMenu, closePopMenu, confirmSheet, field, select, empty, tag, skeletonList, debounce,
+    initTactile, afterRender, AVATAR_BG,
     MONTHS
   };
 })(window.SH = window.SH || {});
@@ -8808,8 +9471,24 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     const dl = ui.deadlineInfo(ev.deadlineDate);
     const saved = store.isSaved(ev.id);
 
+    const ctaInner =
+      '<button class="icon-btn event-cta__act' + (saved ? ' is-saved' : '') + '" ' +
+        'onclick="SH.views.explore.toggleSave(\'' + ev.id + '\')" ' +
+        'aria-label="' + (saved ? 'Убрать из избранного' : 'Добавить в избранное') + '" ' +
+        'title="' + (saved ? 'В избранном' : 'Добавить в избранное') + '">' +
+        icon('bookmark', 20) +
+      '</button>' +
+      '<button class="icon-btn event-cta__act" ' +
+        'onclick="SH.views.explore.addToRoadmap(\'' + ev.id + '\')" aria-label="В роадмап" title="В роадмап">' +
+        icon('map', 20) +
+      '</button>' +
+      (ev.link
+        ? '<a class="btn btn--brand grow" href="' + e(ev.link) + '" target="_blank" rel="noopener noreferrer" ' +
+            'onclick="SH.views.explore.visit(\'' + ev.id + '\')">Перейти на сайт мероприятия' + icon('arrowRight') + '</a>'
+        : '<button class="btn btn--soft grow" disabled>' + icon('info') + 'Ссылку добавит администратор</button>');
+
     return (
-      '<div class="screen screen--flush" style="padding-bottom:120px">' +
+      '<div class="screen screen--flush screen--event-detail">' +
         '<div style="position:relative">' +
           ui.cover(ev, 216, 0) +
           '<button class="icon-btn" onclick="SH.app.back()" aria-label="Назад" ' +
@@ -8861,23 +9540,9 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
           '</div>' +
         '</div>' +
 
-        '<div class="event-cta">' +
-          '<button class="icon-btn event-cta__act' + (saved ? ' is-saved' : '') + '" ' +
-            'onclick="SH.views.explore.toggleSave(\'' + ev.id + '\')" ' +
-            'aria-label="' + (saved ? 'Убрать из избранного' : 'Добавить в избранное') + '" ' +
-            'title="' + (saved ? 'В избранном' : 'Добавить в избранное') + '">' +
-            icon('bookmark', 20) +
-          '</button>' +
-          '<button class="icon-btn event-cta__act" ' +
-            'onclick="SH.views.explore.addToRoadmap(\'' + ev.id + '\')" aria-label="В роадмап" title="В роадмап">' +
-            icon('map', 20) +
-          '</button>' +
-          (ev.link
-            ? '<a class="btn btn--brand grow" href="' + e(ev.link) + '" target="_blank" rel="noopener noreferrer" ' +
-                'onclick="SH.views.explore.visit(\'' + ev.id + '\')">Перейти на сайт мероприятия' + icon('arrowRight') + '</a>'
-            : '<button class="btn btn--soft grow" disabled>' + icon('info') + 'Ссылку добавит администратор</button>') +
-        '</div>' +
-      '</div>'
+        '<div class="event-cta event-cta--inline">' + ctaInner + '</div>' +
+      '</div>' +
+      '<div class="event-cta event-cta--dock">' + ctaInner + '</div>'
     );
   }
 
@@ -10662,11 +11327,11 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
           value: item ? item.title : '',
           placeholder: isTrack ? 'Например: подготовка к IELTS' : (kind === 'milestone' ? 'Что случится?' : 'Что нужно сделать?')
         }) +
-      '<div class="form-grid rm-datetime-grid" style="margin-top:12px">' +
-        '<div>' + ui.field('rm-date', isTrack ? 'Начало' : 'Дата', { type: 'date', value: dateValue }) + '</div>' +
+      '<div class="form-grid rm-datetime-grid ' + (isTrack ? 'rm-datetime-grid--equal' : 'rm-datetime-grid--dt') + '" style="margin-top:12px">' +
+        '<div class="rm-dt-col">' + ui.field('rm-date', isTrack ? 'Начало' : 'Дата', { type: 'date', value: dateValue }) + '</div>' +
         (kind !== 'track'
-          ? '<div>' + ui.field('rm-time', 'Время', { type: 'time', value: timeValue }) + '</div>'
-          : '<div>' + ui.field('rm-end', 'Конец', { type: 'date', value: endValue }) + '</div>') +
+          ? '<div class="rm-dt-col">' + ui.field('rm-time', 'Время', { type: 'time', value: timeValue }) + '</div>'
+          : '<div class="rm-dt-col">' + ui.field('rm-end', 'Конец', { type: 'date', value: endValue }) + '</div>') +
       '</div>' +
       ui.field('rm-note', 'Заметка', {
         textarea: true,
@@ -11690,6 +12355,13 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       const empty = box.querySelector('.tg-empty-pill');
       if (empty) empty.remove();
       box.insertAdjacentHTML('beforeend', add.map((m) => messageRow(c, m, me)).join(''));
+      add.forEach((m) => {
+        const rowEl = box.querySelector('[data-msg="' + m.id + '"]');
+        if (rowEl) {
+          rowEl.classList.add('tg-line--fresh');
+          setTimeout(() => rowEl.classList.remove('tg-line--fresh'), 360);
+        }
+      });
       if (forceBottom || nearBottom || add.some((m) => m.authorId === me.id)) {
         box.scrollTop = box.scrollHeight;
       }
@@ -12079,7 +12751,14 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     },
 
     react(chatId, messageId, emoji) {
-      store.toggleReaction(chatId, messageId, emoji).then(() => {
+      const p = store.toggleReaction(chatId, messageId, emoji);
+      const mineChip = document.querySelector('[data-msg="' + messageId + '"] .tg-rx-chip.is-mine');
+      if (mineChip) {
+        mineChip.classList.remove('is-just-activated');
+        void mineChip.offsetWidth;
+        mineChip.classList.add('is-just-activated');
+      }
+      p.then(() => {
         syncOpen(chatId);
       });
     },
@@ -12804,7 +13483,12 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
           '</div>' +
 
           '<div class="pf-hero__identity">' +
-            '<div class="pf-hero__av">' + ui.avatar(u, 68) + '</div>' +
+            '<div class="pf-hero__av">' +
+              '<button type="button" class="pf-av-btn" onclick="SH.views.profile.openAvatarSheet()" aria-label="Изменить фото профиля" title="Изменить фото профиля">' +
+                ui.avatar(u, 68) +
+                '<span class="pf-av-btn__badge">' + icon('camera', 13) + '</span>' +
+              '</button>' +
+            '</div>' +
             '<div class="pf-hero__meta">' +
               '<div class="pf-hero__name">' +
                 e(u.name) +
@@ -12872,7 +13556,10 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
             '</div>' +
           '</div>' +
           '<div class="row" style="gap:12px">' +
-            ui.avatar(u, 46) +
+            '<button type="button" class="pf-av-btn" onclick="SH.views.profile.openAvatarSheet()" aria-label="Изменить фото профиля">' +
+              ui.avatar(u, 48) +
+              '<span class="pf-av-btn__badge pf-av-btn__badge--sm">' + icon('camera', 11) + '</span>' +
+            '</button>' +
             '<div class="grow" style="min-width:0">' +
               '<div style="font-weight:800;font-size:15.5px;color:var(--text)" class="ellipsis">' + e(u.name || '') + '</div>' +
               '<div class="small muted ellipsis">' + e(u.email || [u.school, u.grade].filter(Boolean).join(' · ') || 'Аккаунт ученика') + '</div>' +
@@ -13413,18 +14100,155 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     pushOn() { SH.push.enable().then(() => SH.app.render()); },
     pushOff() { SH.push.disable().then(() => SH.app.render()); },
 
+    openAvatarSheet() {
+      const u = store.currentUser;
+      if (!u) return;
+      const colors = [
+        ['sun', 'Солнечный'],
+        ['mint', 'Мятный'],
+        ['sky', 'Небесный'],
+        ['blush', 'Персиковый'],
+        ['lavender', 'Лавандовый'],
+        ['brand', 'Тёмный']
+      ];
+      ui.sheet({
+        title: 'Фото профиля',
+        subtitle: 'Отображается в профиле, чатах, тредах и командах',
+        body:
+          '<div class="pf-av-sheet">' +
+            '<div class="pf-av-sheet__preview" id="pf-av-live">' + ui.avatar(u, 96) + '</div>' +
+            '<input type="file" id="pf-av-inp" accept="image/*" hidden>' +
+            '<div class="pf-av-sheet__actions">' +
+              '<button type="button" class="btn btn--brand btn--block" onclick="document.getElementById(\'pf-av-inp\').click()">' +
+                icon('camera', 18) + '<span>' + (u.avatar ? 'Выбрать другое фото' : 'Загрузить фото с устройства') + '</span>' +
+              '</button>' +
+              (u.avatar
+                ? '<button type="button" class="btn btn--soft btn--block" onclick="SH.views.profile.removeAvatar()">' +
+                    icon('trash', 16) + '<span>Удалить фото (оставить инициалы)</span>' +
+                  '</button>'
+                : '') +
+            '</div>' +
+            '<div class="pf-av-sheet__colors">' +
+              '<div class="field-label" style="margin-bottom:8px;text-align:center">Цвет фона для инициалов</div>' +
+              '<div class="pf-av-swatches">' +
+                colors.map(([id, label]) => {
+                  const bg = (ui.AVATAR_BG && ui.AVATAR_BG[id]) || '#FFE8A3';
+                  const active = (u.color || 'sun') === id;
+                  return (
+                    '<button type="button" class="pf-av-swatch' + (active ? ' is-sel' : '') + '" ' +
+                      'style="background:' + bg + '" title="' + e(label) + '" aria-label="' + e(label) + '" ' +
+                      'onclick="SH.views.profile.pickAvatarColor(\'' + id + '\')"></button>'
+                  );
+                }).join('') +
+              '</div>' +
+            '</div>' +
+          '</div>',
+        onMount(el) {
+          const inp = el.querySelector('#pf-av-inp');
+          if (!inp) return;
+          inp.addEventListener('change', async (ev) => {
+            const f = ev.target.files && ev.target.files[0];
+            ev.target.value = '';
+            if (!f) return;
+            try {
+              const dataUrl = await ui.readAvatarFile(f);
+              await store.updateUser({ avatar: dataUrl });
+              ui.closeSheet();
+              ui.toast('Фото профиля обновлено');
+              SH.app.render();
+            } catch (err) {
+              ui.toast(err.message || 'Не удалось загрузить фото');
+            }
+          });
+        }
+      });
+    },
+
+    async pickAvatarColor(color) {
+      await store.updateUser({ color });
+      const live = document.getElementById('pf-av-live');
+      if (live && store.currentUser) live.innerHTML = ui.avatar(store.currentUser, 96);
+      document.querySelectorAll('.pf-av-swatch').forEach((b) => {
+        b.classList.toggle('is-sel', (b.getAttribute('onclick') || '').indexOf("'" + color + "'") >= 0);
+      });
+      SH.app.render();
+    },
+
+    async removeAvatar() {
+      await store.updateUser({ avatar: null });
+      ui.closeSheet();
+      ui.toast('Фото удалено');
+      SH.app.render();
+    },
+
     editProfile() {
       const u = store.currentUser;
+      let pendingAvatar = u.avatar;
       ui.sheet({
         title: 'Основная информация',
         body:
+          '<div class="pf-edit-av-row">' +
+            '<div id="p-av-preview">' + ui.avatar(u, 58) + '</div>' +
+            '<input type="file" id="p-av-file" accept="image/*" hidden>' +
+            '<div class="grow" style="min-width:0">' +
+              '<div style="font-weight:750;font-size:14px">Аватар профиля</div>' +
+              '<div class="row" style="gap:8px;margin-top:6px;flex-wrap:wrap">' +
+                '<button type="button" class="btn btn--soft btn--sm" onclick="document.getElementById(\'p-av-file\').click()">' +
+                  icon('camera', 15) + '<span>' + (u.avatar ? 'Сменить фото' : 'Загрузить фото') + '</span>' +
+                '</button>' +
+                '<button type="button" class="link-btn small" id="p-av-clear" style="' + (u.avatar ? '' : 'display:none') + '">Убрать</button>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
           ui.field('p-name', 'Имя и фамилия', { value: u.name }) +
           '<div class="form-grid" style="margin-top:12px">' +
             ui.field('p-grade', 'Класс', { value: u.grade || '', placeholder: '10 класс' }) +
             ui.field('p-city', 'Город', { value: u.city || '' }) +
           '</div>' +
           ui.field('p-school', 'Школа', { value: u.school || '', style: 'margin-top:12px' }) +
-          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.profile.saveProfile()">Сохранить</button>'
+          '<button class="btn btn--brand btn--block mt-16" id="p-save-btn">Сохранить</button>',
+        onMount(el) {
+          const inp = el.querySelector('#p-av-file');
+          const pv = el.querySelector('#p-av-preview');
+          const clr = el.querySelector('#p-av-clear');
+          const saveBtn = el.querySelector('#p-save-btn');
+          if (inp) {
+            inp.addEventListener('change', async (ev) => {
+              const f = ev.target.files && ev.target.files[0];
+              ev.target.value = '';
+              if (!f) return;
+              try {
+                pendingAvatar = await ui.readAvatarFile(f);
+                if (pv) pv.innerHTML = ui.avatar(Object.assign({}, u, { avatar: pendingAvatar }), 58);
+                if (clr) clr.style.display = '';
+              } catch (err) {
+                ui.toast(err.message || 'Не удалось прочитать фото');
+              }
+            });
+          }
+          if (clr) {
+            clr.addEventListener('click', () => {
+              pendingAvatar = null;
+              if (pv) pv.innerHTML = ui.avatar(Object.assign({}, u, { avatar: null }), 58);
+              clr.style.display = 'none';
+            });
+          }
+          if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+              const v = (id) => (document.getElementById(id) || {}).value || '';
+              actions.persist({
+                name: v('p-name').trim() || 'Ученик',
+                grade: v('p-grade'),
+                school: v('p-school'),
+                city: v('p-city'),
+                avatar: pendingAvatar || null
+              });
+              ui.closeSheet();
+              ui.toast('Профиль обновлён');
+              SH.app.render();
+            });
+          }
+        }
       });
     },
 
@@ -17243,16 +18067,24 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
 
     if (routeChanged) {
       const screen = root.querySelector('.screen');
-      if (screen) screen.classList.add('screen--enter');
+      if (screen) {
+        screen.classList.add('screen--enter');
+        screen.addEventListener('animationend', () => screen.classList.remove('screen--enter'), { once: true });
+      }
       if (tabbar) {
         const bar = root.querySelector('.tabbar');
-        if (bar) bar.classList.add('tabbar--enter');
+        if (bar) {
+          bar.classList.add('tabbar--enter');
+          bar.addEventListener('animationend', () => bar.classList.remove('tabbar--enter'), { once: true });
+        }
       }
     }
 
     if (view.mount) {
       try { view.mount(root); } catch (err) { console.warn('mount error', err); }
     }
+
+    if (ui.afterRender) ui.afterRender(root);
 
     if (routeChanged) {
       if (ui.closePopMenu) ui.closePopMenu();
@@ -17351,6 +18183,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     store.init();
     install.init();
     push.init();
+    if (ui.initTactile) ui.initTactile();
 
     // сервер сказал 401 при живом токене → сессия истекла, честно уводим на вход
     if (SH.api) {
