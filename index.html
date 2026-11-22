@@ -2,7 +2,7 @@
 <html lang="ru" data-theme="light">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <title>Student Hub — возможности, команды и план для школьников</title>
 <meta name="description" content="Student Hub — приложение для школьников: олимпиады, курсы, стажировки, поиск команды и личный роадмап. Устанавливается на главный экран без магазина приложений.">
 
@@ -5803,6 +5803,417 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   v1.16.0 — 1) Фиксация чата/треда на iOS 26 без улёта шапки и лагов,
+             2) Плавающая капсула навигации из изначального макета,
+             3) Обложечные карточки «Подобрано для тебя» в Explore
+   ══════════════════════════════════════════════════════════════════ */
+
+/* 1) Жёсткая фиксация полноэкранного чата и треда к visualViewport */
+.tg-inp,
+.th-reply-inp {
+  font-size: 16px !important; /* >=16px, чтобы iOS Safari не делал зум и сдвиг при фокусе */
+}
+
+@media (max-width: 899px) {
+  html:has(.app--chat),
+  html:has(.app--chat) body {
+    overflow: hidden !important;
+    height: 100% !important;
+    overscroll-behavior: none !important;
+  }
+
+  .app.app--chat,
+  html.pwa-standalone .app.app--chat,
+  html.kb-open .app.app--chat,
+  html.kb-open.pwa-standalone .app.app--chat {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: var(--vvt, 0px) !important;
+    bottom: auto !important;
+    width: 100% !important;
+    height: var(--vvh, 100dvh) !important;
+    max-height: var(--vvh, 100dvh) !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .tg-head {
+    padding-top: calc(var(--safe-t) + 10px) !important;
+  }
+
+  html.kb-open .tg-composer,
+  html.kb-open .th-reply-bar {
+    padding-bottom: 6px !important;
+    box-shadow: 0 96px 0 0 var(--surface);
+  }
+}
+
+/* 2) Плавающая навигационная капсула с приподнятым кругом Роадмапа (image-35) */
+@media (max-width: 899px) {
+  .app > .screen:not(.screen--chat),
+  html.pwa-standalone .app > .screen:not(.screen--chat) {
+    padding-bottom: calc(104px + var(--safe-b)) !important;
+  }
+
+  .pf-canvas .pf-body {
+    padding-bottom: calc(104px + var(--safe-b)) !important;
+  }
+
+  .app > .tabbar,
+  html.pwa-standalone .app > .tabbar {
+    position: fixed !important;
+    left: 14px !important;
+    right: 14px !important;
+    bottom: calc(10px + var(--safe-b)) !important;
+    top: auto !important;
+    height: 64px !important;
+    padding: 0 8px !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(20, 22, 31, 0.08) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: saturate(180%) blur(22px) !important;
+    -webkit-backdrop-filter: saturate(180%) blur(22px) !important;
+    box-shadow: 0 14px 34px rgba(15, 18, 28, 0.14), 0 2px 8px rgba(15, 18, 28, 0.05) !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    align-items: center !important;
+    overflow: visible !important;
+    z-index: 45 !important;
+  }
+
+  html[data-theme='dark'] .app > .tabbar,
+  html[data-theme='dark'].pwa-standalone .app > .tabbar {
+    background: rgba(25, 28, 38, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.48), 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+  }
+
+  .app > .tabbar.tabbar--aux,
+  html.pwa-standalone .app > .tabbar.tabbar--aux {
+    display: none !important;
+  }
+
+  .tabbar--enter .tab[aria-selected='true']::after {
+    display: none !important;
+  }
+
+  .app > .tabbar .tab {
+    height: 100%;
+    padding: 4px 2px 2px;
+    gap: 2px;
+    color: #9399a8;
+    font-size: 10px;
+    font-weight: 650;
+    overflow: visible;
+  }
+
+  html[data-theme='dark'] .app > .tabbar .tab {
+    color: #8b92a5;
+  }
+
+  .app > .tabbar .tab[aria-selected='true'] {
+    color: #12141c;
+    font-weight: 800;
+  }
+
+  html[data-theme='dark'] .app > .tabbar .tab[aria-selected='true'] {
+    color: #ffffff;
+  }
+
+  .tab__ico {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    width: 26px;
+    height: 24px;
+  }
+
+  .tab__ico svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .tab__ico .dot-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 0;
+    width: 8px;
+    height: 8px;
+  }
+
+  .tab__lbl {
+    line-height: 1.1;
+    letter-spacing: -0.1px;
+    white-space: nowrap;
+  }
+
+  .tab__dot {
+    width: 4.5px;
+    height: 4.5px;
+    border-radius: 50%;
+    background: transparent;
+    margin-top: 1px;
+    transform: scale(0.3);
+    transition: transform 0.18s ease, background-color 0.18s ease;
+  }
+
+  .app > .tabbar .tab[aria-selected='true'] .tab__dot {
+    background: currentColor;
+    transform: scale(1);
+  }
+
+  .app > .tabbar .tab--center {
+    justify-content: flex-start;
+    padding-top: 0;
+  }
+
+  .tab--center .tab__orb {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #12141c;
+    color: #ffffff;
+    display: grid;
+    place-items: center;
+    margin-top: -20px;
+    margin-bottom: 2px;
+    box-shadow: 0 8px 20px rgba(18, 20, 28, 0.28), 0 0 0 3px rgba(255, 255, 255, 0.96);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .tab--center .tab__orb svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor !important;
+  }
+
+  html[data-theme='dark'] .tab--center .tab__orb {
+    background: #ffffff;
+    color: #12141c;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45), 0 0 0 3px rgba(25, 28, 38, 0.95);
+  }
+
+  .app > .tabbar .tab--center[aria-selected='true'] .tab__orb {
+    transform: translateY(-2px);
+  }
+
+  html:not(:has(.app--chat)) .toast-wrap {
+    bottom: calc(102px + var(--safe-b)) !important;
+  }
+}
+
+@media (min-width: 900px) {
+  .tab__ico,
+  .tab__orb {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    height: auto;
+    margin: 0;
+    background: transparent !important;
+    color: inherit !important;
+    box-shadow: none !important;
+  }
+  .tab__dot {
+    display: none !important;
+  }
+  .tab__ico .dot-badge {
+    position: absolute;
+    top: -2px;
+    right: -4px;
+    margin: 0;
+  }
+}
+
+/* 3) Кнопка «Фильтры» и обложечные карточки «Подобрано для тебя» в Explore (image-35) */
+.ex-filter-btn {
+  height: 46px;
+  padding: 0 15px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.eh-card {
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  min-height: 196px;
+  background: #0d1526;
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(12, 16, 28, 0.15);
+  cursor: pointer;
+  display: flex;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.eh-art,
+.eh-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.eh-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 12, 22, 0.18) 0%,
+    rgba(8, 12, 22, 0.42) 45%,
+    rgba(7, 10, 19, 0.92) 100%
+  );
+  pointer-events: none;
+}
+
+.eh-inner {
+  position: relative;
+  z-index: 2;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px 15px 15px;
+  gap: 38px;
+}
+
+.eh-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.eh-pill {
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 750;
+  display: inline-flex;
+  align-items: center;
+  color: #111318;
+  background: #a9dcff;
+}
+.eh-pill--sky   { background: #a9dcff; color: #0f253d; }
+.eh-pill--sun   { background: #ffe58f; color: #3d2c00; }
+.eh-pill--mint  { background: #c6f69d; color: #163814; }
+.eh-pill--lav   { background: #ddd2ff; color: #2b1b59; }
+.eh-pill--blush { background: #ffc9c2; color: #4d1712; }
+.eh-pill--glass {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.eh-match {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(11, 14, 23, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 750;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.eh-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eh-info {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.eh-org {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: rgba(255, 255, 255, 0.74);
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eh-title {
+  font-size: 17.5px;
+  font-weight: 800;
+  line-height: 1.22;
+  letter-spacing: -0.35px;
+  color: #ffffff;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.eh-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 11px;
+  margin-top: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.eh-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.eh-cta {
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111318;
+  font-size: 12.5px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  white-space: nowrap;
+}
+
+
 
 
 </style>
@@ -6957,7 +7368,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
         text, createdAt: iso(now()), editedAt: null };
       p.comments = p.comments || [];
       p.comments.push(tmp);
-      emit('posts');
+      emit('post-comments');
 
       if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true, comment: tmp });
 
@@ -6965,12 +7376,12 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
         if (res && res.comment) {
           const i = p.comments.findIndex((c) => c.id === tmp.id);
           if (i >= 0) p.comments[i] = res.comment;
-          emit('posts');
+          emit('post-comments');
         }
         return { ok: true, comment: (res && res.comment) || tmp };
       }).catch((err) => {
         p.comments = p.comments.filter((c) => c.id !== tmp.id);
-        emit('posts');
+        emit('post-comments');
         return { ok: false, error: err.message };
       });
     },
@@ -6981,7 +7392,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       if (!c) return Promise.resolve({ ok: false });
       c.text = text;
       c.editedAt = iso(now());
-      emit('posts');
+      emit('post-comments');
       if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true });
       return SH.api.request('PATCH', '/api/comments/' + commentId, { text })
         .then(() => ({ ok: true }))
@@ -6992,7 +7403,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       const p = state.posts.find((x) => x.id === postId);
       if (!p) return Promise.resolve({ ok: false });
       p.comments = (p.comments || []).filter((c) => c.id !== commentId);
-      emit('posts');
+      emit('post-comments');
       if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true });
       return SH.api.deleteComment(commentId)
         .then(() => ({ ok: true }))
@@ -7012,13 +7423,13 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       });
       if (!had) rx[emoji] = (rx[emoji] || []).concat(u.id);
       m.reactions = Object.keys(rx).length ? rx : null;
-      emit('chats');
+      emit('chat-messages');
       if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true, reactions: m.reactions });
       return SH.api.reactMessage(messageId, emoji)
         .then((res) => {
           if (res && res.reactions !== undefined) {
             m.reactions = Object.keys(res.reactions || {}).length ? res.reactions : null;
-            emit('chats');
+            emit('chat-messages');
           }
           return { ok: true };
         })
@@ -7043,7 +7454,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       m.text = text;
       m.editedAt = iso(now());
       c.preview = null;
-      emit('chats');
+      emit('chat-messages');
       if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true });
       return SH.api.editMessage(messageId, text)
         .then(() => ({ ok: true }))
@@ -7057,7 +7468,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       if (c.pinnedMsgId === messageId) c.pinnedMsgId = '';
       c.preview = null;
       if (c.messages.length) c.lastAt = c.messages[c.messages.length - 1].at;
-      emit('chats');
+      emit('chat-messages');
       if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true });
       return SH.api.deleteMessage(messageId)
         .then(() => ({ ok: true }))
@@ -7244,7 +7655,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       chat.lastAt = msg.at;
       chat.unread = 0;
       chat.preview = null;
-      emit('chats');
+      emit('chat-messages');
 
       if (!(SH.api && SH.api.enabled())) return Promise.resolve({ ok: true, message: msg });
 
@@ -7271,7 +7682,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       if (flag) {
         const state_ = msg.failed ? 'fail' : (msg.pending ? 'wait' : '');
         flag.className = 'chat-flag' + (state_ ? ' chat-flag--' + state_ : '');
-        flag.textContent = msg.failed ? 'не отправлено' : (msg.pending ? 'ждёт отправки' : '');
+        flag.textContent = msg.failed ? 'не отпр.' : (msg.pending ? '⏳' : '✓✓');
       }
       return msg;
     },
@@ -7281,7 +7692,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     readChat(id) {
       const c = store.chat(id);
       if (c && c.unread) {
-        c.unread = 0; emit('chats');
+        c.unread = 0; emit('chat-messages');
         SH.api && SH.api.push('POST', '/api/chats/' + id + '/read');
       }
     },
@@ -8082,26 +8493,187 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     return list;
   }
 
+  function heroSceneSvg(ev) {
+    const cat = (ev && ev.category) || 'event';
+    const seed = String((ev && ev.id) || ev.title || 'a').charCodeAt(0) % 3;
+
+    if (cat === 'hackathon' || (cat === 'olympiad' && seed === 1)) {
+      /* Космический горизонт Земли и орбитальное свечение (как NASA Space Apps на референсе) */
+      return (
+        '<svg class="eh-art" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+          '<defs>' +
+            '<linearGradient id="ehSpc" x1="0" y1="0" x2="1" y2="1">' +
+              '<stop offset="0%" stop-color="#070d1d"/><stop offset="55%" stop-color="#0f2347"/><stop offset="100%" stop-color="#1d497d"/>' +
+            '</linearGradient>' +
+            '<radialGradient id="ehAtm" cx="38%" cy="78%" r="72%">' +
+              '<stop offset="0%" stop-color="#dbeafe"/><stop offset="34%" stop-color="#60a5fa" stop-opacity="0.88"/>' +
+              '<stop offset="62%" stop-color="#1e3a8a" stop-opacity="0.55"/><stop offset="100%" stop-color="#070d1d" stop-opacity="0"/>' +
+            '</radialGradient>' +
+          '</defs>' +
+          '<rect width="420" height="220" fill="url(#ehSpc)"/>' +
+          '<circle cx="76" cy="34" r="1.2" fill="#fff" opacity=".7"/><circle cx="294" cy="28" r="1.5" fill="#bfdbfe" opacity=".8"/>' +
+          '<circle cx="358" cy="52" r="1.1" fill="#fff" opacity=".55"/><circle cx="210" cy="22" r="1" fill="#fff" opacity=".5"/>' +
+          '<ellipse cx="165" cy="235" rx="310" ry="152" fill="url(#ehAtm)"/>' +
+          '<ellipse cx="165" cy="246" rx="296" ry="140" fill="#17345f"/>' +
+          '<path d="M-30 164 Q120 102 330 144 T450 182 L450 230 L-30 230 Z" fill="#60a5fa" opacity=".24"/>' +
+          '<path d="M10 176 Q155 128 308 164 T440 198" fill="none" stroke="#bae6fd" stroke-width="2.2" opacity=".55"/>' +
+          '<g transform="translate(326 42) rotate(-24)">' +
+            '<rect x="-18" y="-9" width="36" height="18" rx="4" fill="#cbd5e1" opacity=".78"/>' +
+            '<rect x="-46" y="-5" width="24" height="10" rx="2" fill="#38bdf8" opacity=".62"/>' +
+            '<rect x="22" y="-5" width="24" height="10" rx="2" fill="#38bdf8" opacity=".62"/>' +
+          '</g>' +
+        '</svg>'
+      );
+    }
+
+    if (cat === 'internship') {
+      /* Современный кампус и вечерний IT-горизонт с тёплым светом окон */
+      return (
+        '<svg class="eh-art" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+          '<defs>' +
+            '<linearGradient id="ehInt" x1="0" y1="0" x2="1" y2="1">' +
+              '<stop offset="0%" stop-color="#0b1626"/><stop offset="52%" stop-color="#15324a"/><stop offset="100%" stop-color="#1e4d5c"/>' +
+            '</linearGradient>' +
+            '<radialGradient id="ehSun" cx="24%" cy="22%" r="60%">' +
+              '<stop offset="0%" stop-color="#38bdf8" stop-opacity=".34"/><stop offset="100%" stop-color="#0b1626" stop-opacity="0"/>' +
+            '</radialGradient>' +
+          '</defs>' +
+          '<rect width="420" height="220" fill="url(#ehInt)"/>' +
+          '<rect width="420" height="220" fill="url(#ehSun)"/>' +
+          '<rect x="34" y="54" width="68" height="166" rx="6" fill="#0f2236" stroke="#2b5270" stroke-width="1"/>' +
+          '<rect x="116" y="28" width="92" height="192" rx="6" fill="#132a42" stroke="#35658a" stroke-width="1"/>' +
+          '<rect x="222" y="44" width="84" height="176" rx="6" fill="#10253b" stroke="#2d597a" stroke-width="1"/>' +
+          '<rect x="318" y="66" width="76" height="154" rx="6" fill="#0d1f33" stroke="#264b68" stroke-width="1"/>' +
+          '<g opacity=".78">' +
+            '<rect x="132" y="46" width="18" height="8" rx="2" fill="#fde68a"/><rect x="158" y="46" width="32" height="8" rx="2" fill="#7dd3fc"/>' +
+            '<rect x="132" y="64" width="34" height="8" rx="2" fill="#38bdf8" opacity=".7"/><rect x="174" y="64" width="16" height="8" rx="2" fill="#fde68a"/>' +
+            '<rect x="132" y="82" width="22" height="8" rx="2" fill="#6ee7b7"/><rect x="162" y="82" width="28" height="8" rx="2" fill="#93c5fd" opacity=".6"/>' +
+            '<rect x="238" y="62" width="26" height="8" rx="2" fill="#fde68a"/><rect x="272" y="62" width="20" height="8" rx="2" fill="#38bdf8"/>' +
+            '<rect x="238" y="80" width="44" height="8" rx="2" fill="#7dd3fc" opacity=".65"/>' +
+            '<rect x="48" y="72" width="36" height="7" rx="2" fill="#7dd3fc" opacity=".6"/><rect x="48" y="88" width="22" height="7" rx="2" fill="#fde68a"/>' +
+            '<rect x="334" y="84" width="38" height="7" rx="2" fill="#6ee7b7" opacity=".7"/>' +
+          '</g>' +
+        '</svg>'
+      );
+    }
+
+    if (cat === 'course') {
+      /* Тёмные экраны кода с подсветкой синтаксиса (как курс DeepLearning.AI на референсе) */
+      return (
+        '<svg class="eh-art" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+          '<defs>' +
+            '<linearGradient id="ehIde" x1="0" y1="0" x2="1" y2="1">' +
+              '<stop offset="0%" stop-color="#0b101b"/><stop offset="55%" stop-color="#121c2e"/><stop offset="100%" stop-color="#0d2538"/>' +
+            '</linearGradient>' +
+          '</defs>' +
+          '<rect width="420" height="220" fill="url(#ehIde)"/>' +
+          '<rect x="18" y="18" width="184" height="142" rx="10" fill="#152238" stroke="#294066" stroke-width="1"/>' +
+          '<rect x="214" y="12" width="190" height="156" rx="10" fill="#111b2d" stroke="#243b5e" stroke-width="1"/>' +
+          '<g opacity=".82">' +
+            '<rect x="30" y="34" width="54" height="5" rx="2.5" fill="#38bdf8"/>' +
+            '<rect x="90" y="34" width="76" height="5" rx="2.5" fill="#a78bfa"/>' +
+            '<rect x="40" y="48" width="98" height="5" rx="2.5" fill="#34d399"/>' +
+            '<rect x="40" y="62" width="68" height="5" rx="2.5" fill="#fbbf24"/>' +
+            '<rect x="114" y="62" width="58" height="5" rx="2.5" fill="#60a5fa"/>' +
+            '<rect x="30" y="78" width="118" height="5" rx="2.5" fill="#94a3b8" opacity=".6"/>' +
+            '<rect x="40" y="92" width="84" height="5" rx="2.5" fill="#f472b6"/>' +
+            '<rect x="40" y="106" width="126" height="5" rx="2.5" fill="#38bdf8" opacity=".75"/>' +
+            '<rect x="228" y="28" width="66" height="5" rx="2.5" fill="#fbbf24"/>' +
+            '<rect x="300" y="28" width="72" height="5" rx="2.5" fill="#34d399"/>' +
+            '<rect x="238" y="44" width="134" height="5" rx="2.5" fill="#60a5fa"/>' +
+            '<rect x="238" y="58" width="94" height="5" rx="2.5" fill="#a78bfa"/>' +
+            '<rect x="248" y="72" width="112" height="5" rx="2.5" fill="#34d399"/>' +
+            '<rect x="228" y="88" width="78" height="5" rx="2.5" fill="#f87171"/>' +
+            '<rect x="238" y="104" width="140" height="5" rx="2.5" fill="#94a3b8" opacity=".55"/>' +
+          '</g>' +
+          '<circle cx="330" cy="150" r="64" fill="#0ea5e9" opacity=".14"/>' +
+        '</svg>'
+      );
+    }
+
+    if (cat === 'fellowship' || cat === 'event') {
+      /* Изумрудный ландшафт с солнечными панелями и дорожками (как Fellowship на референсе) */
+      return (
+        '<svg class="eh-art" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+          '<defs>' +
+            '<linearGradient id="ehEco" x1="0" y1="0" x2="1" y2="1">' +
+              '<stop offset="0%" stop-color="#143824"/><stop offset="52%" stop-color="#1f5b37"/><stop offset="100%" stop-color="#0f2d25"/>' +
+            '</linearGradient>' +
+          '</defs>' +
+          '<rect width="420" height="220" fill="url(#ehEco)"/>' +
+          '<path d="M-20 88 Q120 34 268 78 T440 66 L440 220 L-20 220 Z" fill="#256d3f" opacity=".68"/>' +
+          '<g transform="skewX(-22)" opacity=".78">' +
+            '<rect x="70" y="58" width="110" height="36" rx="4" fill="#1d4ed8"/>' +
+            '<rect x="194" y="58" width="116" height="36" rx="4" fill="#1e40af"/>' +
+            '<rect x="92" y="104" width="124" height="38" rx="4" fill="#1d4ed8"/>' +
+            '<rect x="230" y="104" width="118" height="38" rx="4" fill="#1e3a8a"/>' +
+          '</g>' +
+          '<path d="M-10 158 C110 116, 250 176, 430 132" fill="none" stroke="#bbf7d0" stroke-width="5" opacity=".36"/>' +
+        '</svg>'
+      );
+    }
+
+    /* Олимпиады и конкурсы: глубокий сапфирово-индиговый купол с золотистыми орбитами */
+    return (
+      '<svg class="eh-art" viewBox="0 0 420 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+        '<defs>' +
+          '<linearGradient id="ehOly" x1="0" y1="0" x2="1" y2="1">' +
+            '<stop offset="0%" stop-color="#111633"/><stop offset="52%" stop-color="#1e275c"/><stop offset="100%" stop-color="#2b1e4d"/>' +
+          '</linearGradient>' +
+          '<radialGradient id="ehGlow" cx="76%" cy="28%" r="58%">' +
+            '<stop offset="0%" stop-color="#fbbf24" stop-opacity=".42"/><stop offset="55%" stop-color="#6366f1" stop-opacity=".24"/><stop offset="100%" stop-color="#111633" stop-opacity="0"/>' +
+          '</radialGradient>' +
+        '</defs>' +
+        '<rect width="420" height="220" fill="url(#ehOly)"/>' +
+        '<rect width="420" height="220" fill="url(#ehGlow)"/>' +
+        '<circle cx="316" cy="74" r="78" fill="none" stroke="#a5b4fc" stroke-width="1.2" opacity=".32"/>' +
+        '<circle cx="316" cy="74" r="118" fill="none" stroke="#fcd34d" stroke-width="1" opacity=".24" stroke-dasharray="5 6"/>' +
+        '<polygon points="316,28 358,96 274,96" fill="none" stroke="#fde68a" stroke-width="1.5" opacity=".42"/>' +
+        '<circle cx="316" cy="28" r="3.5" fill="#fde68a" opacity=".85"/>' +
+        '<circle cx="274" cy="96" r="3" fill="#93c5fd" opacity=".8"/>' +
+        '<circle cx="358" cy="96" r="3" fill="#c4b5fd" opacity=".8"/>' +
+      '</svg>'
+    );
+  }
+
   function heroCard({ ev, match }) {
     const cat = store.CATEGORIES[ev.category] || store.CATEGORIES.event;
     const dl = ui.deadlineInfo(ev.deadlineDate);
+    const pillTone = {
+      hackathon: 'sky',
+      olympiad: 'sky',
+      course: 'sun',
+      fellowship: 'mint',
+      event: 'mint',
+      internship: 'lav',
+      competition: 'blush'
+    }[ev.category] || 'sky';
+
     return (
-      '<article class="event-hero card--tap" onclick="SH.app.go(\'#/event/' + ev.id + '\')" style="cursor:pointer">' +
-        '<div class="event-hero__cover">' +
-          ui.cover(ev, 132) +
-          '<div class="event-hero__badges">' +
-            '<span class="tag tag--dark">' + e(cat.label) + '</span>' +
-            (ev.isFree ? '<span class="tag tag--mint">Бесплатно</span>' : '') +
+      '<article class="eh-card card--tap" onclick="SH.app.go(\'#/event/' + e(ev.id) + '\')">' +
+        heroSceneSvg(ev) +
+        (ev.image
+          ? '<img class="eh-photo" src="' + e(ev.image) + '" alt="" loading="lazy" onerror="this.style.display=&quot;none&quot;">'
+          : '') +
+        '<div class="eh-scrim"></div>' +
+        '<div class="eh-inner">' +
+          '<div class="eh-top">' +
+            '<span class="eh-pill eh-pill--' + pillTone + '">' + e(cat.label) + '</span>' +
+            '<span class="eh-pill eh-pill--glass">' + (ev.isFree !== false ? 'Бесплатно' : 'Платно') + '</span>' +
             '<span class="spacer"></span>' +
-            '<span class="match-badge">' + icon('sparkles', 11) + ' ' + match + '%</span>' +
+            '<span class="eh-match">' + icon('sparkles', 11) + ' ' + match + '% match</span>' +
           '</div>' +
-        '</div>' +
-        '<div class="event-hero__body">' +
-          '<div class="grow">' +
-            '<div class="event-hero__title">' + e(ev.title) + '</div>' +
-            '<div class="event-hero__meta">' + e(ev.organizer) + ' · ' + e(dl.label) + '</div>' +
+          '<div class="eh-bottom">' +
+            '<div class="eh-info">' +
+              '<div class="eh-org">' + e(ev.organizer || '') + '</div>' +
+              '<div class="eh-title">' + e(ev.title) + '</div>' +
+              '<div class="eh-meta">' +
+                '<span>' + icon('globe', 12) + ' ' + e(ev.format || 'Онлайн') + '</span>' +
+                '<span>' + icon('clock', 12) + ' ' + e(dl.label) + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<span class="eh-cta">Открыть ' + icon('arrowRight', 13) + '</span>' +
           '</div>' +
-          '<span class="event-hero__cta">Открыть</span>' +
         '</div>' +
       '</article>'
     );
@@ -8173,11 +8745,13 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
 
         installBanner() +
 
-        '<div class="row" style="margin-bottom:14px">' +
+        '<div class="row" style="margin-bottom:14px;gap:8px">' +
           '<div class="search grow">' + icon('search') +
             '<input id="explore-search" placeholder="Олимпиады, курсы, стажировки" value="' + e(query) + '">' +
           '</div>' +
-          '<button class="icon-btn" onclick="SH.views.explore.openFilters()" aria-label="Фильтры">' + icon('tune', 20) + '</button>' +
+          '<button class="ex-filter-btn" onclick="SH.views.explore.openFilters()" aria-label="Фильтры">' +
+            icon('tune', 16) + '<span>Фильтры</span>' +
+          '</button>' +
         '</div>' +
 
         '<div class="pill-row" style="margin-bottom:6px">' +
@@ -8841,7 +9415,8 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
             (ctx ? 'Измените комментарий…' : 'Написать комментарий…') + '">' +
             e(ctx && ctx.draft ? ctx.draft : '') +
           '</div>' +
-          '<button class="icon-btn icon-btn--brand" style="width:40px;height:40px;flex:0 0 auto;border-radius:50%" ' +
+          '<button type="button" class="icon-btn icon-btn--brand th-reply-send" style="width:40px;height:40px;flex:0 0 auto;border-radius:50%" ' +
+            'onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" ' +
             'onclick="SH.views.community.sendDetailComment(\'' + e(p.id) + '\')" aria-label="' + (ctx ? 'Сохранить' : 'Отправить') + '">' +
             icon(ctx ? 'check' : 'send', 17) +
           '</button>' +
@@ -8996,11 +9571,15 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       if (editCommentCtx && editCommentCtx.postId === postId && editCommentCtx.commentId) {
         const cid = editCommentCtx.commentId;
         editCommentCtx = null;
-        if (el) el.textContent = '';
+        if (el) { el.textContent = ''; el.setAttribute('data-placeholder', 'Написать комментарий…'); }
+        const ctxBar = document.querySelector('.tg-compose-ctx');
+        if (ctxBar) ctxBar.remove();
+        const sendBtn = document.querySelector('.th-reply-send');
+        if (sendBtn) sendBtn.innerHTML = icon('send', 17);
         store.editComment(postId, cid, text).then((res) => {
           if (!res || !res.ok) { ui.toast((res && res.error) || 'Не сохранено'); return; }
           ui.toast('Комментарий изменён');
-          SH.app.render();
+          syncPostDetail(postId);
         });
         return;
       }
@@ -9008,9 +9587,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       if (el) el.textContent = '';
       store.addComment(postId, text).then((res) => {
         if (!res.ok) { ui.toast(res.error || 'Не отправлено'); return; }
-        SH.app.render();
-        const again = document.getElementById('cm-detail-' + postId);
-        if (again) ceFocusEnd(again);
+        syncPostDetail(postId, true);
       });
     },
 
@@ -9051,7 +9628,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
               store.deleteComment(postId, c.id).then((res) => {
                 if (!res || !res.ok) { ui.toast((res && res.error) || 'Не удалось удалить'); return; }
                 ui.toast('Комментарий удалён');
-                SH.app.render();
+                syncPostDetail(postId);
               });
             }
           } : null
@@ -9261,6 +9838,28 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     } catch (err) { /* ignore */ }
   }
 
+  function syncPostDetail(postId, scrollBottom) {
+    const p = store.postById ? store.postById(postId) : store.posts({ includeHidden: true }).find((x) => x.id === postId);
+    if (!p) return;
+    const comments = p.comments || [];
+    const head = document.querySelector('.th-replies-head');
+    if (head) head.textContent = 'Ответы · ' + comments.length;
+    const list = document.querySelector('.th-replies-list');
+    if (list) {
+      list.innerHTML = comments.length
+        ? comments.map((c) => threadCommentRow(p.id, c)).join('')
+        : '<div style="padding:28px 20px;text-align:center" class="muted small">Пока нет комментариев — напишите первый ответ ниже.</div>';
+    }
+    const countSpan = document.querySelector('.th-root .th-post__actions span.th-act span');
+    if (countSpan) {
+      countSpan.textContent = comments.length + ' ' + ui.plural(comments.length, 'ответ', 'ответа', 'ответов');
+    }
+    if (scrollBottom) {
+      const scroller = document.querySelector('[data-post-scroll]');
+      if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    }
+  }
+
   function mountPostDetail(root, postId) {
     const inp = root && root.querySelector('#cm-detail-' + postId);
     if (inp) {
@@ -9293,6 +9892,26 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
         editCommentCtx.autoFocus = false;
         ceFocusEnd(inp);
       }
+    }
+
+    const sendBtn = root && root.querySelector('.th-reply-send');
+    if (sendBtn && !sendBtn.__sendBound) {
+      sendBtn.__sendBound = true;
+      sendBtn.addEventListener('touchstart', (ev) => {
+        ev.preventDefault();
+        SH.views.community.sendDetailComment(postId);
+      }, { passive: false });
+    }
+
+    if (root) {
+      root.querySelectorAll('.th-detail-top, .tg-compose-ctx, .th-reply-bar').forEach((bar) => {
+        if (bar.__touchLocked) return;
+        bar.__touchLocked = true;
+        bar.addEventListener('touchmove', (ev) => {
+          if (ev.target && ev.target.closest('.tg-ce')) return;
+          ev.preventDefault();
+        }, { passive: false });
+      });
     }
 
     const scroller = root && root.querySelector('[data-post-scroll]');
@@ -9337,7 +9956,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
   }
 
   SH.views = SH.views || {};
-  SH.views.community = Object.assign({ html, teamDetail, teamInvite, mountInvite, postDetail, mountPostDetail }, actions);
+  SH.views.community = Object.assign({ html, teamDetail, teamInvite, mountInvite, postDetail, mountPostDetail, syncPostDetail }, actions);
   SH.views.community.getTab = () => tab;
 })(window.SH = window.SH || {});
 
@@ -10843,7 +11462,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
             '</div>' +
             '<button class="tg-bar-sticker' + (stickerOpen ? ' is-on' : '') + '" onclick="SH.views.chats.toggleStickers()" title="Мем-стикеры" aria-label="Стикеры">🎭</button>' +
           '</div>' +
-          '<button class="icon-btn icon-btn--brand tg-send-btn" onclick="SH.views.chats.send(\'' + e(c.id) + '\')" aria-label="' + (ctx && ctx.mode === 'edit' ? 'Сохранить' : 'Отправить') + '">' +
+          '<button class="icon-btn icon-btn--brand tg-send-btn" type="button" onpointerdown="event.preventDefault()" onmousedown="event.preventDefault()" onclick="SH.views.chats.send(\'' + e(c.id) + '\')" aria-label="' + (ctx && ctx.mode === 'edit' ? 'Сохранить' : 'Отправить') + '">' +
             icon(ctx && ctx.mode === 'edit' ? 'check' : 'send', 18) +
           '</button>' +
         '</div>' +
@@ -11024,11 +11643,12 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     } catch (err) { /* ignore */ }
   }
 
-  function syncOpen(id) {
+  function syncOpen(id, forceBottom) {
     const c = store.chat(id);
     const box = document.querySelector('.chat-scroll');
     if (!c || !box) return;
     const me = store.currentUser || {};
+    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 120;
     const rows = Array.from(box.querySelectorAll('[data-msg]'));
     const have = new Set(rows.map((el) => el.getAttribute('data-msg')));
 
@@ -11065,13 +11685,17 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     });
 
     const add = (c.messages || []).filter((m) => m && !have.has(m.id));
-    if (!add.length) return;
-    add.sort((a, b) => String(a.at).localeCompare(String(b.at)));
-    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 100;
-    const empty = box.querySelector('.tg-empty-pill');
-    if (empty) empty.remove();
-    box.insertAdjacentHTML('beforeend', add.map((m) => messageRow(c, m, me)).join(''));
-    if (nearBottom || add.some((m) => m.authorId !== me.id)) box.scrollTop = box.scrollHeight;
+    if (add.length) {
+      add.sort((a, b) => String(a.at).localeCompare(String(b.at)));
+      const empty = box.querySelector('.tg-empty-pill');
+      if (empty) empty.remove();
+      box.insertAdjacentHTML('beforeend', add.map((m) => messageRow(c, m, me)).join(''));
+      if (forceBottom || nearBottom || add.some((m) => m.authorId === me.id)) {
+        box.scrollTop = box.scrollHeight;
+      }
+    } else if (!(c.messages || []).length && !box.querySelector('.tg-empty-pill')) {
+      box.innerHTML = '<div class="tg-empty-pill">Пока нет сообщений — напишите или отправьте мем-стикер 👋</div>';
+    }
   }
 
   function mountList(root) {
@@ -11252,6 +11876,26 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       }
     }
 
+    // Не даём кнопке отправки сбивать фокус с поля на iOS (иначе клавиатура дёргается)
+    const sendBtn = root.querySelector('.tg-send-btn');
+    if (sendBtn && !sendBtn.__sendBound) {
+      sendBtn.__sendBound = true;
+      sendBtn.addEventListener('touchstart', (ev) => {
+        ev.preventDefault();
+        SH.views.chats.send(id);
+      }, { passive: false });
+    }
+
+    // Запрещаем Safari сдвигать visualViewport при свайпе по шапке или панели ввода
+    root.querySelectorAll('.tg-head, .tg-pinbar, .tg-compose-ctx, .tg-composer').forEach((bar) => {
+      if (bar.__touchLocked) return;
+      bar.__touchLocked = true;
+      bar.addEventListener('touchmove', (ev) => {
+        if (ev.target && ev.target.closest('.tg-ce')) return;
+        ev.preventDefault();
+      }, { passive: false });
+    });
+
     const scroller = root.querySelector('.chat-scroll');
     if (scroller) {
       bindMessageGestures(scroller, id);
@@ -11259,7 +11903,9 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     }
     const toBottom = () => {
       const sc = document.querySelector('.chat-scroll');
-      if (sc) sc.scrollTop = sc.scrollHeight;
+      if (sc && (sc.scrollHeight - sc.scrollTop - sc.clientHeight < 180)) {
+        sc.scrollTop = sc.scrollHeight;
+      }
     };
     if (viewportListener) {
       document.removeEventListener('sh:viewport', viewportListener);
@@ -11314,31 +11960,44 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       const input = document.getElementById('msg-input');
       const val = ceRead(input).trim();
       if (!val) return;
-      stickerOpen = false;
+
+      if (stickerOpen) {
+        stickerOpen = false;
+        const stBox = document.querySelector('.tg-stickers');
+        if (stBox) stBox.remove();
+        const stBtn = document.querySelector('.tg-bar-sticker');
+        if (stBtn) stBtn.classList.remove('is-on');
+      }
 
       if (composerCtx && composerCtx.chatId === id && composerCtx.mode === 'edit') {
         const msgId = composerCtx.msgId;
         composerCtx = null;
         ceWrite(input, '');
+        if (input) input.setAttribute('data-placeholder', 'Сообщение…');
+        const ctxBar = document.querySelector('.tg-compose-ctx');
+        if (ctxBar) ctxBar.remove();
+        const sendBtn = document.querySelector('.tg-send-btn');
+        if (sendBtn) sendBtn.innerHTML = icon('send', 18);
         store.editMessage(id, msgId, val).then((res) => {
           if (!res || !res.ok) { ui.toast((res && res.error) || 'Не сохранено'); return; }
           ui.toast('Сообщение изменено');
-          SH.app.render();
+          syncOpen(id);
         });
         return;
       }
 
       const att = withActiveReply(id, null);
       ceWrite(input, '');
+      const ctxBar = document.querySelector('.tg-compose-ctx');
+      if (ctxBar) ctxBar.remove();
+
       const sent = store.sendMessage(id, val, att);
-      SH.app.render();
+      syncOpen(id, true);
+      const scroller = document.querySelector('.chat-scroll');
+      if (scroller) scroller.scrollTop = scroller.scrollHeight;
       if (sent && sent.then) {
         sent.then((res) => { if (res && res.queued) ui.toast('Нет связи: сообщение уйдёт при подключении'); });
       }
-      const again = document.getElementById('msg-input');
-      if (again) ceFocusEnd(again);
-      const scroller = document.querySelector('.chat-scroll');
-      if (scroller) scroller.scrollTop = scroller.scrollHeight;
     },
 
     toggleStickers() {
@@ -11631,7 +12290,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       store.deleteMessage(chatId, messageId).then((res) => {
         if (!res || !res.ok) { ui.toast((res && res.error) || 'Не удалось удалить'); return; }
         ui.toast('Сообщение удалено');
-        SH.app.render();
+        syncOpen(chatId);
       });
     },
 
@@ -12138,7 +12797,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
               '<button class="pf-edit-pill" onclick="SH.views.profile.editProfile()">' +
                 icon('edit', 14) + '<span>Изменить</span>' +
               '</button>' +
-              '<button class="icon-btn icon-btn--plain" onclick="SH.views.profile.settings()" aria-label="Тема">' +
+              '<button class="icon-btn icon-btn--plain" onclick="SH.views.profile.settings()" aria-label="Настройки" title="Настройки">' +
                 icon('settings', 20) +
               '</button>' +
             '</div>' +
@@ -12179,8 +12838,6 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
 
           academicPortfolioHtml(u, true) +
 
-          pushCard() +
-
           '<section class="pf-open-sec">' +
             '<div class="pf-sec-head">' +
               '<h2 class="pf-sec-title">Избранные события</h2>' +
@@ -12190,15 +12847,56 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
               ? '<div class="pf-flat-list">' + saved.map(savedRow).join('') + '</div>'
               : '<div class="pf-open-empty">Пока нет сохранённых событий — нажимайте на закладку в разделе Explore.</div>') +
           '</section>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  /* ─────────────────────────── единый экран настроек (#/settings) ─────────────────────────── */
+
+  function settingsScreen() {
+    if (!store.isAuthed) {
+      SH.app.go('#/auth');
+      return '<div class="screen"></div>';
+    }
+    const u = store.currentUser || {};
+    return (
+      '<div class="screen screen--flush pf-canvas">' +
+        '<header class="pf-hero" style="padding-bottom:18px">' +
+          '<div class="pf-hero__topbar" style="margin-bottom:12px">' +
+            '<div class="row" style="gap:8px">' +
+              '<button class="icon-btn icon-btn--plain" onclick="SH.app.go(\'#/profile\')" aria-label="Назад">' +
+                icon('arrowLeft', 21) +
+              '</button>' +
+              '<h1 class="screen-title" style="font-size:24px;margin:0">Настройки</h1>' +
+            '</div>' +
+          '</div>' +
+          '<div class="row" style="gap:12px">' +
+            ui.avatar(u, 46) +
+            '<div class="grow" style="min-width:0">' +
+              '<div style="font-weight:800;font-size:15.5px;color:var(--text)" class="ellipsis">' + e(u.name || '') + '</div>' +
+              '<div class="small muted ellipsis">' + e(u.email || [u.school, u.grade].filter(Boolean).join(' · ') || 'Аккаунт ученика') + '</div>' +
+            '</div>' +
+          '</div>' +
+        '</header>' +
+
+        '<div class="pf-body">' +
+          pushCard() +
 
           '<section class="pf-open-sec">' +
-            '<div class="pf-sec-head"><h2 class="pf-sec-title">Настройки</h2></div>' +
+            '<div class="pf-sec-head"><h2 class="pf-sec-title">Приложение и оформление</h2></div>' +
             '<div class="pf-flat-list">' +
               row('install', 'Установить приложение', 'Иконка на главном экране', "SH.app.go('#/install')", '', 'sky') +
+              row('moon', 'Тема оформления', themeLabel(), 'SH.views.profile.themeSheet()', '', 'sun') +
               ((u.role === 'admin' || u.role === 'root')
                 ? row('shield', 'Админ-панель', 'События, пользователи, модерация', "SH.app.go('#/admin')", 'pf-pastel-pill--lav', 'lav')
                 : '') +
-              row('moon', 'Тема оформления', themeLabel(), 'SH.views.profile.themeSheet()', '', 'sun') +
+            '</div>' +
+          '</section>' +
+
+          '<section class="pf-open-sec">' +
+            '<div class="pf-sec-head"><h2 class="pf-sec-title">Безопасность и вход</h2></div>' +
+            '<div class="pf-flat-list">' +
               row('mail', 'Сменить пароль', 'Подтверждение кодом по почте', 'SH.views.profile.passwordSheet()', '', 'mint') +
               row('logout', 'Выйти из аккаунта', 'Завершить текущую сессию', 'SH.views.profile.logout()', '', 'blush') +
             '</div>' +
@@ -12879,7 +13577,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       }
     },
 
-    settings() { actions.themeSheet(); },
+    settings() { SH.app.go('#/settings'); },
 
     logout() {
       ui.confirmSheet('Выйти?', 'Сессия на сервере будет закрыта, токен удалён из браузера.', 'Выйти', async () => {
@@ -12983,7 +13681,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
   }
 
   SH.views = SH.views || {};
-  SH.views.profile = Object.assign({ html, user, auth, submitAuth, portfolioOf }, actions);
+  SH.views.profile = Object.assign({ html, settingsScreen, user, auth, submitAuth, portfolioOf }, actions);
 })(window.SH = window.SH || {});
 
 /* Админ-панель: два уровня доступа — root (владелец) и admin */
@@ -16429,7 +17127,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     if (isTab(route.name)) return route.name;
     if (route.name === 'event' || route.name === 'all') return 'explore';
     if (route.name === 'team' || route.name === 'team-invite' || route.name === 'post') return 'community';
-    if (route.name === 'user') return 'profile';
+    if (route.name === 'user' || route.name === 'settings') return 'profile';
     if (route.name === 'chat') return 'chats';
     return '';
   }
@@ -16454,6 +17152,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       case 'chats': return { html: SH.views.chats.html(), mount: (root) => SH.views.chats.mountList(root) };
       case 'chat': return { html: SH.views.chats.thread(p1), mount: (root) => SH.views.chats.mountThread(root, p1) };
       case 'profile': return { html: SH.views.profile.html() };
+      case 'settings': return { html: SH.views.profile.settingsScreen() };
       case 'auth': return { html: SH.views.profile.auth(p1 === 'register' ? 'register' : 'login') };
       case 'install': return { html: SH.views.install.html() };
       case 'user': return { html: SH.views.profile.user(p1) };
@@ -16578,7 +17277,7 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     const names = {
       explore: 'Explore', event: 'Событие', community: 'Сообщество',
       team: 'Команда', 'team-invite': 'Приглашение в команду', post: 'Тред',
-      roadmap: 'Роадмап', chats: 'Чаты', chat: 'Чат', profile: 'Профиль',
+      roadmap: 'Роадмап', chats: 'Чаты', chat: 'Чат', profile: 'Профиль', settings: 'Настройки',
       auth: 'Вход', install: 'Установка', admin: 'Админ-панель', all: 'События', user: 'Профиль',
       org: 'kk. · Организация'
     };
@@ -16589,13 +17288,18 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
     const unread = store.unreadTotal();
     const list = tabsList();
     return '<nav class="tabbar' + (aux ? ' tabbar--aux' : '') + '" role="tablist" style="--tabs:' + list.length + '">' +
-      list.map(([id, ico, label]) =>
-        '<button class="tab" role="tab" aria-selected="' + (id === active) + '" onclick="SH.app.go(\'#/' + id + '\')">' +
-          icon(ico) +
-          (id === 'chats' && unread ? '<span class="dot-badge"></span>' : '') +
-          '<span>' + label + '</span>' +
-        '</button>'
-      ).join('') +
+      list.map(([id, ico, label]) => {
+        const isCenter = id === 'roadmap';
+        return (
+          '<button class="tab' + (isCenter ? ' tab--center' : '') + '" role="tab" aria-selected="' + (id === active) + '" onclick="SH.app.go(\'#/' + id + '\')">' +
+            (isCenter
+              ? '<span class="tab__orb">' + icon(ico) + '</span>'
+              : '<span class="tab__ico">' + icon(ico) + (id === 'chats' && unread ? '<span class="dot-badge"></span>' : '') + '</span>') +
+            '<span class="tab__lbl">' + label + '</span>' +
+            '<span class="tab__dot" aria-hidden="true"></span>' +
+          '</button>'
+        );
+      }).join('') +
     '</nav>';
   }
 
@@ -16656,41 +17360,47 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       };
     }
 
-    /* Клавиатура на телефоне (iOS Safari / PWA / Android):
-       пишем в --vvh и --vvt точный прямоугольник visualViewport,
-       чтобы экран чата и треда всегда совпадал с видимой областью над клавиатурой:
-       ни уезда под клавиатуру, ни белой щели от safe-area над ней. */
+    /* Клавиатура на телефоне (iOS 26 Safari / PWA / Android):
+       пишем в --vvh и --vvt точный прямоугольник visualViewport.
+       maxSeenH хранит полную высоту экрана в текущей ориентации и НИКОГДА
+       не уменьшается при focusout / перерисовке, чтобы kb-open не мигал,
+       а шапка и поле ввода не улетали вверх при отправке сообщения. */
     function trackKeyboard() {
       const vv = window.visualViewport;
       const root = document.documentElement;
-      let baseH = window.innerHeight || 0;
+      let maxSeenH = Math.max(window.innerHeight || 0, vv ? Math.round(vv.height) : 0);
+      let rafId = 0;
 
       const apply = () => {
         const winH = window.innerHeight || document.documentElement.clientHeight || 0;
-        const active = document.activeElement;
-        const inputFocused = isTextControl(active);
-        if (!inputFocused && winH > baseH) baseH = winH;
-        const refH = Math.max(baseH, winH);
-
+        const scale = vv && vv.scale ? vv.scale : 1;
         const h = vv ? Math.round(vv.height) : winH;
-        const top = vv ? Math.max(0, Math.round(vv.offsetTop)) : 0;
+        const top = (vv && scale <= 1.02) ? Math.max(0, Math.round(vv.offsetTop)) : 0;
+
+        if (Math.max(winH, h) > maxSeenH) maxSeenH = Math.max(winH, h);
+
         root.style.setProperty('--vvh', h + 'px');
         root.style.setProperty('--vvt', top + 'px');
 
-        const kb = Math.max(0, refH - h);
-        const isKbOpen = kb > 100 || (inputFocused && kb > 48);
+        const kb = scale > 1.02 ? 0 : Math.max(0, maxSeenH - h);
+        const isKbOpen = kb > 105;
         root.classList.toggle('kb-open', isKbOpen);
 
-        // В полноэкранном чате/треде не даём iOS утаскивать документ вверх
-        if (window.innerWidth < 900 && document.querySelector('.app--chat') && window.scrollY !== 0 && top === 0) {
+        if (window.innerWidth < 900 && document.querySelector('.app--chat') && !isKbOpen && window.scrollY !== 0) {
           window.scrollTo(0, 0);
         }
 
         document.dispatchEvent(new CustomEvent('sh:viewport', { detail: { height: h, top, keyboard: isKbOpen } }));
       };
 
-      const burstApply = () => {
+      const scheduleApply = () => {
         apply();
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => { rafId = 0; apply(); });
+      };
+
+      const burstApply = () => {
+        scheduleApply();
         setTimeout(apply, 60);
         setTimeout(apply, 180);
         setTimeout(apply, 360);
@@ -16698,23 +17408,25 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
 
       apply();
       if (vv) {
-        vv.addEventListener('resize', apply);
-        vv.addEventListener('scroll', apply);
+        vv.addEventListener('resize', scheduleApply);
+        vv.addEventListener('scroll', scheduleApply);
       }
       document.addEventListener('focusin', (ev) => {
         if (isTextControl(ev.target)) burstApply();
       });
       document.addEventListener('focusout', () => {
         setTimeout(() => {
-          baseH = window.innerHeight || baseH;
+          if (!isTextControl(document.activeElement) && window.innerWidth < 900) {
+            if (window.scrollY !== 0) window.scrollTo(0, 0);
+          }
           burstApply();
-        }, 50);
+        }, 120);
       });
       window.addEventListener('orientationchange', () => {
-        baseH = 0;
-        setTimeout(burstApply, 120);
+        maxSeenH = 0;
+        setTimeout(burstApply, 140);
       });
-      window.addEventListener('resize', apply);
+      window.addEventListener('resize', scheduleApply);
     }
     trackKeyboard();
 
@@ -16727,7 +17439,17 @@ html[data-theme='dark'] .pf-flat-row__ico--blush { background: rgba(248, 113, 11
       try { window.matchMedia('(display-mode: standalone)').addEventListener('change', markStandalone); } catch (e) {}
     }
 
-    store.on(() => render());
+    store.on((_state, reason) => {
+      if (reason === 'chat-messages' && location.hash.indexOf('#/chat/') === 0 && SH.views.chats && SH.views.chats.syncOpen) {
+        SH.views.chats.syncOpen(location.hash.split('/')[2], true);
+        return;
+      }
+      if (reason === 'post-comments' && location.hash.indexOf('#/post/') === 0 && SH.views.community && SH.views.community.syncPostDetail) {
+        SH.views.community.syncPostDetail(location.hash.split('/')[2]);
+        return;
+      }
+      render();
+    });
 
     window.addEventListener('hashchange', render);
 
