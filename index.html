@@ -6973,9 +6973,164 @@ html[data-theme='dark'] .audit-row__icon--danger {
   text-overflow: ellipsis;
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   v1.20.1 — Полновысотный чат у ментора / админа организации (.kk-shell--room)
+             и прижатие поля ввода строго к нижнему краю экрана
+   ══════════════════════════════════════════════════════════════════ */
 
+.tg-chat {
+  display: flex !important;
+  flex-direction: column !important;
+}
 
+.tg-scroll {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+}
 
+/* В коротких переписках сообщения аккуратно прижимаются к низу над полем ввода, как в Telegram */
+.tg-scroll > .msg-line:first-child {
+  margin-top: auto;
+}
+
+.tg-composer {
+  flex: 0 0 auto;
+}
+
+@media (min-width: 900px) {
+  .kk-shell.kk-shell--room {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    align-items: stretch;
+  }
+
+  .kk-main.kk-main--room {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .kk-main.kk-main--room > .screen.screen--chat {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    margin: 0;
+  }
+
+  .kk-main.kk-main--room .tg-head,
+  .kk-main.kk-main--room .tg-pinbar,
+  .kk-main.kk-main--room .tg-compose-ctx,
+  .kk-main.kk-main--room .tg-composer {
+    padding-left: max(18px, calc((100% - 920px) / 2)) !important;
+    padding-right: max(18px, calc((100% - 920px) / 2)) !important;
+  }
+
+  .kk-main.kk-main--room .tg-scroll {
+    padding-left: max(20px, calc((100% - 920px) / 2)) !important;
+    padding-right: max(20px, calc((100% - 920px) / 2)) !important;
+  }
+
+  .app.app--chat > .screen.screen--chat {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .app.app--chat .tg-head,
+  .app.app--chat .tg-pinbar,
+  .app.app--chat .tg-compose-ctx,
+  .app.app--chat .tg-composer {
+    padding-left: max(18px, calc((100% - 920px) / 2)) !important;
+    padding-right: max(18px, calc((100% - 920px) / 2)) !important;
+  }
+
+  .app.app--chat .tg-scroll {
+    padding-left: max(20px, calc((100% - 920px) / 2)) !important;
+    padding-right: max(20px, calc((100% - 920px) / 2)) !important;
+  }
+}
+
+@media (max-width: 899px) {
+  html:has(.kk-shell--room),
+  html:has(.kk-shell--room) body {
+    overflow: hidden !important;
+    height: 100% !important;
+    overscroll-behavior: none !important;
+    background: var(--surface) !important;
+    background-image: none !important;
+  }
+
+  html:has(.kk-shell--room) body::before,
+  html:has(.kk-shell--room) body::after {
+    display: none !important;
+  }
+
+  .kk-shell.kk-shell--room > .kk-side {
+    display: none !important;
+  }
+
+  html:not(.kb-open) .kk-shell.kk-shell--room,
+  html.pwa-standalone:not(.kb-open) .kk-shell.kk-shell--room {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    z-index: 20;
+    transform: translate3d(0, 0, 0);
+  }
+
+  html.kb-open .kk-shell.kk-shell--room,
+  html.kb-open.pwa-standalone .kk-shell.kk-shell--room {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: var(--vvt, 0px) !important;
+    bottom: auto !important;
+    width: 100% !important;
+    height: var(--vvh, 100dvh) !important;
+    max-height: var(--vvh, 100dvh) !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    z-index: 20;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .kk-shell.kk-shell--room > .kk-main.kk-main--room,
+  .kk-shell.kk-shell--room > .kk-main.kk-main--room > .screen.screen--chat {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+}
 
 
 </style>
@@ -19223,10 +19378,11 @@ html[data-theme='dark'] .audit-row__icon--danger {
     const prevScroll = prevScreen ? prevScreen.scrollTop : 0;
 
     if (orgChatWrap && SH.views.org && SH.views.org.kkSidebar) {
+      const isRoom = route.name === 'chat';
       root.innerHTML =
-        '<div class="kk-shell">' +
+        '<div class="kk-shell' + (isRoom ? ' kk-shell--room' : '') + '">' +
           SH.views.org.kkSidebar('chats') +
-          '<main class="kk-main kk-main--chat">' + view.html + '</main>' +
+          '<main class="kk-main kk-main--chat' + (isRoom ? ' kk-main--room' : '') + '">' + view.html + '</main>' +
         '</div>';
     } else {
       const isFixedComposerScreen = route.name === 'chat' || route.name === 'post';
