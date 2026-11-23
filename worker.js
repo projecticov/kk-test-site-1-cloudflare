@@ -1,6 +1,6 @@
 /* ============================================================
    Student Hub — единый файл бэкенда для Cloudflare Workers
-   Сборка: 2026-11-22 14:14 · 572aa034
+   Сборка: 2026-11-23 17:07 · 5e3dbfe3
    Вставлять целиком в Dashboard → Edit code → Deploy.
    Переменные: DB (биндинг D1), GEMINI_KEYS (secret), ALLOW_ORIGIN
    ============================================================ */
@@ -286,7 +286,7 @@
 
 /* ───────────────────────── базовое ───────────────────────── */
 
-const BUILD = '2026-11-22 14:14 · 572aa034';
+const BUILD = '2026-11-23 17:07 · 5e3dbfe3';
 
 const CORS = (o) => ({
   'access-control-allow-origin': o,
@@ -1286,9 +1286,12 @@ async function authRegister(request, env, origin, body) {
   return json({ ok: true, token: session.token, expires: session.expires, user: publicUser(toUser(user), true) }, 201, origin);
 }
 
-async function authLogout(request, env, origin) {
+async function authLogout(request, env, origin, me) {
   const token = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim();
   if (token) await env.DB.prepare('delete from sessions where id=?').bind(await sha256(token)).run();
+  if (me && me.id) {
+    try { await audit(env, me.id, 'logout', me.id, me.name); } catch (e) { /* ignore */ }
+  }
   return json({ ok: true }, 200, origin);
 }
 
@@ -1506,7 +1509,7 @@ async function api(request, env, url, origin) {
   /* ── авторизация ── */
   if (path === '/auth/login' && method === 'POST') return authLogin(request, env, origin, body);
   if (path === '/auth/register' && method === 'POST') return authRegister(request, env, origin, body);
-  if (path === '/auth/logout' && method === 'POST') return authLogout(request, env, origin);
+  if (path === '/auth/logout' && method === 'POST') return authLogout(request, env, origin, me);
 
   if (path === '/auth/me') {
     if (!me) return json({ ok: false, error: 'Сессия истекла' }, 401, origin);
@@ -1661,12 +1664,13 @@ async function api(request, env, url, origin) {
     const city = body.city != null ? str(body.city, 60) : (me.city || '');
     const skills = body.skills != null ? body.skills : (me.skills || []);
     const interests = body.interests != null ? body.interests : (me.interests || []);
+    const color = body.color != null ? (str(body.color, 24) || 'sun') : (me.color || 'sun');
     const avatar = body.avatar !== undefined ? (str(body.avatar, 350000) || null) : (me.avatar || null);
     const pf = body.portfolio !== undefined
       ? (body.portfolio && typeof body.portfolio === 'object' ? str(JSON.stringify(body.portfolio), 1800000) : null)
       : (me.portfolio ? JSON.stringify(me.portfolio) : null);
-    await db.prepare('update users set name=?,grade=?,school=?,city=?,skills=?,interests=?,avatar=?,portfolio=? where id=?')
-      .bind(name, grade, school, city, K(skills), K(interests), avatar, pf, me.id).run();
+    await db.prepare('update users set name=?,grade=?,school=?,city=?,color=?,skills=?,interests=?,avatar=?,portfolio=? where id=?')
+      .bind(name, grade, school, city, color, K(skills), K(interests), avatar, pf, me.id).run();
     // если ученик прикреплён к организации — синхронизируем GPA/IELTS/SAT с карточкой организации
     if (me.orgId && body.portfolio && typeof body.portfolio === 'object') {
       try {
@@ -1726,12 +1730,12 @@ async function api(request, env, url, origin) {
   let m = path.match(/^\/events\/([^/]+)$/);
   if (m && (method === 'PATCH' || method === 'DELETE')) {
     const g = notAdmin(); if (g) return g;
+    const cur = await db.prepare('select * from events where id=?').bind(m[1]).first();
     if (method === 'DELETE') {
       await db.prepare('delete from events where id=?').bind(m[1]).run();
-      await audit(env, me.id, 'event.delete', m[1]);
+      await audit(env, me.id, 'event.delete', m[1], cur ? cur.title : null);
       return json({ ok: true }, 200, origin);
     }
-    const cur = await db.prepare('select * from events where id=?').bind(m[1]).first();
     if (!cur) return json({ error: 'not found' }, 404, origin);
     const e = Object.assign(toEvent(cur), body);
     await db.prepare(
@@ -2028,15 +2032,16 @@ async function api(request, env, url, origin) {
 
     const after = url.searchParams.get('after') || '';
     const rows = await db.prepare(
-      `select id, chat_id, author_id, text, attachment, created_at, edited_at from messages
-        where chat_id=? and (created_at>=? or coalesce(edited_at,'')>=?)
+      `select id, chat_id, author_id, text, attachment, reactions, created_at, edited_at, updated_at from messages
+        where chat_id=? and (created_at>=? or coalesce(edited_at,'')>=? or coalesce(updated_at,'')>=?)
         order by created_at asc limit 100`
-    ).bind(m[1], after, after).all();
+    ).bind(m[1], after, after, after).all();
 
     return json({ ok: true, messages: (rows.results || []).map((r) => ({
       id: r.id, chatId: r.chat_id, authorId: r.author_id, text: r.text,
       attachment: P(r.attachment, null),
-      at: r.created_at, editedAt: r.edited_at || ''
+      reactions: P(r.reactions, null),
+      at: r.created_at, editedAt: r.edited_at || '', updatedAt: r.updated_at || ''
     })) }, 200, origin);
   }
 
@@ -2531,7 +2536,10 @@ async function api(request, env, url, origin) {
            on conflict(user_id) do update set tags=excluded.tags, updated_at=excluded.updated_at`
         ).bind(target.id, JSON.stringify(clean), nowISO()).run();
       }
-      await audit(env, me.id, 'org.mentor.update', target.id);
+      const nextMentorName = (body.name != null && String(body.name).trim().length >= 2)
+        ? str(body.name, 120).trim()
+        : target.name;
+      await audit(env, me.id, 'org.mentor.update', target.id, nextMentorName);
       return json({ ok: true }, 200, origin);
     }
     if (method === 'DELETE') {
@@ -2545,11 +2553,11 @@ async function api(request, env, url, origin) {
         return json({ ok: false, error: 'Сначала переведите учеников этого ментора другому ментору (' + attached.c + ')' }, 400, origin);
       }
       await db.prepare('delete from org_students where user_id=?').bind(target.id).run();
-      await db.prepare('delete from sessions where user_id=?').bind(target.id).run();
-      await db.prepare('delete from user_logins where user_id=?').bind(target.id).run();
-      await db.prepare('delete from users where id=?').bind(target.id).run();
-      await audit(env, me.id, 'org.mentor.delete', target.id, target.name);
-      return json({ ok: true }, 200, origin);
+      const nextRole = target.role === 'org' ? 'student' : target.role;
+      await db.prepare('update users set role=?, org_id=null, org_role=null where id=?')
+        .bind(nextRole, target.id).run();
+      await audit(env, me.id, 'org.mentor.remove', target.id, target.name);
+      return json({ ok: true, detached: true }, 200, origin);
     }
   }
 
@@ -2959,21 +2967,26 @@ async function api(request, env, url, origin) {
         ? await db.prepare("select * from users where id=? and org_id=? and (role='org' or org_role='mentor')").bind(mentorId, org.id).first()
         : null;
       if (mentorId && !mentor) return json({ ok: false, error: 'Ментор не найден в организации' }, 404, origin);
+      const prevCard = await db.prepare('select mentor_id from org_students where user_id=?').bind(m[1]).first();
+      const nextMentorId = mentor ? mentor.id : null;
       await db.prepare(
         `insert into org_students (user_id,mentor_id,tags,grade,gpa,gpa_note,sat,sat_note,ielts,ielts_note,goal,goal_note,status,updated_at)
          values (?,?,'[]','','','','','','','','','','plan',?)
          on conflict(user_id) do update set mentor_id=excluded.mentor_id, updated_at=excluded.updated_at`
-      ).bind(m[1], mentor ? mentor.id : null, nowISO()).run();
-      await audit(env, me.id, 'org.student.mentor', m[1], mentor ? mentor.name : 'без ментора');
-      return json({ ok: true, mentorId: mentor ? mentor.id : null }, 200, origin);
+      ).bind(m[1], nextMentorId, nowISO()).run();
+      if (!prevCard || (prevCard.mentor_id || null) !== nextMentorId) {
+        await audit(env, me.id, 'org.student.mentor', m[1], mentor ? mentor.name : 'без ментора');
+      }
+      return json({ ok: true, mentorId: nextMentorId }, 200, origin);
     }
 
     if (m[2] === 'remove' && method === 'POST') {
+      const stUser = await db.prepare('select name from users where id=?').bind(m[1]).first();
       await db.prepare('delete from org_portfolio where user_id=?').bind(m[1]).run();
       await db.prepare('delete from org_students where user_id=?').bind(m[1]).run();
       await db.prepare('delete from org_slots where org_id=? and student_id=?').bind(org.id, m[1]).run();
       await db.prepare('update users set org_id=null, org_role=null where id=?').bind(m[1]).run();
-      await audit(env, me.id, 'org.student.remove', m[1], 'карточка откреплена');
+      await audit(env, me.id, 'org.student.remove', m[1], stUser ? stUser.name : 'карточка откреплена');
       return json({ ok: true }, 200, origin);
     }
   }
@@ -3324,11 +3337,12 @@ async function api(request, env, url, origin) {
     const org = await myOrgRow();
     const id = String(body.userId || '');
     if (!(await canSeeStudent(org, id))) return json({ ok: false, error: 'Ученик не найден' }, 404, origin);
+    const stUser = await db.prepare('select name from users where id=?').bind(id).first();
     const rid = uid('rep');
     await db.prepare('insert into org_reports (id,user_id,period,comment,payload,created_by,created_at) values (?,?,?,?,?,?,?)')
       .bind(rid, id, str(body.period || 'month', 20), str(body.comment, 2000),
         JSON.stringify(body.payload || null), me.id, nowISO()).run();
-    await audit(env, me.id, 'org.report.create', rid, id);
+    await audit(env, me.id, 'org.report.create', rid, stUser ? stUser.name : id);
     return json({ ok: true, id: rid }, 201, origin);
   }
 
@@ -3759,13 +3773,348 @@ async function api(request, env, url, origin) {
   /* ── журнал ── */
   if (path === '/admin/audit' && method === 'GET') {
     const g = notAdmin(); if (g) return g;
-    const list = await db.prepare('select * from audit_log order by created_at desc limit 100').all();
-    const rootRow = await db.prepare("select id from users where role='root' limit 1").first();
-    const rootId = rootRow ? rootRow.id : null;
-    // администратор не должен видеть владельца даже в журнале
-    const log = list.results.map((r) => (me.role !== 'root' && r.actor_id === rootId
-      ? Object.assign({}, r, { actor_id: null, detail: 'Администрация' })
-      : r));
+    const safeQ = (sql) => db.prepare(sql).all().catch(() => ({ results: [] }));
+    const [
+      list, histNames, userRows, orgRows, eventRows, tplRows, slotRows, pfRows, promptRows, postRows
+    ] = await Promise.all([
+      db.prepare('select * from audit_log order by created_at desc limit 1000').all(),
+      safeQ("select target, detail from audit_log where target is not null and detail is not null and action in ('register','login','login.otp','logout','user.delete','org.mentor.delete','org.mentor.remove','user.update','user.password','user.impersonate')"),
+      safeQ('select id, name, email, role, org_role, org_id from users'),
+      safeQ('select id, name from organizations'),
+      safeQ('select id, title from events'),
+      safeQ('select id, title from roadmap_templates'),
+      safeQ('select id, title, student_id from org_slots'),
+      safeQ('select id, user_id, title from org_portfolio'),
+      safeQ('select key, title from ai_prompts'),
+      safeQ('select id, text from posts')
+    ]);
+
+    const usersMap = {};
+    let rootId = null;
+    for (const u of (userRows.results || [])) {
+      usersMap[u.id] = u;
+      if (u.role === 'root') rootId = u.id;
+    }
+    const deletedUserNames = {};
+    for (const h of (histNames.results || [])) {
+      if (h.target && h.detail && !deletedUserNames[h.target]) {
+        deletedUserNames[h.target] = h.detail;
+      }
+    }
+    const orgsMap = {};
+    for (const o of (orgRows.results || [])) orgsMap[o.id] = o.name;
+    const eventsMap = {};
+    for (const ev of (eventRows.results || [])) eventsMap[ev.id] = ev.title;
+    const tplMap = {};
+    for (const t of (tplRows.results || [])) tplMap[t.id] = t.title;
+    const slotMap = {};
+    for (const s of (slotRows.results || [])) slotMap[s.id] = s;
+    const pfMap = {};
+    for (const p of (pfRows.results || [])) pfMap[p.id] = p;
+    const promptMap = {};
+    for (const pr of (promptRows.results || [])) promptMap[pr.key] = pr.title;
+    const postMap = {};
+    for (const po of (postRows.results || [])) {
+      const snippet = String(po.text || '').replace(/\s+/g, ' ').trim().slice(0, 48);
+      postMap[po.id] = snippet ? (snippet + (String(po.text || '').length > 48 ? '…' : '')) : '';
+    }
+
+    const roleRu = (u) => {
+      if (!u) return '';
+      if (u.role === 'root') return 'Владелец';
+      if (u.role === 'admin') return 'Администратор';
+      if (u.role === 'org') return u.org_role === 'mentor' ? 'Ментор' : 'Руководитель организации';
+      if (u.org_role === 'mentor') return 'Ментор';
+      return 'Ученик';
+    };
+    const roleCodeRu = (code) => {
+      if (code === 'root') return 'Владелец';
+      if (code === 'admin') return 'Администратор';
+      if (code === 'org') return 'Сотрудник организации';
+      if (code === 'mentor') return 'Ментор';
+      if (code === 'student') return 'Ученик';
+      return code || '';
+    };
+    const resolvePersonName = (id, fallback) => {
+      if (!id) return fallback || '';
+      if (usersMap[id] && usersMap[id].name) return usersMap[id].name;
+      if (deletedUserNames[id]) return deletedUserNames[id];
+      return fallback || '';
+    };
+
+    const isoToRuNum = (strVal) => String(strVal || '').replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, '$3.$2.$1');
+
+    const log = (list.results || []).map((raw) => {
+      const hideRoot = me.role !== 'root' && rootId && raw.actor_id === rootId;
+      const actorObj = (!hideRoot && raw.actor_id) ? usersMap[raw.actor_id] : null;
+      const actorName = hideRoot
+        ? 'Администрация платформы'
+        : (resolvePersonName(raw.actor_id) || (raw.action === 'db.seed' ? 'Система' : 'Пользователь'));
+      const actorRole = hideRoot
+        ? 'Система'
+        : (actorObj ? roleRu(actorObj) : (raw.actor_id ? 'Удалённый аккаунт' : 'Система'));
+      const actorEmail = (!hideRoot && actorObj && actorObj.email) ? actorObj.email : '';
+      const whoPhrase = hideRoot || (!raw.actor_id && raw.action === 'db.seed')
+        ? actorName
+        : 'Пользователь «' + actorName + '»';
+
+      const act = String(raw.action || '');
+      const t = raw.target ? String(raw.target) : '';
+      const d = raw.detail != null ? String(raw.detail) : '';
+
+      let category = 'other';
+      let tone = 'sky';
+      let human = '';
+      const targetPeople = [];
+      const addTargetPerson = (nm) => {
+        if (nm && nm !== 'ученик' && nm !== 'ментор' && nm !== 'пользователь' && nm !== 'без имени' && nm !== 'удалённый аккаунт') {
+          if (!targetPeople.includes(nm)) targetPeople.push(nm);
+        }
+      };
+
+      if (act === 'login') {
+        category = 'auth'; tone = 'mint';
+        human = whoPhrase + ' вошёл в систему';
+      } else if (act === 'login.otp') {
+        category = 'auth'; tone = 'mint';
+        human = whoPhrase + ' вошёл в систему по одноразовому коду';
+      } else if (act === 'logout') {
+        category = 'auth'; tone = 'sky';
+        human = whoPhrase + ' вышел из системы';
+      } else if (act === 'register') {
+        category = 'auth'; tone = 'mint';
+        addTargetPerson(d || actorName);
+        human = 'Пользователь «' + (d || actorName) + '» зарегистрировался в системе';
+      } else if (act === 'password.code_sent') {
+        category = 'auth'; tone = 'sun';
+        human = whoPhrase + ' запросил код подтверждения для смены пароля' + (d ? ' (' + d + ')' : '');
+      } else if (act === 'password.change' || act === 'password.change.code') {
+        category = 'auth'; tone = 'sun';
+        human = whoPhrase + ' сменил свой пароль';
+      } else if (act === 'user.create') {
+        category = 'users'; tone = 'mint';
+        const createdName = resolvePersonName(t);
+        addTargetPerson(createdName);
+        const cleanDetail = d.replace(/\/\s*(student|org|admin)/i, (_, rc) => '· роль: ' + roleCodeRu(rc.toLowerCase()));
+        human = whoPhrase + ' создал нового пользователя' +
+          (createdName ? ' «' + createdName + '»' : '') +
+          (cleanDetail ? ' (' + cleanDetail + ')' : '');
+      } else if (act === 'user.update') {
+        category = 'users'; tone = 'sky';
+        const uname = resolvePersonName(t, d) || 'без имени';
+        addTargetPerson(uname);
+        human = whoPhrase + ' изменил профиль пользователя «' + uname + '»';
+      } else if (act === 'user.delete') {
+        category = 'users'; tone = 'danger';
+        const uname = d || resolvePersonName(t) || 'удалённый аккаунт';
+        addTargetPerson(uname);
+        human = whoPhrase + ' удалил пользователя «' + uname + '» из системы';
+      } else if (act === 'user.bulk-delete') {
+        category = 'users'; tone = 'danger';
+        human = whoPhrase + ' удалил выбранных пользователей из системы' + (d ? ' (количество: ' + d + ')' : '');
+      } else if (act === 'user.role') {
+        category = 'users'; tone = 'lav';
+        const uname = resolvePersonName(t) || 'пользователь';
+        addTargetPerson(uname);
+        human = whoPhrase + ' назначил пользователю «' + uname + '» роль «' + roleCodeRu(d) + '»';
+      } else if (act === 'user.org') {
+        category = 'users'; tone = 'lav';
+        const uname = resolvePersonName(t) || 'пользователь';
+        addTargetPerson(uname);
+        if (!d || d === '—') {
+          human = whoPhrase + ' открепил пользователя «' + uname + '» от организации';
+        } else {
+          const oname = orgsMap[d] || d;
+          human = whoPhrase + ' привязал пользователя «' + uname + '» к организации «' + oname + '»';
+        }
+      } else if (act === 'user.password') {
+        category = 'users'; tone = 'sun';
+        const uname = resolvePersonName(t, d) || 'пользователь';
+        addTargetPerson(uname);
+        human = whoPhrase + ' установил новый пароль пользователю «' + uname + '»';
+      } else if (act === 'user.otp') {
+        category = 'users'; tone = 'sun';
+        const uname = resolvePersonName(t, d) || 'пользователь';
+        addTargetPerson(uname);
+        human = whoPhrase + ' сгенерировал одноразовый код входа для пользователя «' + uname + '»';
+      } else if (act === 'user.impersonate') {
+        category = 'users'; tone = 'lav';
+        const uname = resolvePersonName(t, d) || 'пользователь';
+        addTargetPerson(uname);
+        human = whoPhrase + ' открыл сессию от имени пользователя «' + uname + '» (режим проверки)';
+      } else if (act === 'org.create') {
+        category = 'org'; tone = 'mint';
+        const oname = d || orgsMap[t] || 'организация';
+        human = whoPhrase + ' создал организацию «' + oname + '»';
+      } else if (act === 'org.update') {
+        category = 'org'; tone = 'sky';
+        const oname = d || orgsMap[t] || 'организация';
+        human = whoPhrase + ' обновил данные организации «' + oname + '»';
+      } else if (act === 'org.delete') {
+        category = 'org'; tone = 'danger';
+        const oname = d || orgsMap[t] || 'организация';
+        human = whoPhrase + ' удалил организацию «' + oname + '» из системы';
+      } else if (act === 'org.manager.create') {
+        category = 'org'; tone = 'mint';
+        const mname = resolvePersonName(t);
+        addTargetPerson(mname);
+        human = whoPhrase + ' создал аккаунт руководителя организации' +
+          (mname ? ' «' + mname + '»' : '') + (d ? ' (' + d + ')' : '');
+      } else if (act === 'org.user.create') {
+        category = 'org'; tone = 'mint';
+        const uname = resolvePersonName(t);
+        addTargetPerson(uname);
+        human = whoPhrase + ' добавил участника' +
+          (uname ? ' «' + uname + '»' : '') + ' в организацию' + (d ? ' (' + d + ')' : '');
+      } else if (act === 'org.mentor.update') {
+        category = 'org'; tone = 'sky';
+        const mname = resolvePersonName(t, d) || 'ментор';
+        addTargetPerson(mname);
+        human = whoPhrase + ' обновил профиль ментора «' + mname + '»';
+      } else if (act === 'org.mentor.remove') {
+        category = 'org'; tone = 'sun';
+        const mname = d || resolvePersonName(t) || 'ментор';
+        addTargetPerson(mname);
+        human = whoPhrase + ' снял права ментора у пользователя «' + mname + '» и открепил его от организации';
+      } else if (act === 'org.mentor.delete') {
+        category = 'org'; tone = 'danger';
+        const mname = d || resolvePersonName(t) || 'ментор';
+        addTargetPerson(mname);
+        human = whoPhrase + ' удалил ментора «' + mname + '» из системы';
+      } else if (act === 'org.student.mentor') {
+        category = 'org'; tone = 'lav';
+        const sname = resolvePersonName(t) || 'ученик';
+        addTargetPerson(sname);
+        if (!d || d === 'без ментора') {
+          human = whoPhrase + ' снял назначенного ментора у ученика «' + sname + '»';
+        } else {
+          addTargetPerson(d);
+          human = whoPhrase + ' назначил ученику «' + sname + '» ментора «' + d + '»';
+        }
+      } else if (act === 'org.student.update') {
+        category = 'org'; tone = 'sky';
+        const sname = resolvePersonName(t) || 'ученик';
+        addTargetPerson(sname);
+        human = whoPhrase + ' обновил карточку сопровождения ученика «' + sname + '»';
+      } else if (act === 'org.student.remove') {
+        category = 'org'; tone = 'danger';
+        const sname = resolvePersonName(t, d && d !== 'карточка откреплена' ? d : '') || 'ученик';
+        addTargetPerson(sname);
+        human = whoPhrase + ' открепил ученика «' + sname + '» от организации';
+      } else if (act === 'org.portfolio.add') {
+        category = 'org'; tone = 'mint';
+        const pf = pfMap[t];
+        const sname = pf ? resolvePersonName(pf.user_id) : '';
+        addTargetPerson(sname);
+        const cleanItem = d
+          .replace(/^achievement:\s*/i, 'достижение «')
+          .replace(/^project:\s*/i, 'проект «')
+          .replace(/^certificate:\s*/i, 'сертификат «')
+          .replace(/^exam:\s*/i, 'экзамен «');
+        const itemText = cleanItem !== d ? (cleanItem + '»') : (d ? '«' + d + '»' : 'запись');
+        human = whoPhrase + ' добавил в портфолио' + (sname ? ' ученика «' + sname + '» ' : ' ') + itemText;
+      } else if (act === 'org.template.save' || act === 'org.template.fromStudent') {
+        category = 'org'; tone = 'mint';
+        const tname = d || tplMap[t] || 'шаблон';
+        human = whoPhrase + ' сохранил шаблон дорожной карты «' + tname + '»';
+      } else if (act === 'org.template.assign') {
+        category = 'org'; tone = 'lav';
+        const tname = tplMap[t] || 'дорожная карта';
+        human = whoPhrase + ' назначил шаблон плана «' + tname + '»' + (d ? ' (' + isoToRuNum(d) + ')' : '');
+      } else if (act === 'org.sprint.add') {
+        category = 'org'; tone = 'mint';
+        human = whoPhrase + ' добавил спринт' + (d ? ' «' + d + '»' : '') + ' в план подготовки';
+      } else if (act === 'org.slot.create') {
+        category = 'org'; tone = 'mint';
+        const sl = slotMap[t];
+        const sname = sl ? resolvePersonName(sl.student_id) : '';
+        addTargetPerson(sname);
+        const title = d || (sl && sl.title) || 'этап';
+        human = whoPhrase + ' добавил дедлайн «' + title + '»' + (sname ? ' для ученика «' + sname + '»' : '');
+      } else if (act === 'org.slot.update') {
+        category = 'org'; tone = 'sky';
+        const sl = slotMap[t];
+        const sname = sl ? resolvePersonName(sl.student_id) : '';
+        addTargetPerson(sname);
+        const title = (sl && sl.title) ? '«' + sl.title + '»' : 'этап плана';
+        human = whoPhrase + ' изменил ' + title +
+          (sname ? ' у ученика «' + sname + '»' : '') +
+          (d ? ' (срок: ' + isoToRuNum(d) + ')' : '');
+      } else if (act === 'org.slot.delete') {
+        category = 'org'; tone = 'danger';
+        const title = d || (slotMap[t] && slotMap[t].title) || 'этап плана';
+        human = whoPhrase + ' удалил дедлайн «' + title + '» из плана ученика';
+      } else if (act === 'org.report.create') {
+        category = 'org'; tone = 'mint';
+        const sname = resolvePersonName(d, d) || 'ученик';
+        addTargetPerson(sname);
+        human = whoPhrase + ' сформировал отчёт для родителей по ученику «' + sname + '»';
+      } else if (act === 'org.taggroup.add') {
+        category = 'org'; tone = 'sky';
+        human = whoPhrase + ' добавил набор тегов в организации' + (d ? ' (' + d + ')' : '');
+      } else if (act === 'event.create') {
+        category = 'content'; tone = 'mint';
+        const etitle = d || eventsMap[t] || 'без названия';
+        human = whoPhrase + ' опубликовал новое мероприятие «' + etitle + '»';
+      } else if (act === 'event.update') {
+        category = 'content'; tone = 'sky';
+        const etitle = d || eventsMap[t] || 'мероприятие';
+        human = whoPhrase + ' отредактировал мероприятие «' + etitle + '»';
+      } else if (act === 'event.delete') {
+        category = 'content'; tone = 'danger';
+        const etitle = d || eventsMap[t] || 'мероприятие';
+        human = whoPhrase + ' удалил мероприятие «' + etitle + '»';
+      } else if (act === 'event.bulk-delete') {
+        category = 'content'; tone = 'danger';
+        human = whoPhrase + ' удалил выбранные мероприятия' + (d ? ' (количество: ' + d + ')' : '');
+      } else if (act === 'post.moderate') {
+        category = 'content'; tone = d === 'published' ? 'mint' : 'danger';
+        const snip = postMap[t];
+        const postLabel = snip ? ' «' + snip + '»' : '';
+        if (d === 'hidden') human = whoPhrase + ' скрыл публикацию в ленте сообщества' + postLabel;
+        else if (d === 'published') human = whoPhrase + ' восстановил публикацию в ленте сообщества' + postLabel;
+        else human = whoPhrase + ' удалил публикацию из ленты сообщества' + postLabel;
+      } else if (act === 'moderation.cleanup') {
+        category = 'content'; tone = 'danger';
+        human = whoPhrase + ' очистил архив удалённых публикаций';
+      } else if (act === 'ai.add') {
+        category = 'system'; tone = 'mint';
+        human = whoPhrase + ' подключил новый API-ключ нейросети' + (d ? ' (' + d + ')' : '');
+      } else if (act === 'ai.delete') {
+        category = 'system'; tone = 'danger';
+        human = whoPhrase + ' удалил API-ключ нейросети';
+      } else if (act === 'prompt.update') {
+        category = 'system'; tone = 'sky';
+        const ptitle = promptMap[t] || t || 'системный промт';
+        human = whoPhrase + ' обновил системную инструкцию ИИ «' + ptitle + '»';
+      } else if (act === 'db.seed') {
+        category = 'system'; tone = 'sky';
+        human = 'Система проверила и обновила базовые демо-данные платформы';
+      } else if (act === 'db.restore') {
+        category = 'system'; tone = 'sun';
+        human = whoPhrase + ' восстановил базу данных из резервной копии';
+      } else {
+        category = 'system'; tone = 'sky';
+        human = whoPhrase + ' выполнил действие «' + act + '»' + (d ? ' (' + isoToRuNum(d) + ')' : '');
+      }
+
+      return {
+        id: raw.id,
+        actor_id: hideRoot ? null : raw.actor_id,
+        actor_name: actorName,
+        actor_role: actorRole,
+        actor_email: actorEmail,
+        target_people: hideRoot ? [] : targetPeople,
+        action: raw.action,
+        target: hideRoot ? null : raw.target,
+        detail: hideRoot ? 'Администрация' : raw.detail,
+        category,
+        tone,
+        human_text: isoToRuNum(human),
+        created_at: raw.created_at
+      };
+    });
+
     return json({ ok: true, log }, 200, origin);
   }
 
@@ -3785,11 +4134,13 @@ async function api(request, env, url, origin) {
     const cur = await db.prepare('select * from users where id=?').bind(m[1]).first();
     if (!cur) return json({ error: 'not found' }, 404, origin);
     const u = Object.assign(toUser(cur), body);
+    const col = body.color !== undefined ? (str(body.color, 24) || 'sun') : (cur.color || 'sun');
+    const av = body.avatar !== undefined ? (str(body.avatar, 350000) || null) : (cur.avatar || null);
     const pf = body.portfolio !== undefined
       ? (body.portfolio && typeof body.portfolio === 'object' ? str(JSON.stringify(body.portfolio), 1800000) : null)
       : cur.portfolio;
-    await db.prepare('update users set name=?,grade=?,school=?,city=?,skills=?,interests=?,portfolio=? where id=?')
-      .bind(u.name, u.grade, u.school, u.city, K(u.skills), K(u.interests), pf, m[1]).run();
+    await db.prepare('update users set name=?,grade=?,school=?,city=?,color=?,avatar=?,skills=?,interests=?,portfolio=? where id=?')
+      .bind(u.name, u.grade, u.school, u.city, col, av, K(u.skills), K(u.interests), pf, m[1]).run();
     return json({ ok: true }, 200, origin);
   }
 
