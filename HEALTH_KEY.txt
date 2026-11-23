@@ -1,3 +1,0 @@
-Ключ для служебных адресов воркера.
-https://<воркер>/api/health?key=c83bf189d186acab6dfb175f6d6189254b038319dcae1fb2
-https://<воркер>/?key=c83bf189d186acab6dfb175f6d6189254b038319dcae1fb2

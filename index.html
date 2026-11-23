@@ -6673,6 +6673,177 @@ a.btn.is-releasing,
   }
 }
 
+/* ── Журнал действий (человекочитаемый формат v1.18.0) ── */
+.audit-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.audit-toolbar .search input,
+.audit-toolbar .search input:focus {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  height: auto !important;
+}
+
+.audit-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.audit-row {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+  transition: background 0.14s ease;
+}
+
+.audit-row:last-child {
+  border-bottom: 0;
+}
+
+.audit-row:hover {
+  background: var(--chip);
+}
+
+.audit-row__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #e9f2ff;
+  color: #2157b5;
+}
+
+.audit-row__icon--mint {
+  background: #e1f6e8;
+  color: #166b3a;
+}
+
+.audit-row__icon--lav {
+  background: #eee7ff;
+  color: #5535b5;
+}
+
+.audit-row__icon--sun {
+  background: #fff3d1;
+  color: #8a5b00;
+}
+
+.audit-row__icon--danger {
+  background: #ffe5e1;
+  color: #b8291d;
+}
+
+html[data-theme='dark'] .audit-row__icon {
+  background: rgba(86, 148, 255, 0.16);
+  color: #9ec5ff;
+}
+
+html[data-theme='dark'] .audit-row__icon--mint {
+  background: rgba(66, 201, 122, 0.16);
+  color: #8ae8b0;
+}
+
+html[data-theme='dark'] .audit-row__icon--lav {
+  background: rgba(154, 125, 255, 0.18);
+  color: #cbb8ff;
+}
+
+html[data-theme='dark'] .audit-row__icon--sun {
+  background: rgba(255, 198, 70, 0.16);
+  color: #ffd982;
+}
+
+html[data-theme='dark'] .audit-row__icon--danger {
+  background: rgba(255, 106, 92, 0.18);
+  color: #ff9d92;
+}
+
+.audit-row__body {
+  min-width: 0;
+}
+
+.audit-row__text {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.audit-quote {
+  font-weight: 650;
+  color: var(--ink-fg);
+}
+
+.audit-repeat {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  vertical-align: middle;
+}
+
+.audit-row__meta {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.audit-row__time {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.audit-row__clock {
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--text);
+}
+
+@media (max-width: 680px) {
+  .audit-row {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 10px 12px;
+    padding: 12px 14px;
+    align-items: flex-start;
+  }
+  .audit-row__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    margin-top: 2px;
+  }
+  .audit-row__time {
+    grid-column: 2;
+    text-align: left;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    margin-top: -4px;
+  }
+}
+
+
 
 
 
@@ -14520,6 +14691,8 @@ a.btn.is-releasing,
 
   let section = 'overview';
   let query = '';
+  let auditFilter = 'all';
+  let auditGroupRepeats = true;
 
   const SECTION_TITLES = {
     overview: 'Обзор',
@@ -15086,22 +15259,251 @@ a.btn.is-releasing,
 
   /* ───────────────────────── журнал ───────────────────────── */
 
+  const AUDIT_MONTHS = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+
+  function formatAuditDateTime(iso) {
+    if (!iso) return '—';
+    const dt = new Date(iso);
+    if (isNaN(dt.getTime())) return String(iso);
+    const pad = (n) => (n < 10 ? '0' + n : String(n));
+    const now = new Date();
+    const sameYear = dt.getFullYear() === now.getFullYear();
+    const datePart = dt.getDate() + ' ' + AUDIT_MONTHS[dt.getMonth()] + (sameYear ? '' : ' ' + dt.getFullYear());
+    return datePart + ' в ' + pad(dt.getHours()) + ':' + pad(dt.getMinutes());
+  }
+
+  function clientFallbackAudit(r) {
+    const whoObj = r.actor_id ? store.userById(r.actor_id) : null;
+    const actorName = r.actor_name ||
+      (whoObj && whoObj.name && whoObj.name !== 'Неизвестный' ? whoObj.name : '') ||
+      (r.detail === 'Администрация' ? 'Администрация платформы' : (r.action === 'db.seed' ? 'Система' : 'Пользователь'));
+    const who = (actorName === 'Система' || actorName === 'Администрация платформы')
+      ? actorName
+      : 'Пользователь «' + actorName + '»';
+
+    const resolveName = (id, fb) => {
+      if (!id) return fb || '';
+      const u = store.userById(id);
+      if (u && u.name && u.name !== 'Неизвестный') return u.name;
+      const fromCache = (cache.users || []).find((x) => x.id === id);
+      if (fromCache && fromCache.name) return fromCache.name;
+      return fb || '';
+    };
+
+    const act = String(r.action || '');
+    const t = r.target ? String(r.target) : '';
+    const d = r.detail != null ? String(r.detail) : '';
+
+    if (r.human_text) {
+      return {
+        text: r.human_text,
+        category: r.category || 'other',
+        tone: r.tone || 'sky',
+        role: r.actor_role || '',
+        email: r.actor_email || ''
+      };
+    }
+
+    let category = 'system';
+    let tone = 'sky';
+    let text = '';
+
+    if (act === 'login') { category = 'auth'; tone = 'mint'; text = who + ' вошёл в систему'; }
+    else if (act === 'login.otp') { category = 'auth'; tone = 'mint'; text = who + ' вошёл в систему по одноразовому коду'; }
+    else if (act === 'logout') { category = 'auth'; tone = 'sky'; text = who + ' вышел из системы'; }
+    else if (act === 'register') { category = 'auth'; tone = 'mint'; text = 'Пользователь «' + (d || actorName) + '» зарегистрировался в системе'; }
+    else if (act === 'password.code_sent') { category = 'auth'; tone = 'sun'; text = who + ' запросил код подтверждения смены пароля' + (d ? ' (' + d + ')' : ''); }
+    else if (act === 'password.change' || act === 'password.change.code') { category = 'auth'; tone = 'sun'; text = who + ' сменил свой пароль'; }
+    else if (act === 'user.delete') { category = 'users'; tone = 'danger'; text = who + ' удалил пользователя «' + (d || resolveName(t, 'аккаунт')) + '» из системы'; }
+    else if (act === 'user.bulk-delete') { category = 'users'; tone = 'danger'; text = who + ' удалил выбранных пользователей из системы' + (d ? ' (количество: ' + d + ')' : ''); }
+    else if (act === 'user.create') { category = 'users'; tone = 'mint'; text = who + ' создал нового пользователя' + (d ? ' (' + d + ')' : ''); }
+    else if (act === 'user.update') { category = 'users'; tone = 'sky'; text = who + ' изменил профиль пользователя «' + resolveName(t, d || 'пользователь') + '»'; }
+    else if (act === 'user.role') { category = 'users'; tone = 'lav'; text = who + ' сменил роль пользователю «' + resolveName(t, 'пользователь') + '»'; }
+    else if (act === 'user.org') { category = 'users'; tone = 'lav'; text = who + ' изменил организацию пользователя «' + resolveName(t, 'пользователь') + '»'; }
+    else if (act === 'user.password') { category = 'users'; tone = 'sun'; text = who + ' установил новый пароль пользователю «' + resolveName(t, d || 'пользователь') + '»'; }
+    else if (act === 'user.otp') { category = 'users'; tone = 'sun'; text = who + ' выдал одноразовый код входа пользователю «' + resolveName(t, d || 'пользователь') + '»'; }
+    else if (act === 'user.impersonate') { category = 'users'; tone = 'lav'; text = who + ' открыл сессию от имени пользователя «' + resolveName(t, d || 'пользователь') + '» (режим проверки)'; }
+    else if (act === 'org.mentor.delete') { category = 'org'; tone = 'danger'; text = who + ' удалил ментора «' + (d || resolveName(t, 'ментор')) + '» из системы'; }
+    else if (act === 'org.mentor.update') { category = 'org'; tone = 'sky'; text = who + ' обновил профиль ментора «' + resolveName(t, d || 'ментор') + '»'; }
+    else if (act === 'org.student.mentor') {
+      category = 'org'; tone = 'lav';
+      const sn = resolveName(t, 'ученик');
+      text = (!d || d === 'без ментора')
+        ? who + ' снял назначенного ментора у ученика «' + sn + '»'
+        : who + ' назначил ученику «' + sn + '» ментора «' + d + '»';
+    }
+    else if (act === 'org.student.update') { category = 'org'; tone = 'sky'; text = who + ' обновил карточку сопровождения ученика «' + resolveName(t, 'ученик') + '»'; }
+    else if (act === 'org.student.remove') { category = 'org'; tone = 'danger'; text = who + ' открепил ученика «' + resolveName(t, 'ученик') + '» от организации'; }
+    else if (act === 'org.user.create') { category = 'org'; tone = 'mint'; text = who + ' добавил участника «' + resolveName(t, d || 'участник') + '» в организацию'; }
+    else if (act === 'org.create') { category = 'org'; tone = 'mint'; text = who + ' создал организацию «' + (d || 'организация') + '»'; }
+    else if (act === 'org.manager.create') { category = 'org'; tone = 'mint'; text = who + ' назначил руководителя организации' + (d ? ' (' + d + ')' : ''); }
+    else if (act === 'org.report.create') { category = 'org'; tone = 'mint'; text = who + ' сформировал отчёт для родителей по ученику «' + resolveName(d, d || 'ученик') + '»'; }
+    else if (act === 'org.portfolio.add') { category = 'org'; tone = 'mint'; text = who + ' добавил запись в портфолио' + (d ? ' («' + d + '»)' : ''); }
+    else if (act === 'org.template.save' || act === 'org.template.fromStudent') { category = 'org'; tone = 'mint'; text = who + ' сохранил шаблон дорожной карты «' + (d || 'шаблон') + '»'; }
+    else if (act === 'org.template.assign') { category = 'org'; tone = 'lav'; text = who + ' назначил шаблон дорожной карты' + (d ? ' (' + d + ')' : ''); }
+    else if (act === 'org.sprint.add') { category = 'org'; tone = 'mint'; text = who + ' добавил спринт «' + (d || 'этап') + '»'; }
+    else if (act === 'org.slot.create') { category = 'org'; tone = 'mint'; text = who + ' добавил дедлайн «' + (d || 'этап') + '» в план ученика'; }
+    else if (act === 'org.slot.update') { category = 'org'; tone = 'sky'; text = who + ' обновил срок этапа в плане ученика' + (d ? ' (' + d + ')' : ''); }
+    else if (act === 'org.slot.delete') { category = 'org'; tone = 'danger'; text = who + ' удалил дедлайн «' + (d || 'этап') + '» из плана ученика'; }
+    else if (act === 'org.taggroup.add') { category = 'org'; tone = 'sky'; text = who + ' обновил теги организации' + (d ? ' (' + d + ')' : ''); }
+    else if (act === 'event.create') { category = 'content'; tone = 'mint'; text = who + ' опубликовал новое мероприятие «' + (d || 'событие') + '»'; }
+    else if (act === 'event.update') { category = 'content'; tone = 'sky'; text = who + ' отредактировал мероприятие «' + (d || 'событие') + '»'; }
+    else if (act === 'event.delete') { category = 'content'; tone = 'danger'; text = who + ' удалил мероприятие «' + (d || 'событие') + '»'; }
+    else if (act === 'event.bulk-delete') { category = 'content'; tone = 'danger'; text = who + ' удалил выбранные мероприятия' + (d ? ' (количество: ' + d + ')' : ''); }
+    else if (act === 'post.moderate') {
+      category = 'content'; tone = d === 'published' ? 'mint' : 'danger';
+      text = who + (d === 'hidden' ? ' скрыл публикацию в сообществе' : d === 'published' ? ' восстановил публикацию в сообществе' : ' удалил публикацию из сообщества');
+    }
+    else if (act === 'db.seed') { category = 'system'; tone = 'sky'; text = 'Система проверила и обновила базовые демо-данные платформы'; }
+    else if (act === 'db.restore') { category = 'system'; tone = 'sun'; text = who + ' восстановил базу данных из резервной копии'; }
+    else if (act === 'ai.add') { category = 'system'; tone = 'mint'; text = who + ' подключил новый API-ключ нейросети'; }
+    else if (act === 'ai.delete') { category = 'system'; tone = 'danger'; text = who + ' удалил API-ключ нейросети'; }
+    else if (act === 'prompt.update') { category = 'system'; tone = 'sky'; text = who + ' обновил системную инструкцию ИИ'; }
+    else { text = who + ' выполнил действие в системе' + (d ? ' (' + d + ')' : ''); }
+
+    return { text, category, tone, role: r.actor_role || '', email: r.actor_email || '' };
+  }
+
+  function highlightQuotes(str) {
+    return e(str).replace(/«([^»]+)»/g, '<b class="audit-quote">«$1»</b>');
+  }
+
+  function auditIconFor(r, meta) {
+    const act = String(r.action || '');
+    if (meta.tone === 'danger' || /\.delete|\.remove|bulk-delete/.test(act)) return 'trash';
+    if (act === 'login' || act === 'login.otp' || act === 'register') return 'checkCircle';
+    if (act === 'logout') return 'logout';
+    if (/password|otp/.test(act)) return 'key';
+    if (act === 'user.impersonate') return 'eye';
+    if (meta.category === 'org') return 'building';
+    if (meta.category === 'users') return 'users';
+    if (meta.category === 'content') return 'calendar';
+    return 'sparkles';
+  }
+
+  const AUDIT_CAT_LABELS = {
+    auth: 'Вход и безопасность',
+    users: 'Пользователи',
+    org: 'Организация',
+    content: 'События и лента',
+    system: 'Система',
+    other: 'Система'
+  };
+
   function auditSection() {
-    const log = cache.audit;
-    return pageHead('Журнал действий', 'Кто и что менял — последние 100 записей', '') +
-      '<div class="panel panel--flush"><div class="table-wrap"><table class="table"><thead><tr>' +
-        '<th>Время</th><th>Кто</th><th>Действие</th><th>Объект</th>' +
-      '</tr></thead><tbody>' +
-      (log.length
-        ? log.map((r) => {
-            const who = store.userById(r.actor_id);
-            return '<tr><td class="small muted">' + e(ui.relTime(r.created_at)) + '</td>' +
-              '<td>' + e(who.name || r.actor_id || '—') + '</td>' +
-              '<td><span class="tag">' + e(r.action) + '</span></td>' +
-              '<td class="small muted ellipsis" style="max-width:240px">' + e(r.detail || r.target || '') + '</td></tr>';
-          }).join('')
-        : '<tr><td colspan="4" class="small muted" style="padding:24px;text-align:center">Записей нет</td></tr>') +
-      '</tbody></table></div></div>';
+    const rawLog = cache.audit || [];
+    const enriched = rawLog.map((r) => Object.assign({}, r, { _meta: clientFallbackAudit(r) }));
+
+    const catCounts = { all: enriched.length, auth: 0, users: 0, org: 0, content: 0, system: 0 };
+    enriched.forEach((r) => {
+      const c = r._meta.category;
+      if (catCounts[c] !== undefined) catCounts[c]++;
+      else catCounts.system++;
+    });
+
+    const q = String(query || '').trim().toLowerCase();
+    const filtered = enriched.filter((r) => {
+      if (auditFilter !== 'all') {
+        const rc = r._meta.category === 'other' ? 'system' : r._meta.category;
+        if (rc !== auditFilter) return false;
+      }
+      if (!q) return true;
+      const hay = (r._meta.text + ' ' + (r._meta.role || '') + ' ' + (r._meta.email || '')).toLowerCase();
+      return hay.includes(q);
+    });
+
+    // Склеиваем подряд идущие полностью одинаковые действия за один день (например, серия входов при проверке)
+    const displayRows = [];
+    if (auditGroupRepeats) {
+      for (const r of filtered) {
+        const dayKey = String(r.created_at || '').slice(0, 10);
+        const prev = displayRows[displayRows.length - 1];
+        if (prev && prev._dayKey === dayKey && prev._meta.text === r._meta.text) {
+          prev._repeatCount++;
+          prev._oldestAt = r.created_at;
+        } else {
+          displayRows.push(Object.assign({}, r, { _dayKey: dayKey, _repeatCount: 1, _oldestAt: r.created_at }));
+        }
+      }
+    } else {
+      for (const r of filtered) {
+        displayRows.push(Object.assign({}, r, { _repeatCount: 1, _oldestAt: r.created_at }));
+      }
+    }
+
+    const tabs = [
+      ['all', 'Все', catCounts.all],
+      ['auth', 'Входы и пароли', catCounts.auth],
+      ['users', 'Пользователи', catCounts.users],
+      ['org', 'Организации', catCounts.org],
+      ['content', 'Контент', catCounts.content],
+      ['system', 'Система', catCounts.system]
+    ];
+
+    return pageHead(
+      'Журнал действий',
+      'Понятная история событий на платформе — последние ' + rawLog.length + ' ' + ui.plural(rawLog.length, 'запись', 'записи', 'записей'),
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button class="btn btn--soft btn--sm" onclick="SH.views.admin.toggleAuditGroup()">' +
+          icon('layers', 15) + (auditGroupRepeats ? 'Повторы склеены' : 'Все подряд') +
+        '</button>' +
+        '<button class="btn btn--soft btn--sm" onclick="SH.views.admin.refreshAudit()">' +
+          icon('refresh', 15) + 'Обновить' +
+        '</button>' +
+      '</div>'
+    ) +
+    '<div class="audit-toolbar">' +
+      '<div class="pill-row" style="margin:0;flex-wrap:wrap">' +
+        tabs.map(([id, label, cnt]) =>
+          '<button class="pill" aria-pressed="' + (auditFilter === id ? 'true' : 'false') + '" onclick="SH.views.admin.setAuditFilter(\'' + id + '\')">' +
+            '<span>' + e(label) + '</span>' +
+            (cnt ? '<span style="opacity:.65;font-weight:600;font-size:12px">' + cnt + '</span>' : '') +
+          '</button>'
+        ).join('') +
+      '</div>' +
+      '<div class="search" style="max-width:300px;flex:1;min-width:210px;margin:0;height:40px">' + icon('search') +
+        '<input id="admin-search" placeholder="Поиск по имени или действию…" value="' + e(query) + '">' +
+      '</div>' +
+    '</div>' +
+    '<div class="panel panel--flush">' +
+      (displayRows.length
+        ? '<div class="audit-list">' +
+            displayRows.map((r) => {
+              const m = r._meta;
+              const ico = auditIconFor(r, m);
+              const catLabel = AUDIT_CAT_LABELS[m.category] || 'Система';
+              const metaParts = [catLabel];
+              if (m.role && m.role !== 'Система') metaParts.push(m.role);
+              if (m.email) metaParts.push(m.email);
+              const clockStr = formatAuditDateTime(r.created_at);
+              const relStr = ui.relTime(r.created_at);
+              const showRel = relStr && !clockStr.startsWith(relStr);
+              return (
+                '<div class="audit-row">' +
+                  '<div class="audit-row__icon audit-row__icon--' + e(m.tone || 'sky') + '">' +
+                    icon(ico, 17) +
+                  '</div>' +
+                  '<div class="audit-row__body">' +
+                    '<div class="audit-row__text">' +
+                      highlightQuotes(m.text) +
+                      (r._repeatCount > 1
+                        ? ' <span class="audit-repeat" title="Повторилось подряд ' + r._repeatCount + ' раз">×' + r._repeatCount + '</span>'
+                        : '') +
+                    '</div>' +
+                    '<div class="audit-row__meta">' +
+                      e(metaParts.join(' · ')) +
+                    '</div>' +
+                  '</div>' +
+                  '<div class="audit-row__time">' +
+                    '<div class="audit-row__clock">' + e(clockStr) + '</div>' +
+                    (showRel ? '<div class="small muted" style="font-size:11.5px">' + e(relStr) + '</div>' : '') +
+                  '</div>' +
+                '</div>'
+              );
+            }).join('') +
+          '</div>'
+        : '<div class="small muted" style="padding:32px 20px;text-align:center">Подходящих записей не найдено</div>') +
+    '</div>';
   }
 
   /* ───────────────────────── вспомогательное ───────────────────────── */
@@ -15139,6 +15541,27 @@ a.btn.is-releasing,
       section = sec;
       query = '';
       SH.app.render();
+    },
+
+    setAuditFilter(cat) {
+      auditFilter = cat || 'all';
+      SH.app.render();
+    },
+
+    toggleAuditGroup() {
+      auditGroupRepeats = !auditGroupRepeats;
+      SH.app.render();
+    },
+
+    async refreshAudit() {
+      try {
+        cache.audit = await SH.api.adminAudit().then((r) => r.log || []);
+        cache.loaded.audit = true;
+        SH.app.render();
+        ui.toast('Журнал обновлён');
+      } catch (err) {
+        ui.toast('Ошибка обновления: ' + err.message);
+      }
     },
 
     // вызывается роутером после каждой отрисовки: догружаем недостающее один раз
