@@ -3316,15 +3316,15 @@ html[data-theme='dark'] .chip-btn.is-on { background: #f4f5f8; color: #14161f; }
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   Переливающийся фон из референса: тёплый → холодный градиент,
-   по которому медленно плывут пастельные пятна. Слой фиксированный,
-   поэтому не влияет на скролл и не дёргается при перерисовке экранов.
+   Пастельный фон: тёплый → холодный градиент с мягкими цветовыми пятнами.
+   Статичный полноэкранный слой без бесконечной перерисовки background-position,
+   чтобы вкладка не нагружала GPU в простое (особенно с backdrop-filter).
    ══════════════════════════════════════════════════════════════════ */
 
 body::after {
   content: '';
   position: fixed;
-  inset: -20vmax;
+  inset: 0;
   z-index: -1;
   pointer-events: none;
   background:
@@ -3334,21 +3334,7 @@ body::after {
     radial-gradient(30vmax 26vmax at 18% 86%, rgba(255, 211, 204, 0.42), transparent 64%),
     radial-gradient(26vmax 24vmax at 52% 46%, rgba(231, 221, 251, 0.45), transparent 66%),
     linear-gradient(180deg, #fbfaf5 0%, #f1f3f6 52%, #dde8f3 100%);
-  background-size: 150% 150%, 140% 140%, 150% 150%, 140% 140%, 160% 160%, 100% 100%;
-  animation: bg-flow 46s ease-in-out infinite alternate;
-  will-change: background-position;
-}
-
-@keyframes bg-flow {
-  0% {
-    background-position: 0% 0%, 100% 0%, 100% 100%, 0% 100%, 50% 50%, 0 0;
-  }
-  50% {
-    background-position: 22% 12%, 74% 18%, 68% 76%, 18% 82%, 42% 58%, 0 0;
-  }
-  100% {
-    background-position: 8% 26%, 92% 30%, 88% 62%, 6% 66%, 62% 38%, 0 0;
-  }
+  background-size: 100% 100%;
 }
 
 /* приложение и панели полупрозрачные — фон просвечивает */
@@ -6932,6 +6918,61 @@ html[data-theme='dark'] .audit-row__icon--danger {
   }
 }
 
+/* ── Прикрепление сторонних учеников и карточка доступа (v1.20.0) ── */
+.attach-list {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.attach-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.attach-row:last-child {
+  border-bottom: 0;
+}
+
+.attach-row:hover {
+  background: var(--chip);
+}
+
+.attach-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  accent-color: var(--ink, #14151a);
+}
+
+.org-login-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--text);
+  margin-top: 6px;
+  max-width: 100%;
+}
+
+.org-login-badge code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 
 
 
@@ -7564,13 +7605,18 @@ html[data-theme='dark'] .audit-row__icon--danger {
     adminCreateOrg(payload) { return this.request('POST', '/api/admin/orgs', payload); },
     adminUpdateOrg(id, patch) { return this.request('PATCH', '/api/admin/orgs/' + id, patch); },
     adminDeleteOrg(id) { return this.request('DELETE', '/api/admin/orgs/' + id); },
+    adminAttachStudents(orgId, payload) {
+      return this.request('POST', '/api/admin/orgs/' + encodeURIComponent(orgId) + '/attach-students', payload);
+    },
 
     orgOverview(orgId) {
       return this.request('GET', '/api/org/overview' + (orgId ? '?org=' + encodeURIComponent(orgId) : ''));
     },
     mentorCard() { return this.request('GET', '/api/me/mentor-card'); },
     orgCrm(orgId) { return this.request('GET', '/api/org/crm' + (orgId ? '?org=' + encodeURIComponent(orgId) : '')); },
-    orgStudent(id) { return this.request('GET', '/api/org/student?id=' + encodeURIComponent(id)); },
+    orgStudent(id, orgId) {
+      return this.request('GET', '/api/org/student?id=' + encodeURIComponent(id) + (orgId ? '&org=' + encodeURIComponent(orgId) : ''));
+    },
     orgStudentSave(payload) { return this.request('PATCH', '/api/org/student', payload); },
     orgPortfolioAdd(payload) { return this.request('POST', '/api/org/portfolio', payload); },
     orgPortfolioDel(id) { return this.request('DELETE', '/api/org/portfolio/' + encodeURIComponent(id)); },
@@ -7594,6 +7640,12 @@ html[data-theme='dark'] .audit-row__icon--danger {
     orgCreateUser(payload) { return this.request('POST', '/api/org/users', payload); },
     orgUpdateMentor(id, payload) { return this.request('PATCH', '/api/org/mentors/' + encodeURIComponent(id), payload); },
     orgDeleteMentor(id) { return this.request('DELETE', '/api/org/mentors/' + encodeURIComponent(id)); },
+    orgResetUserPassword(id, password, orgId) {
+      return this.request('POST', '/api/org/users/' + encodeURIComponent(id) + '/password', Object.assign({ password: password || '' }, orgId ? { orgId } : {}));
+    },
+    orgIssueUserOtp(id, orgId) {
+      return this.request('POST', '/api/org/users/' + encodeURIComponent(id) + '/otp', orgId ? { orgId } : {});
+    },
     orgCreateSlot(payload) { return this.request('POST', '/api/org/slots', payload); },
     orgUpdateSlot(id, patch) { return this.request('PATCH', '/api/org/slots/' + encodeURIComponent(id), patch); },
     orgDeleteSlot(id) { return this.request('DELETE', '/api/org/slots/' + encodeURIComponent(id)); },
@@ -9250,50 +9302,140 @@ html[data-theme='dark'] .audit-row__icon--danger {
       return Math.abs(h);
     },
 
+    /* ── единый профиль тегов ученика (навыки + интересы) ── */
+    profileTags(user) {
+      if (!user) return [];
+      const seen = new Set();
+      const out = [];
+      (user.skills || []).concat(user.interests || []).forEach((raw) => {
+        const s = String(raw || '').trim();
+        const k = s.toLowerCase();
+        if (s && !seen.has(k)) { seen.add(k); out.push(s); }
+      });
+      return out;
+    },
+
+    /* ── семантические кластеры направлений для умного сопоставления ── */
+    _topicClusters: [
+      { keys: ['ии', 'ai', 'ml', 'нейросет', 'data', 'данн', 'машинн', 'deep', 'gpt', 'llm'], cats: ['hackathon', 'course', 'internship'] },
+      { keys: ['python', 'программ', 'код', 'разработ', 'веб', 'web', 'js', 'javascript', 'фронтенд', 'бэкенд', 'it', 'ит', 'алгоритм', 'информат', 'хакатон', 'мобильн'], cats: ['hackathon', 'course', 'internship', 'olympiad'] },
+      { keys: ['математ', 'физик', 'хим', 'биолог', 'эколог', 'наук', 'исслед', 'олимпиад', 'инженер', 'робот', 'космос', 'stem'], cats: ['olympiad', 'competition', 'event'] },
+      { keys: ['дизайн', 'design', 'figma', 'ux', 'ui', 'медиа', 'видео', 'арт', 'творч', 'иллюстр'], cats: ['competition', 'course', 'hackathon'] },
+      { keys: ['стартап', 'бизнес', 'предприним', 'продукт', 'маркетинг', 'эконом', 'финанс', 'менеджм', 'кейс'], cats: ['competition', 'fellowship', 'internship'] },
+      { keys: ['англ', 'english', 'ielts', 'toefl', 'sat', 'сша', 'зарубеж', 'международ', 'грант', 'стипенд', 'fellowship', 'вуз', 'поступ'], cats: ['fellowship', 'event', 'course'] }
+    ],
+
+    _gradeFit(event, user) {
+      if (!user || !user.grade || !event || !event.eligibility) return 0;
+      const gMatch = String(user.grade).match(/\d{1,2}/);
+      if (!gMatch) return 0;
+      const g = Number(gMatch[0]);
+      if (g < 5 || g > 12) return 0;
+      const elig = String(event.eligibility);
+      const range = elig.match(/(\d{1,2})\s*[–—-]\s*(\d{1,2})/);
+      if (range) {
+        const lo = Number(range[1]), hi = Number(range[2]);
+        return (g >= lo && g <= hi) ? 8 : -14;
+      }
+      const nums = (elig.match(/\d{1,2}/g) || []).map(Number).filter((n) => n >= 5 && n <= 12);
+      if (nums.length) return nums.includes(g) ? 8 : -10;
+      return 0;
+    },
+
     /* ── подбор: насколько событие подходит ученику ── */
     matchPercent(event, user) {
-      // без профиля (или с пустыми интересами) скоринг вырождается —
-      // тогда разводим проценты по хешу, чтобы карточки не выглядели одинаково
-      if (!user || !((user.interests || []).length || (user.skills || []).length)) {
-        return 46 + (ai.hash(event.id + ((user && user.id) || '')) % 27);
+      const tags = ai.profileTags(user);
+      // без профиля (или с пустыми тегами) скоринг разводим по хешу + классу
+      if (!user || !tags.length) {
+        const base = 46 + (ai.hash(event.id + ((user && user.id) || '')) % 25) + ai._gradeFit(event, user);
+        return Math.max(35, Math.min(82, base));
       }
-      const interests = (user.interests || []).map((s) => s.toLowerCase());
-      const skills = (user.skills || []).map((s) => s.toLowerCase());
-      const hay = (event.tags || []).concat([event.title, event.description, event.category])
+
+      const hay = (event.tags || [])
+        .concat([event.title, event.description, event.organizer, event.category])
         .join(' ').toLowerCase();
 
-      let score = 30;
-      interests.forEach((i) => { if (hay.includes(i)) score += 16; });
-      skills.forEach((s) => { if (hay.includes(s)) score += 11; });
+      let score = 34;
+      let matchedCount = 0;
 
-      const catBoost = {
-        'ИИ': 'hackathon', 'Хакатоны': 'hackathon', 'Дизайн': 'competition',
-        'Олимпиады': 'olympiad', 'Веб': 'course', 'Стартапы': 'competition',
-        'Наука': 'event', 'Мобильная разработка': 'internship'
-      };
-      (user.interests || []).forEach((i) => { if (catBoost[i] === event.category) score += 12; });
+      tags.forEach((rawTag) => {
+        const t = rawTag.toLowerCase();
+        const stem = t.length >= 5 ? t.slice(0, Math.max(4, t.length - 2)) : t;
+        if (hay.includes(t) || (stem.length >= 4 && hay.includes(stem))) {
+          score += 16;
+          matchedCount++;
+          return;
+        }
+        // проверяем тематический кластер (например, «Python» → хакатон / IT / курс)
+        for (const cl of ai._topicClusters) {
+          const userInCluster = cl.keys.some((k) => t.includes(k) || k.includes(t));
+          if (!userInCluster) continue;
+          const evInCluster = cl.keys.some((k) => hay.includes(k));
+          if (evInCluster) {
+            score += 11;
+            matchedCount++;
+          } else if (cl.cats.includes(event.category)) {
+            score += 6;
+          }
+          break;
+        }
+      });
 
-      score += ai.hash(event.id + (user.id || '')) % 7;
+      score += ai._gradeFit(event, user);
+
+      if (event.format === 'online') {
+        score += 3;
+      } else if (user.city && event.location && String(event.location).toLowerCase().includes(String(user.city).toLowerCase())) {
+        score += 5;
+      }
+
+      if (matchedCount >= 2) score += 6;
+      score += ai.hash(event.id + (user.id || '')) % 6;
       return Math.max(34, Math.min(98, score));
     },
 
     /* ── объяснение подбора человеческим языком ── */
     explain(event, user) {
-      if (!user) return 'Заполни интересы в профиле — и подбор станет персональным.';
-      const interests = user.interests || [];
-      const skills = user.skills || [];
-      const hay = (event.tags || []).concat([event.title, event.description]).join(' ').toLowerCase();
-      const hitInterests = interests.filter((i) => hay.includes(i.toLowerCase()));
-      const hitSkills = skills.filter((s) => hay.includes(s.toLowerCase()));
+      if (!user) return 'Войдите и укажите навыки и интересы в профиле — подборка подстроится под вас.';
+      const tags = ai.profileTags(user);
+      if (!tags.length) return 'Добавьте навыки и интересы в профиле — и лента «Для тебя» станет персональной.';
+
+      const hay = (event.tags || [])
+        .concat([event.title, event.description, event.organizer])
+        .join(' ').toLowerCase();
+
+      const directHits = [];
+      const clusterHits = [];
+      tags.forEach((rawTag) => {
+        const t = rawTag.toLowerCase();
+        const stem = t.length >= 5 ? t.slice(0, Math.max(4, t.length - 2)) : t;
+        if (hay.includes(t) || (stem.length >= 4 && hay.includes(stem))) {
+          directHits.push(rawTag);
+          return;
+        }
+        for (const cl of ai._topicClusters) {
+          if (cl.keys.some((k) => t.includes(k) || k.includes(t)) && cl.keys.some((k) => hay.includes(k))) {
+            clusterHits.push(rawTag);
+            break;
+          }
+        }
+      });
 
       const chunks = [];
-      if (hitInterests.length) chunks.push('совпадает с интересами: ' + hitInterests.slice(0, 2).join(', '));
-      if (hitSkills.length) chunks.push('совпадает с навыками: ' + hitSkills.slice(0, 2).join(', '));
+      if (directHits.length) chunks.push('совпадает с профилем: ' + directHits.slice(0, 3).join(', '));
+      else if (clusterHits.length) chunks.push('близко к вашим направлениям: ' + clusterHits.slice(0, 2).join(', '));
 
-      if (chunks.length) {
-        return 'Подходит на ' + ai.matchPercent(event, user) + '% — ' + chunks.join('; ') + '.';
+      const gFit = ai._gradeFit(event, user);
+      if (gFit > 0 && user.grade) chunks.push('подходит для ' + String(user.grade).replace(/\s*класс.*/i, '') + ' класса');
+      if (user.city && event.location && String(event.location).toLowerCase().includes(String(user.city).toLowerCase())) {
+        chunks.push('проходит в г. ' + user.city);
       }
-      return 'Подходит на ' + ai.matchPercent(event, user) + '% — это направление пока не в твоих интересах, но даёт смежный опыт.';
+
+      const pct = ai.matchPercent(event, user);
+      if (chunks.length) {
+        return 'Подходит на ' + pct + '% — ' + chunks.join('; ') + '.';
+      }
+      return 'Подходит на ' + pct + '% — это направление расширит портфолио смежным опытом.';
     },
 
     /* ── рекомендация топ-событий ── */
@@ -9354,7 +9496,7 @@ html[data-theme='dark'] .audit-row__icon--danger {
     digest() {
       const s = SH.store.stats();
       const users = SH.store.state.users;
-      const emptyProfiles = users.filter((u) => u.role === 'student' && (u.interests || []).length === 0).length;
+      const emptyProfiles = users.filter((u) => u.role === 'student' && ai.profileTags(u).length === 0).length;
       const soon = SH.store.events().filter((ev) => {
         const d = Math.ceil((new Date(ev.deadlineDate) - Date.now()) / 864e5);
         return d >= 0 && d <= 7;
@@ -9908,8 +10050,8 @@ html[data-theme='dark'] .audit-row__icon--danger {
           description: ev.description || '',
           tags: (ev.tags || []).join(', '),
           grade: me.grade || 'не указан',
-          skills: (me.skills || []).join(', ') || 'не указаны',
-          interests: (me.interests || []).join(', ') || 'не указаны'
+          skills: (ai.profileTags ? ai.profileTags(me) : (me.skills || [])).join(', ') || 'не указаны',
+          interests: ((me.interests && me.interests.length) ? me.interests : (ai.profileTags ? ai.profileTags(me) : [])).join(', ') || 'не указаны'
         }
       });
       if (!text) return;
@@ -15082,7 +15224,7 @@ html[data-theme='dark'] .audit-row__icon--danger {
   function usersSection() {
     const list = cache.users
       .filter((u) => isRoot() || u.role !== 'root')
-      .filter((u) => !query || (u.name + ' ' + (u.email || '')).toLowerCase().includes(query.toLowerCase()));
+      .filter((u) => !query || (u.name + ' ' + (u.login || '') + ' ' + (u.email || '')).toLowerCase().includes(query.toLowerCase()));
 
     const picking = selectMode.users;
     const me = store.currentUser || {};
@@ -15108,7 +15250,7 @@ html[data-theme='dark'] .audit-row__icon--danger {
           '<td><div style="display:flex;gap:10px;align-items:center">' + ui.avatar(u, 32) +
             '<div style="min-width:0"><div style="font-weight:650">' + e(u.name) +
               (u.id === me.id ? ' <span class="tag" style="font-size:10px">вы</span>' : '') + '</div>' +
-            '<div class="small muted mono">' + e(u.email || '—') + '</div></div></div></td>' +
+            '<div class="small muted mono">' + e(u.login || u.email || '—') + '</div></div></div></td>' +
           '<td>' + roleTag(u.role) + '</td>' +
           '<td>' + e(u.grade || '—') + '</td>' +
           '<td>' + (u.blocked ? '<span class="tag tag--blush">заблокирован</span>' : '<span class="tag tag--mint">активен</span>') + '</td>' +
@@ -15185,6 +15327,7 @@ html[data-theme='dark'] .audit-row__icon--danger {
               '<td>' + (o.openTasks != null ? o.openTasks : 0) + '</td>' +
               '<td style="text-align:right;white-space:nowrap">' +
                 '<button class="btn btn--soft btn--xs" onclick="SH.app.go(\'#/org/' + o.id + '\')">Кабинет</button> ' +
+                '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.orgAttachStudentForm(\'' + o.id + '\')">Прикрепить аккаунт</button> ' +
                 '<button class="btn btn--soft btn--xs" onclick="SH.views.admin.orgStudentForm(\'' + o.id + '\')">+ ученик</button>' +
                 (isRoot()
                   ? ' <button class="icon-btn icon-btn--plain" style="width:32px;height:32px" title="Удалить организацию" ' +
@@ -15450,6 +15593,7 @@ html[data-theme='dark'] .audit-row__icon--danger {
     else if (act === 'org.student.update') { const sn = resolveName(t, 'ученик'); pushTarget(sn); category = 'org'; tone = 'sky'; text = who + ' обновил карточку сопровождения ученика «' + sn + '»'; }
     else if (act === 'org.student.remove') { const sn = resolveName(t, 'ученик'); pushTarget(sn); category = 'org'; tone = 'danger'; text = who + ' открепил ученика «' + sn + '» от организации'; }
     else if (act === 'org.user.create') { const nm = resolveName(t, d || 'участник'); pushTarget(nm); category = 'org'; tone = 'mint'; text = who + ' добавил участника «' + nm + '» в организацию'; }
+    else if (act === 'org.student.attach') { const nm = resolveName(t, 'ученик'); pushTarget(nm); category = 'org'; tone = 'mint'; text = who + ' прикрепил стороннего ученика «' + nm + '» к организации' + (d ? ' (' + d + ')' : ''); }
     else if (act === 'org.create') { category = 'org'; tone = 'mint'; text = who + ' создал организацию «' + (d || 'организация') + '»'; }
     else if (act === 'org.manager.create') { category = 'org'; tone = 'mint'; text = who + ' назначил руководителя организации' + (d ? ' (' + d + ')' : ''); }
     else if (act === 'org.report.create') { const sn = resolveName(d, d || 'ученик'); pushTarget(sn); category = 'org'; tone = 'mint'; text = who + ' сформировал отчёт для родителей по ученику «' + sn + '»'; }
@@ -16131,6 +16275,8 @@ html[data-theme='dark'] .audit-row__icon--danger {
 
     orgStudentForm(orgId) {
       const org = (cache.orgs || []).find((o) => o.id === orgId) || {};
+      const mentors = org.mentors || [];
+      const defaultMentor = (mentors.find((m) => m.isManager) || mentors[0] || {}).id || '';
       ui.sheet({
         title: 'Новый ученик',
         subtitle: org.name || 'Организация',
@@ -16140,7 +16286,18 @@ html[data-theme='dark'] .audit-row__icon--danger {
             ui.field('os-login', 'Логин', { placeholder: 'aziz@school.ru' }) +
             ui.field('os-pass', 'Пароль', { placeholder: 'пусто — сгенерируем' }) +
           '</div>' +
-          ui.field('os-grade', 'Класс', { placeholder: '10 класс', style: 'margin-top:12px' }) +
+          '<div class="form-grid" style="margin-top:12px">' +
+            ui.field('os-grade', 'Класс', { placeholder: '10 класс' }) +
+            '<div class="field"><label class="field-label">Прикрепить к ментору</label>' +
+              '<select id="os-mentor">' +
+                '<option value="">Без ментора</option>' +
+                mentors.map((m) =>
+                  '<option value="' + e(m.id) + '"' + (m.id === defaultMentor ? ' selected' : '') + '>' +
+                    e(m.name) + (m.isManager ? ' (руководитель)' : '') +
+                  '</option>'
+                ).join('') +
+              '</select></div>' +
+          '</div>' +
           '<button class="btn btn--brand btn--block mt-16" id="os-save">Создать аккаунт</button>',
         onMount(el, destroy) {
           el.querySelector('#os-save').addEventListener('click', () => {
@@ -16150,10 +16307,11 @@ html[data-theme='dark'] .audit-row__icon--danger {
             if (login.length < 3) { ui.toast('Логин минимум 3 символа'); return; }
             const password = el.querySelector('#os-pass').value.trim();
             const grade = el.querySelector('#os-grade').value.trim();
+            const mentorId = el.querySelector('#os-mentor').value;
             destroy();
-            SH.api.adminCreateUser({ name, login, password, grade, role: 'student', orgId })
+            SH.api.adminCreateUser({ name, login, password, grade, role: 'student', orgId, mentorId })
               .then((res) => {
-                cache.loaded.orgs = false; cache.loaded.users = false;
+                cache.loaded.orgs = false; cache.loaded.users = false; cache.loaded.audit = false;
                 loadData(true).then(() => SH.app.render());
                 ui.sheet({
                   title: 'Аккаунт создан',
@@ -16169,19 +16327,153 @@ html[data-theme='dark'] .audit-row__icon--danger {
       });
     },
 
+    async orgAttachStudentForm(orgId) {
+      if (!cache.loaded.users || !cache.loaded.orgs) {
+        await loadData(true);
+      }
+      const org = (cache.orgs || []).find((o) => o.id === orgId) || {};
+      const mentors = org.mentors || [];
+      const defaultMentor = (mentors.find((m) => m.isManager) || mentors[0] || {}).id || '';
+      const orgNameById = {};
+      (cache.orgs || []).forEach((o) => { orgNameById[o.id] = o.name; });
+
+      const candidates = (cache.users || []).filter((u) =>
+        u.role === 'student' && u.orgRole !== 'mentor' && u.orgId !== orgId
+      );
+
+      ui.sheet({
+        title: 'Прикрепить существующий аккаунт',
+        subtitle: org.name || 'Агентство',
+        body:
+          '<p class="small muted" style="margin:0 0 10px">Выберите сторонние аккаунты учеников платформы, чтобы добавить их в это агентство без пересоздания логина.</p>' +
+          '<div class="form-grid" style="margin-bottom:10px">' +
+            '<div class="field"><input id="att-q" placeholder="Поиск по имени, логину, школе…"></div>' +
+            '<div class="field"><select id="att-scope">' +
+              '<option value="free">Свободные ученики (без агентства)</option>' +
+              '<option value="all">Все ученики платформы</option>' +
+            '</select></div>' +
+          '</div>' +
+          '<div class="attach-list" id="att-list"></div>' +
+          '<div class="small muted" id="att-count" style="margin-top:6px">Выбрано: 0</div>' +
+          '<div class="form-grid" style="margin-top:12px">' +
+            '<div class="field"><label class="field-label">Прикрепить к ментору</label>' +
+              '<select id="att-mentor">' +
+                '<option value="">Без ментора</option>' +
+                mentors.map((m) =>
+                  '<option value="' + e(m.id) + '"' + (m.id === defaultMentor ? ' selected' : '') + '>' +
+                    e(m.name) + (m.isManager ? ' (руководитель)' : '') +
+                  '</option>'
+                ).join('') +
+              '</select></div>' +
+            ui.field('att-tags', 'Теги в агентстве', { placeholder: 'сша, олимпиады' }) +
+          '</div>' +
+          '<button class="btn btn--brand btn--block mt-16" id="att-save">Добавить в организацию</button>',
+        onMount(el, destroy) {
+          const selected = new Set();
+          const listEl = el.querySelector('#att-list');
+          const countEl = el.querySelector('#att-count');
+          const qEl = el.querySelector('#att-q');
+          const scopeEl = el.querySelector('#att-scope');
+
+          // Если свободных учеников нет, сразу переключаем на всех учеников платформы
+          if (!candidates.some((u) => !u.orgId) && candidates.length) {
+            scopeEl.value = 'all';
+          }
+
+          const renderList = () => {
+            const q = qEl.value.trim().toLowerCase();
+            const onlyFree = scopeEl.value === 'free';
+            const rows = candidates.filter((u) => {
+              if (onlyFree && u.orgId) return false;
+              if (!q) return true;
+              const hay = (u.name + ' ' + (u.login || '') + ' ' + (u.email || '') + ' ' + (u.school || '') + ' ' + (u.grade || '')).toLowerCase();
+              return hay.includes(q);
+            });
+            if (!rows.length) {
+              listEl.innerHTML = '<div class="small muted" style="padding:18px;text-align:center">Подходящих учеников не найдено</div>';
+            } else {
+              listEl.innerHTML = rows.map((u) =>
+                '<label class="attach-row">' +
+                  '<input type="checkbox" value="' + e(u.id) + '"' + (selected.has(u.id) ? ' checked' : '') + '>' +
+                  '<div style="min-width:0;flex:1">' +
+                    '<div style="font-weight:650;font-size:13.5px">' + e(u.name) +
+                      (u.grade ? ' <span class="muted small">· ' + e(u.grade) + '</span>' : '') +
+                    '</div>' +
+                    '<div class="small muted mono">' + e(u.login || u.email || '—') +
+                      (u.orgId && orgNameById[u.orgId] ? ' · сейчас в «' + e(orgNameById[u.orgId]) + '»' : ' · сторонний аккаунт') +
+                    '</div>' +
+                  '</div>' +
+                '</label>'
+              ).join('');
+            }
+            countEl.textContent = 'Выбрано: ' + selected.size;
+          };
+
+          listEl.addEventListener('change', (ev) => {
+            const cb = ev.target;
+            if (cb && cb.type === 'checkbox') {
+              if (cb.checked) selected.add(cb.value);
+              else selected.delete(cb.value);
+              countEl.textContent = 'Выбрано: ' + selected.size;
+            }
+          });
+          qEl.addEventListener('input', renderList);
+          scopeEl.addEventListener('change', renderList);
+          renderList();
+
+          el.querySelector('#att-save').addEventListener('click', () => {
+            if (!selected.size) { ui.toast('Отметьте хотя бы одного ученика'); return; }
+            const mentorId = el.querySelector('#att-mentor').value;
+            const tags = el.querySelector('#att-tags').value.split(',').map((s) => s.trim()).filter(Boolean);
+            destroy();
+            SH.api.adminAttachStudents(orgId, {
+              userIds: Array.from(selected),
+              mentorId,
+              tags
+            })
+              .then((res) => {
+                cache.loaded.orgs = false; cache.loaded.users = false; cache.loaded.audit = false;
+                loadData(true).then(() => SH.app.render());
+                ui.toast('Добавлено в организацию: ' + (res.attached || selected.size));
+              })
+              .catch((err) => ui.toast('Ошибка: ' + err.message));
+          });
+        }
+      });
+    },
+
     userForm(id, forcedRole) {
       const u = id ? cache.users.find((x) => x.id === id) : null;
       const roleFixed = forcedRole === 'admin';
       const self = u && store.currentUser && u.id === store.currentUser.id;
       const targetIsRoot = u && u.role === 'root';
+      const curLogin = u ? (u.login || u.email || '') : '';
+
+      const mentorOptsHtml = (orgIdVal, currentMentorId) => {
+        const orgObj = (cache.orgs || []).find((o) => o.id === orgIdVal);
+        const mentors = (orgObj && orgObj.mentors) || [];
+        const pick = currentMentorId !== undefined
+          ? (currentMentorId || '')
+          : ((mentors.find((m) => m.isManager) || mentors[0] || {}).id || '');
+        return '<option value="">Без ментора</option>' +
+          mentors.map((m) =>
+            '<option value="' + e(m.id) + '"' + (m.id === pick ? ' selected' : '') + '>' +
+              e(m.name) + (m.isManager ? ' (руководитель)' : '') +
+            '</option>'
+          ).join('');
+      };
+
+      const initOrgId = u ? (u.orgId || '') : '';
+      const initRole = roleFixed ? 'admin' : (u ? u.role : 'student');
+      const showMentorInit = !targetIsRoot && !self && initRole === 'student' && !!initOrgId;
 
       ui.sheet({
         title: u ? 'Редактировать пользователя' : (roleFixed ? 'Новый администратор' : 'Новый пользователь'),
-        subtitle: u ? (u.email || u.id) : 'Логин и пароль можно изменить позже',
+        subtitle: u ? (curLogin || u.id) : 'Логин и пароль можно изменить позже',
         body:
           ui.field('u-name', 'Имя', { value: u ? u.name : '' }) +
           '<div class="form-grid" style="margin-top:12px">' +
-            ui.field('u-login', 'Логин или почта', { value: u ? u.email || '' : '', placeholder: 'ivan или ivan@school.ru' }) +
+            ui.field('u-login', 'Логин или почта', { value: curLogin, placeholder: 'ivan или ivan@school.ru' }) +
             (u ? ui.field('u-pass', 'Новый пароль (пусто — не менять)', { type: 'text', placeholder: 'оставьте пустым' })
                : ui.field('u-pass', 'Пароль (пусто — сгенерировать)', { type: 'text', placeholder: 'автоматически' })) +
           '</div>' +
@@ -16203,10 +16495,33 @@ html[data-theme='dark'] .audit-row__icon--danger {
                 '<option value="">Без организации</option>' +
                 cache.orgs.map((o) => '<option value="' + o.id + '"' +
                   ((u && u.orgId === o.id) ? ' selected' : '') + '>' + e(o.name) + '</option>').join('') +
-              '</select></div>'
+              '</select></div>' +
+              '<div class="field" id="u-mentor-wrap" style="margin-top:12px;' + (showMentorInit ? '' : 'display:none') + '">' +
+                '<label class="field-label">Ментор в организации</label>' +
+                '<select id="u-mentor">' + mentorOptsHtml(initOrgId, u ? u.mentorId : undefined) + '</select>' +
+              '</div>'
             : '') +
           '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.admin.saveUser(' + (u ? "'" + u.id + "'" : 'null') + ')">' +
-            (u ? 'Сохранить' : 'Создать') + '</button>'
+            (u ? 'Сохранить' : 'Создать') + '</button>',
+        onMount(el) {
+          const orgSel = el.querySelector('#u-org');
+          const roleSel = el.querySelector('#u-role');
+          const wrap = el.querySelector('#u-mentor-wrap');
+          const mSel = el.querySelector('#u-mentor');
+          if (!orgSel || !wrap || !mSel) return;
+          const syncMentorWrap = () => {
+            const rVal = roleSel ? roleSel.value : initRole;
+            const oVal = orgSel.value;
+            if (rVal === 'student' && oVal) {
+              wrap.style.display = '';
+              mSel.innerHTML = mentorOptsHtml(oVal, (u && u.orgId === oVal) ? u.mentorId : undefined);
+            } else {
+              wrap.style.display = 'none';
+            }
+          };
+          orgSel.addEventListener('change', syncMentorWrap);
+          if (roleSel) roleSel.addEventListener('change', syncMentorWrap);
+        }
       });
     },
 
@@ -16219,11 +16534,14 @@ html[data-theme='dark'] .audit-row__icon--danger {
         if (!id) {
           const password = v('u-pass').trim();
           const role = (document.getElementById('u-role') || {}).value || 'student';
-          const res = await SH.api.adminCreateUser({
+          const orgId = v('u-org') || null;
+          const mentorEl = document.getElementById('u-mentor');
+          const payload = {
             name, login: v('u-login').trim(), password,
-            grade: v('u-grade'), school: v('u-school'), role,
-            orgId: v('u-org') || null
-          });
+            grade: v('u-grade'), school: v('u-school'), role, orgId
+          };
+          if (role === 'student' && orgId && mentorEl) payload.mentorId = mentorEl.value;
+          const res = await SH.api.adminCreateUser(payload);
           ui.closeSheet();
           ui.sheet({
             title: 'Пользователь создан',
@@ -16243,6 +16561,10 @@ html[data-theme='dark'] .audit-row__icon--danger {
           if (orgSel) patch.orgId = orgSel.value || null;
           const roleSel = document.getElementById('u-role');
           if (roleSel) patch.role = roleSel.value;
+          const mentorSel = document.getElementById('u-mentor');
+          if (mentorSel && patch.orgId && (!patch.role || patch.role === 'student')) {
+            patch.mentorId = mentorSel.value;
+          }
 
           await SH.api.adminUpdateUser(id, patch);
 
@@ -16253,6 +16575,8 @@ html[data-theme='dark'] .audit-row__icon--danger {
           ui.toast('Сохранено');
         }
         cache.loaded.users = false;
+        cache.loaded.orgs = false;
+        cache.loaded.audit = false;
         await loadData(true);
         SH.app.render();
       } catch (err) {
@@ -16263,11 +16587,16 @@ html[data-theme='dark'] .audit-row__icon--danger {
     userAccess(id) {
       const u = cache.users.find((x) => x.id === id);
       if (!u) return;
+      const loginStr = u.login || u.email || u.id;
 
       ui.sheet({
         title: 'Доступ: ' + u.name,
-        subtitle: u.email || u.id,
+        subtitle: 'Логин: ' + loginStr,
         body:
+          '<div class="card" style="background:var(--chip);border:0;margin-bottom:12px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+            '<div><div class="small muted">Логин для входа</div><div class="mono" style="font-weight:700">' + e(loginStr) + '</div></div>' +
+            '<button class="btn btn--soft btn--xs" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' + e(loginStr).replace(/'/g, "\\'") + '\');SH.ui.toast(\'Логин скопирован\')">Копировать</button>' +
+          '</div>' +
           '<div class="list">' +
             accessRow('key', 'Сбросить пароль', 'Старый перестанет работать, все сессии закроются',
               'SH.views.admin.resetPassword(\'' + u.id + '\')') +
@@ -16758,7 +17087,7 @@ html[data-theme='dark'] .audit-row__icon--danger {
     if (!id) return Promise.resolve();
     if (!force && card && card.user && card.user.id === id) return Promise.resolve();
     cardLoading = true;
-    return SH.api.orgStudent(id)
+    return SH.api.orgStudent(id, orgIdArg())
       .then((d) => { card = d; })
       .catch((err) => { error = err.message || 'Не удалось открыть карточку'; })
       .finally(() => { cardLoading = false; if (SH.app) SH.app.render(); });
@@ -17097,7 +17426,10 @@ html[data-theme='dark'] .audit-row__icon--danger {
         ? '<div class="cards">' + rows.map((m) =>
             '<article class="mini">' +
               '<header class="mini__h">' + av(m, 48) +
-                '<div class="mini__id"><b>' + e(m.name) + '</b><span class="mu">' + m.students + ' ' + ui.plural(m.students, 'ученик', 'ученика', 'учеников') + '</span></div>' +
+                '<div class="mini__id"><b>' + e(m.name) + '</b>' +
+                  '<span class="mu">' + m.students + ' ' + ui.plural(m.students, 'ученик', 'ученика', 'учеников') + '</span>' +
+                  (isMgr && (m.login || m.email) ? '<span class="mu mono" style="font-size:11.5px">логин: ' + e(m.login || m.email) + '</span>' : '') +
+                '</div>' +
                 (isMgr ? '<button class="ib" aria-label="Управление ментором" onclick="SH.views.org.mentorForm(\'' + e(m.id) + '\')">' + icon('more', 18) + '</button>' : '') +
               '</header>' +
               '<div class="mini__meta"><span class="mu">База</span>' + tagList(m.tags) + '</div>' +
@@ -17135,7 +17467,7 @@ html[data-theme='dark'] .audit-row__icon--danger {
     if (filters.tag) list = list.filter((s) => (s.tags || []).includes(filters.tag));
     if (filters.q) {
       const q = filters.q.toLowerCase();
-      list = list.filter((s) => (s.name + ' ' + s.email + ' ' + (s.tags || []).join(' ')).toLowerCase().includes(q));
+      list = list.filter((s) => (s.name + ' ' + (s.login || '') + ' ' + (s.email || '') + ' ' + (s.tags || []).join(' ')).toLowerCase().includes(q));
     }
     return list;
   }
@@ -17143,21 +17475,27 @@ html[data-theme='dark'] .audit-row__icon--danger {
   function studentTable(list, hideMentorCol) {
     if (!list.length) return '<div class="pane">' + ui.empty('users', 'Пока никого нет',
       isMentorRole() ? 'За вами пока не закреплены ученики.' : 'Создайте аккаунт ученика — он сразу войдёт под этим логином.') + '</div>';
+    const isMgr = isOrgAdminRole();
     return '<section class="pane pane--flush"><div class="tbl-wrap"><table class="tbl">' +
       '<thead><tr><th>Ученик</th><th>Класс</th>' + (hideMentorCol ? '' : '<th>Ментор</th>') + '<th>Теги</th><th>Статус</th><th>Ближайшее</th><th></th></tr></thead><tbody>' +
       list.map((s) => {
         const next = s.nextTitle
           ? (s.nextDate ? s.nextTitle + ' · ' + dayLabel(parseDay(s.nextDate)) : s.nextTitle)
           : (s.overdueTitle ? s.overdueTitle : 'нет событий');
+        const stLogin = s.login || s.email || '';
         return '<tr>' +
           '<td><span class="who">' + av(s) + '<span><b>' + e(s.name) + '</b>' +
+            (isMgr && stLogin ? '<span class="mu mono" style="font-size:11.5px">логин: ' + e(stLogin) + '</span>' : '') +
             (s.goal ? '<span class="mu">' + e(s.goal) + '</span>' : '') + '</span></span></td>' +
           '<td>' + e(s.grade || '—') + '</td>' +
           (hideMentorCol ? '' : '<td>' + e(s.mentorName || '—') + '</td>') +
           '<td>' + tagList(s.tags) + '</td>' +
           '<td>' + statusChip(s.status) + '</td>' +
           '<td class="' + (s.overdue && !s.nextTitle ? 'neg' : 'mu') + '">' + e(next) + '</td>' +
-          '<td class="tbl__act"><button class="btn btn--soft btn--sm" onclick="SH.app.go(\'#/org/student/' + e(s.id) + '\')">Открыть</button></td>' +
+          '<td class="tbl__act" style="white-space:nowrap">' +
+            (isMgr ? '<button class="btn btn--soft btn--sm" title="Логин и сброс пароля" style="margin-right:6px" onclick="SH.views.org.userAccessSheet(\'' + e(s.id) + '\')">' + icon('key', 14) + '</button>' : '') +
+            '<button class="btn btn--soft btn--sm" onclick="SH.app.go(\'#/org/student/' + e(s.id) + '\')">Открыть</button>' +
+          '</td>' +
         '</tr>';
       }).join('') + '</tbody></table></div>' +
       '<p class="hint">Показано ' + list.length + ' из ' + myStudents().length + '</p></section>';
@@ -17209,10 +17547,14 @@ html[data-theme='dark'] .audit-row__icon--danger {
     const isOrgAdm = isOrgAdminRole();
     const backHref = isMentorRole() ? '#/org/overview' : '#/org/students';
     const backLbl = isMentorRole() ? '← Мои ученики' : '← Ученики';
+    const stLogin = u.login || u.email || '';
     return '<section class="pane pane--profile">' +
       '<div class="prof__ava">' + av(u, 64) + '</div>' +
       '<h2 class="prof__name">' + e(u.name) + '</h2>' +
       '<p class="mu">' + e([u.grade ? u.grade + ' класс' : '', u.school, u.city].filter(Boolean).join(' · ')) + '</p>' +
+      (isOrgAdm && stLogin
+        ? '<div class="org-login-badge" title="Логин ученика для входа"><span>Логин:</span><code>' + e(stLogin) + '</code></div>'
+        : '') +
       '<div class="prof__tags">' + tagList(c.tags) +
         (canWrite ? '<button class="chip-dash" onclick="SH.views.org.editCard()">+ тег</button>' : '') + '</div>' +
       '<div class="prof__status">' + statusChip((card && card.status) || 'plan') + '</div>' +
@@ -17220,6 +17562,7 @@ html[data-theme='dark'] .audit-row__icon--danger {
         '<button class="btn btn--soft btn--block btn--sm" onclick="SH.app.go(\'' + backHref + '\')">' + backLbl + '</button>' +
         '<button class="btn btn--soft btn--block btn--sm" onclick="SH.views.chats.openWith(\'' + e(u.id) + '\')">' + icon('message', 15) + 'Написать ученику</button>' +
         (canWrite ? '<button class="btn btn--soft btn--block btn--sm" onclick="SH.views.org.callForm()">' + icon('video', 15) + 'Назначить созвон</button>' : '') +
+        (isOrgAdm ? '<button class="btn btn--soft btn--block btn--sm" onclick="SH.views.org.userAccessSheet(\'' + e(u.id) + '\')">' + icon('key', 15) + 'Логин и сброс пароля</button>' : '') +
         (isOrgAdm ? '<button class="btn btn--soft btn--block btn--sm" onclick="SH.views.org.mentorPicker()">Прикрепить ментора</button>' : '') +
         (isOrgAdm ? '<button class="btn btn--soft btn--block btn--sm" onclick="SH.views.org.fromStudentTemplate()">Сохранить как шаблон</button>' : '') +
         (isOrgAdm ? '<button class="btn btn--danger btn--block btn--sm" onclick="SH.views.org.removeStudent()">Открепить карточку</button>' : '') +
@@ -17295,7 +17638,7 @@ html[data-theme='dark'] .audit-row__icon--danger {
       const weeks = [];
       for (let d = new Date(start); d <= last; d.setDate(d.getDate() + 7)) weeks.push(new Date(d));
       grid = '<div class="spr__grid" style="grid-template-columns:repeat(' + weeks.length + ',minmax(58px,1fr))">' +
-        weeks.map((w) => '<span class="spr__wk">' + w.getDate() + ' ' + ui.MONTHS[w.getMonth()] + '</span>').join('') +
+        weeks.map((w) => '<span class="spr__wk">' + e(ui.dateNum(w).slice(0, 5)) + '</span>').join('') +
         list.map((sp, i) => {
           const a = parseDay(sp.startDate), b = parseDay(sp.endDate || sp.startDate);
           const idx = Math.max(0, Math.round((a - start) / 604800000));
@@ -18306,20 +18649,106 @@ html[data-theme='dark'] .audit-row__icon--danger {
 
     /* аккаунты */
     studentForm() { if (!isOrgAdminRole()) return; SH.views.org.userSheet(false); },
+
+    userAccessSheet(userId) {
+      if (!isOrgAdminRole()) { ui.toast('Доступно только администратору организации'); return; }
+      const stFromList = myStudents().find((s) => s.id === userId);
+      const mFromList = ((data && data.mentorStats) || []).find((m) => m.id === userId);
+      const stFromCard = (card && card.user && card.user.id === userId) ? card.user : null;
+      const person = stFromCard || stFromList || mFromList;
+      if (!person) return;
+      const loginStr = person.login || person.email || person.id;
+
+      ui.sheet({
+        title: 'Доступ и пароль',
+        subtitle: person.name,
+        body:
+          '<div class="card" style="background:var(--chip);border:0;margin-bottom:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+            '<div>' +
+              '<div class="small muted">Логин для входа</div>' +
+              '<div class="mono" style="font-size:15px;font-weight:700">' + e(loginStr) + '</div>' +
+            '</div>' +
+            '<button class="btn btn--soft btn--sm" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' + e(loginStr).replace(/'/g, "\\'") + '\');SH.ui.toast(\'Логин скопирован\')">Копировать</button>' +
+          '</div>' +
+          '<label class="fl">НОВЫЙ ПАРОЛЬ (пусто — сгенерируем автоматически)' +
+            '<input class="inp" id="org-rp-pass" placeholder="Введите пароль или оставьте пустым">' +
+          '</label>' +
+          '<button class="btn btn--brand btn--block" style="margin-top:12px" onclick="SH.views.org.doOrgResetPassword(\'' + e(userId) + '\')">' +
+            icon('key', 15) + 'Сбросить пароль' +
+          '</button>' +
+          '<button class="btn btn--soft btn--block" style="margin-top:8px" onclick="SH.views.org.doOrgIssueOtp(\'' + e(userId) + '\')">' +
+            icon('clock', 15) + 'Одноразовый код входа на 24 часа' +
+          '</button>' +
+          '<p class="hint" style="margin-top:10px">Сброс пароля закрывает старые сессии пользователя. Одноразовый код позволяет войти один раз, не меняя основной пароль.</p>'
+      });
+    },
+
+    doOrgResetPassword(userId) {
+      if (!isOrgAdminRole()) return;
+      const el = document.querySelector('#org-rp-pass');
+      const pw = el ? el.value.trim() : '';
+      SH.api.orgResetUserPassword(userId, pw, orgIdArg())
+        .then((res) => {
+          ui.closeSheet();
+          const copyPair = 'Логин: ' + res.login + '\\nПароль: ' + res.password;
+          ui.sheet({
+            title: 'Пароль обновлён',
+            body:
+              '<p class="small muted" style="margin:0 0 12px">Передайте участнику обновлённые данные для входа:</p>' +
+              '<div class="cred-box">' +
+                '<div class="cred-box__row"><span>Логин</span><b class="mono">' + e(res.login) + '</b></div>' +
+                '<div class="cred-box__row"><span>Новый пароль</span><b class="mono">' + e(res.password) + '</b></div>' +
+              '</div>' +
+              '<button class="btn btn--soft btn--block" style="margin-top:12px" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' + e(copyPair).replace(/'/g, "\\'") + '\');SH.ui.toast(\'Данные скопированы\')">Скопировать логин и пароль</button>' +
+              '<button class="btn btn--brand btn--block" data-close style="margin-top:8px">Готово</button>'
+          });
+        })
+        .catch((err) => ui.toast('Ошибка: ' + err.message));
+    },
+
+    doOrgIssueOtp(userId) {
+      if (!isOrgAdminRole()) return;
+      SH.api.orgIssueUserOtp(userId, orgIdArg())
+        .then((res) => {
+          ui.closeSheet();
+          ui.sheet({
+            title: 'Одноразовый код входа',
+            subtitle: 'Действует 24 часа для одного входа',
+            body:
+              '<div class="card" style="background:var(--mint);border:0;text-align:center;padding:18px">' +
+                '<div class="mono" style="font-size:20px;font-weight:700;letter-spacing:1px">' + e(res.code) + '</div>' +
+              '</div>' +
+              '<p class="small muted mt-12">Логин: <b class="mono">' + e(res.login) + '</b><br>' +
+                'Истекает: ' + e(ui.fullDateTime(res.expires)) + '</p>' +
+              '<button class="btn btn--soft btn--block" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' + e(res.code).replace(/'/g, "\\'") + '\');SH.ui.toast(\'Код скопирован\')">Скопировать код</button>' +
+              '<button class="btn btn--brand btn--block" data-close style="margin-top:8px">Понятно</button>'
+          });
+        })
+        .catch((err) => ui.toast('Ошибка: ' + err.message));
+    },
+
     mentorForm(mentorId) {
       if (!isOrgAdminRole()) { ui.toast('Доступно только администратору организации'); return; }
       if (!mentorId) { SH.views.org.userSheet(true); return; }
       const m = ((data && data.mentorStats) || []).find((x) => x.id === mentorId);
       if (!m) return;
+      const mLogin = m.login || m.email || '';
       ui.sheet({
         title: 'Управление ментором',
         subtitle: m.name,
         body:
+          (mLogin
+            ? '<div class="card" style="background:var(--chip);border:0;margin-bottom:12px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px">' +
+                '<div><div class="small muted">Логин ментора</div><div class="mono" style="font-weight:700">' + e(mLogin) + '</div></div>' +
+                '<button class="btn btn--soft btn--xs" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' + e(mLogin).replace(/'/g, "\\'") + '\');SH.ui.toast(\'Логин скопирован\')">Копировать</button>' +
+              '</div>'
+            : '') +
           '<label class="fl">ИМЯ И ФАМИЛИЯ<input class="inp" id="me-name" value="' + e(m.name || '') + '"></label>' +
           '<label class="fl" style="margin-top:10px">СПЕЦИАЛИЗАЦИЯ / ТЕГИ<input class="inp" id="me-tags" value="' + e((m.tags || []).join(', ')) + '" placeholder="сша, stem, эссе"></label>' +
           '<label class="fl" style="margin-top:10px">НОВЫЙ ПАРОЛЬ (необязательно)<input class="inp" id="me-pass" placeholder="Оставьте пустым, чтобы не менять"></label>' +
           '<button class="btn btn--brand btn--block" style="margin-top:16px" onclick="SH.views.org.saveMentorEdit(\'' + e(mentorId) + '\')">Сохранить</button>' +
-          '<button class="btn btn--danger btn--block" style="margin-top:8px" onclick="SH.views.org.removeMentor(\'' + e(mentorId) + '\')">Удалить ментора из организации</button>'
+          '<button class="btn btn--soft btn--block" style="margin-top:8px" onclick="SH.views.org.userAccessSheet(\'' + e(mentorId) + '\')">' + icon('key', 15) + 'Сгенерировать пароль / одноразовый код</button>' +
+          '<button class="btn btn--danger btn--block" style="margin-top:8px" onclick="SH.views.org.removeMentor(\'' + e(mentorId) + '\')">Открепить ментора от организации</button>'
       });
     },
 
@@ -18327,10 +18756,12 @@ html[data-theme='dark'] .audit-row__icon--danger {
       const val = (id) => { const el = document.querySelector(id); return el ? el.value.trim() : ''; };
       const tags = val('#me-tags').split(',').map((s) => s.trim()).filter(Boolean);
       const payload = { name: val('#me-name'), tags };
+      const oArg = orgIdArg();
+      if (oArg) payload.orgId = oArg;
       const pw = val('#me-pass');
       if (pw) payload.password = pw;
       SH.api.orgUpdateMentor(mentorId, payload)
-        .then(() => { ui.closeSheet(); ui.toast('Ментор обновлён'); return load(true); })
+        .then(() => { ui.closeSheet(); ui.toast(pw ? 'Ментор и пароль обновлены' : 'Ментор обновлён'); return load(true); })
         .catch((err) => ui.toast('Ошибка: ' + err.message));
     },
 
@@ -18343,13 +18774,25 @@ html[data-theme='dark'] .audit-row__icon--danger {
     },
     userSheet(isMentor) {
       const tpls = (data && data.templates) || [];
+      const mentors = (data && data.mentorStats && data.mentorStats.length)
+        ? data.mentorStats
+        : ((data && data.mentors) || []);
+      const defaultMentor = (mentors.find((m) => m.isManager) || mentors[0] || {}).id || '';
       ui.sheet({ title: isMentor ? 'Новый ментор' : 'Новый ученик', body: '' +
         '<label class="fl">ИМЯ И ФАМИЛИЯ<input class="inp" id="u-name" placeholder="Алия Нурланова"></label>' +
         '<div class="row" style="gap:10px;margin-top:10px">' +
           '<label class="fl" style="flex:1">ЛОГИН<input class="inp" id="u-login" placeholder="aliya@school.ru"></label>' +
-          '<label class="fl" style="flex:1">КЛАСС<input class="inp" id="u-grade" placeholder="10"></label>' +
+          (isMentor ? '' : '<label class="fl" style="flex:0 0 110px">КЛАСС<input class="inp" id="u-grade" placeholder="10"></label>') +
         '</div>' +
         (isMentor ? '' :
+          '<label class="fl" style="margin-top:10px">ПРИКРЕПИТЬ К МЕНТОРУ<select class="inp" id="u-mentor">' +
+            '<option value="">Без ментора</option>' +
+            mentors.map((m) =>
+              '<option value="' + e(m.id) + '"' + (m.id === defaultMentor ? ' selected' : '') + '>' +
+                e(m.name) + (m.isManager ? ' (руководитель)' : '') +
+              '</option>'
+            ).join('') +
+          '</select></label>' +
           '<label class="fl" style="margin-top:10px">ТЕГИ (через запятую)<input class="inp" id="u-tags" placeholder="premium, сша"></label>' +
           '<label class="fl" style="margin-top:10px">ШАБЛОН РОАДМАПА<select class="inp" id="u-tpl"><option value="">Без шаблона</option>' +
             tpls.map((t) => '<option value="' + t.id + '">' + e(t.title) + (t.grade ? ' · ' + e(t.grade) + ' кл' : '') + '</option>').join('') +
@@ -18362,15 +18805,31 @@ html[data-theme='dark'] .audit-row__icon--danger {
       const val = (id) => { const el = document.querySelector(id); return el ? el.value : ''; };
       const tags = (val('#u-tags') || '').split(',').map((x) => x.trim()).filter(Boolean);
       const tplId = val('#u-tpl');
-      SH.api.orgCreateUser({
+      const mentorId = !isMentor ? val('#u-mentor') : undefined;
+      const oArg = orgIdArg();
+      const payload = {
         name: val('#u-name'), login: val('#u-login'), password: val('#u-pass'),
         grade: val('#u-grade'), mentor: !!isMentor, tags
-      }).then((d) => {
+      };
+      if (!isMentor) payload.mentorId = mentorId;
+      if (oArg) payload.orgId = oArg;
+      SH.api.orgCreateUser(payload).then((d) => {
         ui.closeSheet();
         const after = tplId ? SH.api.orgTemplateAssign(tplId, [d.id]) : Promise.resolve();
-        return after.then(() => {
-          ui.toast('Аккаунт создан' + (d.password ? ' · пароль ' + d.password : ''));
-          return load(true);
+        return after.then(() => load(true)).then(() => {
+          const copyPair = 'Логин: ' + (d.login || payload.login) + '\\nПароль: ' + (d.password || payload.password);
+          ui.sheet({
+            title: isMentor ? 'Ментор создан' : 'Ученик создан',
+            body:
+              '<p class="small muted" style="margin:0 0 12px">Данные для входа готовы:</p>' +
+              '<div class="cred-box">' +
+                '<div class="cred-box__row"><span>Логин</span><b class="mono">' + e(d.login || payload.login) + '</b></div>' +
+                '<div class="cred-box__row"><span>Пароль</span><b class="mono">' + e(d.password || payload.password) + '</b></div>' +
+                (!isMentor && d.mentorName ? '<div class="cred-box__row"><span>Ментор</span><b>' + e(d.mentorName) + '</b></div>' : '') +
+              '</div>' +
+              '<button class="btn btn--soft btn--block" style="margin-top:12px" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' + e(copyPair).replace(/'/g, "\\'") + '\');SH.ui.toast(\'Данные скопированы\')">Скопировать логин и пароль</button>' +
+              '<button class="btn btn--brand btn--block" data-close style="margin-top:8px">Готово</button>'
+          });
         });
       }).catch((err) => ui.toast('Не получилось: ' + err.message));
     },
