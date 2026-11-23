@@ -8155,6 +8155,11 @@ html[data-theme='dark'] .audit-row__icon--danger {
 
     async logout() {
       if (SH.api && SH.api.enabled()) await SH.api.logout();
+      try {
+        localStorage.removeItem('studenthub:adminToken');
+        localStorage.removeItem('studenthub:adminId');
+      } catch (e) {}
+      if (SH.views && SH.views.org && SH.views.org.resetState) SH.views.org.resetState();
       state.session.userId = null;
       emit('auth');
     },
@@ -14341,9 +14346,10 @@ html[data-theme='dark'] .audit-row__icon--danger {
 
   const actions = {
     async backToAdmin() {
+      if (SH.views.org && SH.views.org.resetState) SH.views.org.resetState();
       const res = await store.backToAdmin();
       if (!res.ok) { ui.toast(res.error || 'Не удалось вернуться'); return; }
-      ui.toast('Снова в админке');
+      ui.toast('Снова в админ-панели');
       SH.app.go('#/admin');
     },
 
@@ -15148,6 +15154,9 @@ html[data-theme='dark'] .audit-row__icon--danger {
             'onclick="SH.views.admin.go(\'' + id + '\')">' + icon(ico) + e(label) + '</button>'
         ).join('') +
         '<div style="flex:1;min-height:12px"></div>' +
+        (store.hasAdminBackup()
+          ? '<button class="admin__nav" style="font-weight:700" onclick="SH.views.profile.backToAdmin()">' + icon('shield') + '← Вернуться в root</button>'
+          : '') +
         '<button class="admin__nav" onclick="SH.app.go(\'#/explore\')">' + icon('arrowLeft') + 'В приложение</button>' +
         '<button class="admin__nav" onclick="SH.views.profile.logout()">' + icon('logout') + 'Выйти</button>' +
       '</aside>'
@@ -16345,16 +16354,25 @@ html[data-theme='dark'] .audit-row__icon--danger {
         });
     },
 
-    /* вход в аккаунт ученика */
+    /* вход в аккаунт пользователя */
     impersonate(id) {
       const u = cache.users.find((x) => x.id === id) || {};
       ui.confirmSheet('Войти в аккаунт ' + (u.name || 'пользователя') + '?',
-        'Вы выйдете из своей сессии, но сможете вернуться: в профиле появится кнопка «Вернуться в админку».',
+        'Ваша сессия сохранится — в меню аккаунта появится кнопка «← Вернуться в root».',
         'Войти', async () => {
+          if (SH.views.org && SH.views.org.resetState) SH.views.org.resetState();
           const res = await store.impersonate(id);
           if (!res.ok) { ui.toast(res.error || 'Не удалось войти'); return; }
-          ui.toast('Вы в аккаунте ученика');
-          SH.app.go('#/profile');
+          const usr = res.user || {};
+          ui.toast('Вы вошли в аккаунт: ' + (usr.name || 'пользователь'));
+          if (usr.role === 'org' || usr.orgRole === 'mentor') {
+            SH.app.go('#/org');
+          } else if (usr.role === 'admin' || usr.role === 'root') {
+            cache.loaded = {};
+            SH.app.go('#/admin');
+          } else {
+            SH.app.go('#/profile');
+          }
         });
     },
 
@@ -17365,9 +17383,13 @@ html[data-theme='dark'] .audit-row__icon--danger {
         '</nav>' +
 
         '<div class="kk-side__foot">' +
-          (isStaff
-            ? '<button class="btn btn--soft btn--block btn--sm" style="margin-bottom:10px" onclick="SH.app.go(\'#/admin\')">← В админ-панель</button>'
-            : '') +
+          (store.hasAdminBackup()
+            ? '<button class="btn btn--brand btn--block btn--sm" style="margin-bottom:10px" onclick="SH.views.profile.backToAdmin()">' +
+                icon('shield', 15) + '← Вернуться в root' +
+              '</button>'
+            : (isStaff
+                ? '<button class="btn btn--soft btn--block btn--sm" style="margin-bottom:10px" onclick="SH.app.go(\'#/admin\')">← В админ-панель</button>'
+                : '')) +
           '<div class="kk-me">' +
             av(me, 36) +
             '<div class="kk-me__info">' +
@@ -18363,6 +18385,14 @@ html[data-theme='dark'] .audit-row__icon--danger {
   /* ─────────────────────────── действия ─────────────────────────── */
 
   function reload() { load(true); }
+  function resetState() {
+    data = null;
+    loadedFor = '';
+    card = null;
+    alerts = null;
+    balance = null;
+    error = '';
+  }
 
   const actions = {
     setFilter(key, value) {
@@ -18989,7 +19019,8 @@ html[data-theme='dark'] .audit-row__icon--danger {
       }).catch((err) => ui.toast('Не получилось: ' + err.message));
     },
 
-    reload
+    reload,
+    resetState
   };
 
   function mount() {
