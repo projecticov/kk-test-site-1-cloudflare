@@ -1,6 +1,6 @@
 /* ============================================================
    Student Hub — единый файл бэкенда для Cloudflare Workers
-   Сборка: 2026-11-23 17:07 · 5e3dbfe3
+   Сборка: 2026-11-24 17:29 · 5999b887
    Вставлять целиком в Dashboard → Edit code → Deploy.
    Переменные: DB (биндинг D1), GEMINI_KEYS (secret), ALLOW_ORIGIN
    ============================================================ */
@@ -286,7 +286,7 @@
 
 /* ───────────────────────── базовое ───────────────────────── */
 
-const BUILD = '2026-11-23 17:07 · 5e3dbfe3';
+const BUILD = '2026-11-24 17:29 · 5999b887';
 
 const CORS = (o) => ({
   'access-control-allow-origin': o,
@@ -440,6 +440,10 @@ const TABLES = [
   `create table if not exists org_reports (
     id text primary key, user_id text, period text, comment text, payload text,
     created_by text, created_at text)`,
+  `create table if not exists org_call_slots (
+    id text primary key, org_id text, mentor_id text, slot_date text, slot_time text,
+    duration integer default 60, link text, student_id text, topic text,
+    importance text default 'middle', org_slot_id text, created_at text, booked_at text)`,
   `create table if not exists meta (key text primary key, value text)`
 ];
 
@@ -458,6 +462,11 @@ const COLUMNS = [
   ['org_students', 'template_id', 'text'],
   ['org_slots', 'importance', "text default 'middle'"],
   ['org_slots', 'notify', 'integer default 0'],
+  ['org_slots', 'end_date', 'text'],
+  ['org_slots', 'project', 'text'],
+  ['org_slots', 'color', 'text'],
+  ['org_slots', 'slot_time', 'text'],
+  ['org_slots', 'link', 'text'],
   ['org_portfolio', 'file_name', 'text'],
   ['org_portfolio', 'file_size', 'integer default 0'],
   ['org_portfolio', 'file_data', 'text'],
@@ -648,12 +657,20 @@ async function ensureReady(env) {
 
   await env.DB.batch(TABLES.map((q) => env.DB.prepare(q)));
 
+  const uniqTables = Array.from(new Set(COLUMNS.map(([t]) => t)));
+  const infos = await env.DB.batch(uniqTables.map((t) => env.DB.prepare(`pragma table_info(${t})`)));
+  const tableCols = {};
+  uniqTables.forEach((t, idx) => {
+    tableCols[t] = new Set(((infos[idx] && infos[idx].results) || []).map((c) => c.name));
+  });
+  const alters = [];
   for (const [table, column, type] of COLUMNS) {
-    const info = await env.DB.prepare(`pragma table_info(${table})`).all();
-    if (!(info.results || []).some((c) => c.name === column)) {
-      await env.DB.prepare(`alter table ${table} add column ${column} ${type}`).run();
+    if (!tableCols[table] || !tableCols[table].has(column)) {
+      alters.push(env.DB.prepare(`alter table ${table} add column ${column} ${type}`));
+      if (tableCols[table]) tableCols[table].add(column);
     }
   }
+  if (alters.length) await env.DB.batch(alters);
 
   await ensureRoot(env);
   await seedPrompts(env);
@@ -1121,6 +1138,30 @@ const toPlan = (r) => ({
   checklist: P(r.checklist, []), color: r.color || 'sky'
 });
 
+const orgSlotToPlan = (s) => {
+  const startDay = String(s.date || '').slice(0, 10);
+  const endDay = String(s.end_date || '').slice(0, 10);
+  const isSpan = !!(endDay && endDay > startDay);
+  const isHigh = s.importance === 'high' || s.kind === 'milestone' || s.kind === 'external';
+  const colorMap = { '#FF9F43': 'sun', '#8B8DF0': 'lavender', '#3CC9B5': 'mint', '#FF7AA8': 'blush' };
+  const color = colorMap[s.color] || (isHigh ? 'blush' : (isSpan ? 'lavender' : (s.importance === 'low' ? 'sky' : 'sun')));
+  return {
+    id: 'orgslot_' + s.id,
+    userId: s.student_id,
+    chatId: '',
+    kind: isSpan ? 'track' : (isHigh ? 'milestone' : 'task'),
+    title: s.title + (s.slot_time ? ' · ' + s.slot_time : ''),
+    note: [s.project ? 'Проект: ' + s.project : '', s.note || '', s.link ? 'Ссылка: ' + s.link : '', 'Сопровождение ментора'].filter(Boolean).join(' · '),
+    startAt: startDay + (s.slot_time ? 'T' + s.slot_time + ':00' : ''),
+    endAt: isSpan ? endDay : '',
+    done: !!s.done,
+    eventId: '',
+    checklist: [],
+    color,
+    fromOrg: true
+  };
+};
+
 const stripPortfolioBlobs = (pf) => {
   if (!pf || typeof pf !== 'object') return null;
   const certs = Array.isArray(pf.certificates)
@@ -1325,6 +1366,10 @@ async function bootstrap(env, origin, me) {
       ).bind(me.id, me.id).all()
     : { results: [] };
 
+  const myOrgSlotRows = (me && me.role === 'student')
+    ? await db.prepare('select * from org_slots where student_id=? order by date limit 300').bind(me.id).all()
+    : { results: [] };
+
   const [users, events, posts, goals, tasks, teams, members, chats, chatMembers, messages, comments, likes] =
     await Promise.all([
       q('select * from users order by created_at limit 500'),
@@ -1391,7 +1436,7 @@ async function bootstrap(env, origin, me) {
       memberIds: memByChat[c.id] || [], messages: byChat[c.id] || []
     })),
     saved: (saved.results || []).map((r) => r.event_id),
-    plan: (planRows.results || []).map(toPlan),
+    plan: (planRows.results || []).map(toPlan).concat((myOrgSlotRows.results || []).map(orgSlotToPlan)),
     goals: goals.results.map((g) => ({ id: g.id, userId: g.user_id, title: g.title, createdAt: g.created_at })),
     tasks: tasks.results.map((t) => ({
       id: t.id, goalId: t.goal_id, userId: t.user_id, title: t.title,
@@ -2171,13 +2216,18 @@ async function api(request, env, url, origin) {
       const rows = await db.prepare('select * from plan_items where chat_id=? order by start_at limit 400').bind(chatId).all();
       return json({ ok: true, items: (rows.results || []).map(toPlan) }, 200, origin);
     }
-    const rows = await db.prepare(
-      `select * from plan_items
-        where (user_id=? and (chat_id is null or chat_id=''))
-           or (chat_id is not null and chat_id != '' and chat_id in (select chat_id from chat_members where user_id=?))
-        order by start_at limit 600`
-    ).bind(me.id, me.id).all();
-    return json({ ok: true, items: (rows.results || []).map(toPlan) }, 200, origin);
+    const [rows, orgRows2] = await Promise.all([
+      db.prepare(
+        `select * from plan_items
+          where (user_id=? and (chat_id is null or chat_id=''))
+             or (chat_id is not null and chat_id != '' and chat_id in (select chat_id from chat_members where user_id=?))
+          order by start_at limit 600`
+      ).bind(me.id, me.id).all(),
+      me.role === 'student'
+        ? db.prepare('select * from org_slots where student_id=? order by date limit 300').bind(me.id).all()
+        : Promise.resolve({ results: [] })
+    ]);
+    return json({ ok: true, items: (rows.results || []).map(toPlan).concat((orgRows2.results || []).map(orgSlotToPlan)) }, 200, origin);
   }
 
   if (path === '/plan/items' && method === 'POST') {
@@ -2205,6 +2255,14 @@ async function api(request, env, url, origin) {
   m = path.match(/^\/plan\/items\/([^/]+)$/);
   if (m && method === 'PATCH') {
     if (!me) return notAuth();
+    if (m[1].startsWith('orgslot_')) {
+      const rawSlotId = m[1].slice(8);
+      const osRow = await db.prepare('select * from org_slots where id=? and student_id=?').bind(rawSlotId, me.id).first();
+      if (!osRow) return json({ ok: false, error: 'Пункт не найден' }, 404, origin);
+      const nextDone = body.done === undefined ? osRow.done : (body.done ? 1 : 0);
+      await db.prepare('update org_slots set done=? where id=?').bind(nextDone, rawSlotId).run();
+      return json({ ok: true }, 200, origin);
+    }
     const row = await db.prepare('select * from plan_items where id=?').bind(m[1]).first();
     if (!row) return json({ ok: false, error: 'Пункт не найден' }, 404, origin);
     if (row.chat_id) {
@@ -2237,6 +2295,9 @@ async function api(request, env, url, origin) {
 
   if (m && method === 'DELETE') {
     if (!me) return notAuth();
+    if (m[1].startsWith('orgslot_')) {
+      return json({ ok: false, error: 'Событие назначено ментором — его можно отметить выполненным' }, 403, origin);
+    }
     const row = await db.prepare('select * from plan_items where id=?').bind(m[1]).first();
     if (!row) return json({ ok: true }, 200, origin);
     if (row.chat_id) {
@@ -2317,21 +2378,37 @@ async function api(request, env, url, origin) {
       if (!me.orgId) return null;
       return await db.prepare('select * from organizations where id=?').bind(me.orgId).first();
     }
-    const wanted = url.searchParams.get('org');
+    const wanted = url.searchParams.get('org') || (body && body.orgId ? String(body.orgId) : '');
     if (wanted) return await db.prepare('select * from organizations where id=?').bind(wanted).first();
     return await db.prepare('select * from organizations order by created_at limit 1').first();
   }
 
   if (path === '/admin/orgs' && method === 'GET') {
     const g = notAdmin(); if (g) return g;
-    const list = await db.prepare(
-      `select o.*, u.name as manager_name,
-         (select count(*) from users x where x.org_id=o.id and x.role='student') as students,
-         (select count(*) from org_slots s where s.org_id=o.id and s.done=0) as open_tasks
-       from organizations o left join users u on u.id=o.manager_id
-       order by o.created_at desc`
-    ).all();
-    return json({ ok: true, orgs: list.results.map(toOrg) }, 200, origin);
+    const [list, staffRows] = await Promise.all([
+      db.prepare(
+        `select o.*, u.name as manager_name,
+           (select count(*) from users x where x.org_id=o.id and x.role='student' and coalesce(x.org_role,'')!='mentor') as students,
+           (select count(*) from org_slots s where s.org_id=o.id and s.done=0) as open_tasks
+         from organizations o left join users u on u.id=o.manager_id
+         order by o.created_at desc`
+      ).all(),
+      db.prepare("select id, name, org_id, role, org_role from users where org_id is not null and (role='org' or org_role='mentor') order by name").all()
+    ]);
+    const mentorsByOrg = {};
+    for (const s of (staffRows.results || [])) {
+      (mentorsByOrg[s.org_id] = mentorsByOrg[s.org_id] || []).push({ id: s.id, name: s.name });
+    }
+    return json({
+      ok: true,
+      orgs: list.results.map((r) => Object.assign(toOrg(r), {
+        mentors: (mentorsByOrg[r.id] || []).map((m) => ({
+          id: m.id,
+          name: m.name,
+          isManager: m.id === r.manager_id
+        }))
+      }))
+    }, 200, origin);
   }
 
   if (path === '/admin/orgs' && method === 'POST') {
@@ -2398,11 +2475,59 @@ async function api(request, env, url, origin) {
     if (method === 'DELETE') {
       const gr = notRoot(); if (gr) return gr;
       await db.prepare('update users set org_id=null where org_id=?').bind(org.id).run();
+      await db.prepare('delete from org_call_slots where org_id=?').bind(org.id).run();
       await db.prepare('delete from org_slots where org_id=?').bind(org.id).run();
       await db.prepare('delete from organizations where id=?').bind(org.id).run();
       await audit(env, me.id, 'org.delete', org.id, org.name);
       return json({ ok: true }, 200, origin);
     }
+  }
+
+  /* прикрепление существующих сторонних учеников к организации (для админа и владельца) */
+  m = path.match(/^\/admin\/orgs\/([^/]+)\/attach-students$/);
+  if (m && method === 'POST') {
+    const g = notAdmin(); if (g) return g;
+    const org = await db.prepare('select * from organizations where id=?').bind(m[1]).first();
+    if (!org) return json({ ok: false, error: 'Организация не найдена' }, 404, origin);
+
+    const rawIds = Array.isArray(body.userIds)
+      ? body.userIds
+      : (body.userId ? [body.userId] : []);
+    const ids = Array.from(new Set(rawIds.map((x) => String(x || '').trim()).filter(Boolean))).slice(0, 200);
+    if (!ids.length) return json({ ok: false, error: 'Выберите хотя бы одного ученика' }, 400, origin);
+
+    let mentor = null;
+    if (body.mentorId) {
+      mentor = await db.prepare("select id, name from users where id=? and org_id=? and (role='org' or org_role='mentor')")
+        .bind(String(body.mentorId), org.id).first();
+      if (!mentor) return json({ ok: false, error: 'Выбранный ментор не найден в этой организации' }, 400, origin);
+    }
+    const chosenMentorId = body.mentorId !== undefined
+      ? (mentor ? mentor.id : null)
+      : (org.manager_id || null);
+
+    const cleanTags = (Array.isArray(body.tags) ? body.tags : String(body.tags || '').split(','))
+      .map((t) => str(t, 40).trim().replace(/^#/, '')).filter(Boolean).slice(0, 20);
+
+    let attached = 0;
+    for (const uidItem of ids) {
+      const target = await db.prepare("select * from users where id=? and role='student' and coalesce(org_role,'')!='mentor'").bind(uidItem).first();
+      if (!target) continue;
+      await db.prepare('update users set org_id=?, org_role=null where id=?').bind(org.id, target.id).run();
+      await db.prepare(
+        `insert into org_students (user_id,mentor_id,tags,grade,gpa,gpa_note,sat,sat_note,ielts,ielts_note,goal,goal_note,status,updated_at)
+         values (?,?,?,?,'','','','','','','','','plan',?)
+         on conflict(user_id) do update set
+           mentor_id=excluded.mentor_id,
+           tags=case when excluded.tags != '[]' then excluded.tags else org_students.tags end,
+           grade=case when org_students.grade != '' then org_students.grade else excluded.grade end,
+           updated_at=excluded.updated_at`
+      ).bind(target.id, chosenMentorId, JSON.stringify(cleanTags), str(target.grade, 40), nowISO()).run();
+      await audit(env, me.id, 'org.student.attach', target.id, org.name + (mentor ? ' · ментор: ' + mentor.name : ''));
+      attached++;
+    }
+    if (!attached) return json({ ok: false, error: 'Не найдено подходящих аккаунтов учеников' }, 400, origin);
+    return json({ ok: true, attached }, 200, origin);
   }
 
   /* кабинет управляющего организацией (только админ организации) */
@@ -2484,9 +2609,23 @@ async function api(request, env, url, origin) {
     const cleanTags = Array.isArray(body.tags)
       ? body.tags.slice(0, 20).map((t) => str(t, 40).replace(/^#/, '')).filter(Boolean)
       : [];
-    const chosenMentor = !mentor
-      ? (body.mentorId ? String(body.mentorId) : (me.role === 'org' ? me.id : org.manager_id || null))
-      : null;
+    let chosenMentor = null;
+    let chosenMentorName = '';
+    if (!mentor) {
+      if (body.mentorId !== undefined) {
+        if (body.mentorId) {
+          const mRow = await db.prepare("select id, name from users where id=? and org_id=? and (role='org' or org_role='mentor')")
+            .bind(String(body.mentorId), org.id).first();
+          if (!mRow) return json({ ok: false, error: 'Выбранный ментор не найден в организации' }, 400, origin);
+          chosenMentor = mRow.id;
+          chosenMentorName = mRow.name;
+        } else {
+          chosenMentor = null;
+        }
+      } else {
+        chosenMentor = me.role === 'org' ? me.id : (org.manager_id || null);
+      }
+    }
     await db.prepare(
       `insert into org_students (user_id,mentor_id,tags,grade,gpa,gpa_note,sat,sat_note,ielts,ielts_note,goal,goal_note,status,template_id,updated_at)
        values (?,?,?,?,'','','','','','','','','plan',?,?)
@@ -2512,7 +2651,51 @@ async function api(request, env, url, origin) {
     }
 
     await audit(env, me.id, 'org.user.create', id, login + ' / ' + org.name);
-    return json({ ok: true, id, login, password }, 201, origin);
+    if (!mentor && chosenMentor && chosenMentorName) {
+      await audit(env, me.id, 'org.student.mentor', id, chosenMentorName);
+    }
+    return json({ ok: true, id, login, password, mentorId: chosenMentor, mentorName: chosenMentorName }, 201, origin);
+  }
+
+  /* управление доступом (просмотр логина, сброс пароля, одноразовый код) внутри организации — строго для админа организации */
+  m = path.match(/^\/org\/users\/([^/]+)\/(password|otp)$/);
+  if (m && method === 'POST') {
+    if (!isOrgAdmin()) {
+      return json({ ok: false, error: 'Сбрасывать пароли может только администратор организации' }, 403, origin);
+    }
+    const org = await myOrgRow();
+    if (!org) return json({ ok: false, error: 'Организация не найдена' }, 400, origin);
+    const target = await db.prepare('select * from users where id=? and org_id=?').bind(m[1], org.id).first();
+    if (!target) return json({ ok: false, error: 'Участник не найден в вашей организации' }, 404, origin);
+    if (target.role === 'root' || target.role === 'admin') {
+      return json({ ok: false, error: 'Недостаточно прав для смены пароля администратора платформы' }, 403, origin);
+    }
+    const loginRow = await db.prepare('select login from user_logins where user_id=? order by created_at limit 1').bind(target.id).first();
+    const resolvedLogin = (loginRow && loginRow.login) || target.email || target.id;
+
+    if (m[2] === 'password') {
+      const password = String(body.password || '').trim() || makeOtp();
+      if (password.length < 4) return json({ ok: false, error: 'Пароль минимум 4 символа' }, 400, origin);
+      const salt = newSalt();
+      await db.prepare('update users set pass_hash=?, salt=?, pass=null where id=?')
+        .bind(await hashPassword(password, salt), salt, target.id).run();
+      if (target.id !== me.id) {
+        await db.prepare('delete from sessions where user_id=?').bind(target.id).run();
+      }
+      await audit(env, me.id, 'user.password', target.id, target.name);
+      return json({ ok: true, login: resolvedLogin, password }, 200, origin);
+    }
+
+    if (m[2] === 'otp') {
+      const code = makeOtp();
+      const salt = newSalt();
+      const expires = new Date(Date.now() + 24 * 3600e3).toISOString();
+      await db.prepare(
+        'insert into otp_codes (id,user_id,code_hash,salt,expires_at,used,created_by,created_at) values (?,?,?,?,?,0,?,?)'
+      ).bind(uid('otp'), target.id, await hashPassword(code, salt), salt, expires, me.id, nowISO()).run();
+      await audit(env, me.id, 'user.otp', target.id, target.name);
+      return json({ ok: true, login: resolvedLogin, code, expires }, 200, origin);
+    }
   }
 
   /* управление карточкой ментора — строго только для главного админа организации */
@@ -2539,6 +2722,20 @@ async function api(request, env, url, origin) {
       const nextMentorName = (body.name != null && String(body.name).trim().length >= 2)
         ? str(body.name, 120).trim()
         : target.name;
+      if (body.password != null && String(body.password).trim().length > 0) {
+        const pw = String(body.password).trim();
+        if (pw.length < 4) return json({ ok: false, error: 'Пароль минимум 4 символа' }, 400, origin);
+        if (target.role === 'root' || target.role === 'admin') {
+          return json({ ok: false, error: 'Недостаточно прав для смены пароля администратора' }, 403, origin);
+        }
+        const salt = newSalt();
+        await db.prepare('update users set pass_hash=?, salt=?, pass=null where id=?')
+          .bind(await hashPassword(pw, salt), salt, target.id).run();
+        if (target.id !== me.id) {
+          await db.prepare('delete from sessions where user_id=?').bind(target.id).run();
+        }
+        await audit(env, me.id, 'user.password', target.id, nextMentorName);
+      }
       await audit(env, me.id, 'org.mentor.update', target.id, nextMentorName);
       return json({ ok: true }, 200, origin);
     }
@@ -2594,17 +2791,35 @@ async function api(request, env, url, origin) {
       return json({ ok: false, error: 'Ментор может добавлять события только своим ученикам' }, 403, origin);
     }
     const title = str(body.title, 160);
-    if (!title.trim()) return json({ ok: false, error: 'Название задачи обязательно' }, 400, origin);
+    if (!title.trim()) return json({ ok: false, error: 'Название события обязательно' }, 400, origin);
     const date = String(body.date || '').slice(0, 24);
     if (!/^\d{4}-\d{2}-\d{2}/.test(date)) return json({ ok: false, error: 'Нужна дата' }, 400, origin);
-    const kind = ['internal', 'milestone', 'external'].includes(body.kind) ? body.kind : 'internal';
+    const kind = ['internal', 'milestone', 'external', 'course', 'call'].includes(body.kind) ? body.kind : 'internal';
+    const endDateRaw = String(body.endDate || '').slice(0, 10);
+    const endDate = /^\d{4}-\d{2}-\d{2}$/.test(endDateRaw) ? endDateRaw : '';
+    const project = str(body.project, 120).trim();
+    const color = str(body.color, 20).trim();
+    const slotTime = str(body.slotTime, 10).trim();
+    const link = str(body.link, 300).trim();
 
     const id = uid('slot');
     const importance = ['high', 'middle', 'low'].includes(body.importance) ? body.importance : 'middle';
     await db.prepare(
-      'insert into org_slots (id,org_id,student_id,title,note,date,kind,importance,notify,done,created_by,created_at) values (?,?,?,?,?,?,?,?,?,0,?,?)'
+      'insert into org_slots (id,org_id,student_id,title,note,date,end_date,project,color,slot_time,link,kind,importance,notify,done,created_by,created_at) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)'
     ).bind(id, org.id, sid, title.trim(),
-      str(body.note, 400), date, kind, importance, body.notify ? 1 : 0, me.id, nowISO()).run();
+      str(body.note, 400), date.slice(0, 10), endDate, project, color, slotTime, link, kind, importance, body.notify ? 1 : 0, me.id, nowISO()).run();
+
+    // Если назначен прямой созвон ученику — отражаем его и в таблице слотов/броней календаря ментора
+    if (kind === 'call' && sid) {
+      const stCard = await db.prepare('select mentor_id from org_students where user_id=?').bind(sid).first();
+      const targetMentorId = isMentor() ? me.id : ((stCard && stCard.mentor_id) || org.manager_id || me.id);
+      const csId = uid('cs');
+      await db.prepare(
+        'insert into org_call_slots (id,org_id,mentor_id,slot_date,slot_time,duration,link,student_id,topic,importance,org_slot_id,created_at,booked_at) values (?,?,?,?,?,?,?,?,?,?,?,?,?)'
+      ).bind(csId, org.id, targetMentorId, date.slice(0, 10), slotTime || '18:00', Number(body.duration) || 60,
+        link, sid, title.trim(), importance, id, nowISO(), nowISO()).run();
+    }
+
     await audit(env, me.id, 'org.slot.create', id, title.trim());
     return json({ ok: true, id }, 201, origin);
   }
@@ -2627,37 +2842,132 @@ async function api(request, env, url, origin) {
       if (body.date != null && !/^\d{4}-\d{2}-\d{2}/.test(date)) {
         return json({ ok: false, error: 'Нужна дата' }, 400, origin);
       }
-      const kind = ['internal', 'milestone', 'external'].includes(body.kind) ? body.kind : row.kind;
-      await db.prepare('update org_slots set title=?,note=?,date=?,kind=?,done=?,student_id=?,importance=?,notify=? where id=?')
+      const kind = ['internal', 'milestone', 'external', 'course', 'call'].includes(body.kind) ? body.kind : row.kind;
+      const endDate = body.endDate !== undefined
+        ? (/^\d{4}-\d{2}-\d{2}$/.test(String(body.endDate || '').slice(0, 10)) ? String(body.endDate).slice(0, 10) : '')
+        : (row.end_date || '');
+      const project = body.project !== undefined ? str(body.project, 120).trim() : (row.project || '');
+      const color = body.color !== undefined ? str(body.color, 20).trim() : (row.color || '');
+      const slotTime = body.slotTime !== undefined ? str(body.slotTime, 10).trim() : (row.slot_time || '');
+      const link = body.link !== undefined ? str(body.link, 300).trim() : (row.link || '');
+      await db.prepare('update org_slots set title=?,note=?,date=?,end_date=?,project=?,color=?,slot_time=?,link=?,kind=?,done=?,student_id=?,importance=?,notify=? where id=?')
         .bind(body.title != null ? str(body.title, 160) : row.title,
           body.note != null ? str(body.note, 400) : row.note,
-          date, kind,
+          date.slice(0, 10), endDate, project, color, slotTime, link, kind,
           body.done == null ? row.done : (body.done ? 1 : 0),
           isMentor() ? row.student_id : (body.studentId !== undefined ? (body.studentId ? String(body.studentId) : null) : row.student_id),
           ['high', 'middle', 'low'].includes(body.importance) ? body.importance : (row.importance || 'middle'),
           body.notify == null ? (row.notify || 0) : (body.notify ? 1 : 0),
           row.id).run();
-      await audit(env, me.id, 'org.slot.update', row.id, date);
+      await audit(env, me.id, 'org.slot.update', row.id, date.slice(0, 10));
       return json({ ok: true }, 200, origin);
     }
 
     if (method === 'DELETE') {
+      await db.prepare('delete from org_call_slots where org_slot_id=?').bind(row.id).run();
       await db.prepare('delete from org_slots where id=?').bind(row.id).run();
       await audit(env, me.id, 'org.slot.delete', row.id, row.title);
       return json({ ok: true }, 200, origin);
     }
   }
 
+  /* ── Календарь слотов созвона ментора и бронирования учеников ── */
+  function mapCallSlot(cs, userMap) {
+    const st = cs.student_id && userMap ? userMap[cs.student_id] : null;
+    const mn = cs.mentor_id && userMap ? userMap[cs.mentor_id] : null;
+    return {
+      id: cs.id,
+      orgId: cs.org_id,
+      mentorId: cs.mentor_id,
+      mentorName: mn ? mn.name : '',
+      date: cs.slot_date,
+      time: cs.slot_time || '17:00',
+      duration: Number(cs.duration) || 60,
+      link: cs.link || '',
+      studentId: cs.student_id || null,
+      studentName: st ? st.name : '',
+      studentGrade: st ? (st.grade || '') : '',
+      studentColor: st ? (st.color || '') : '',
+      topic: cs.topic || '',
+      importance: cs.importance || 'middle',
+      orgSlotId: cs.org_slot_id || null,
+      bookedAt: cs.booked_at || null
+    };
+  }
+
+  if (path === '/org/call-slots' && method === 'GET') {
+    const g = orgGuard(false); if (g) return g;
+    const org = await myOrgRow();
+    if (!org) return json({ ok: true, slots: [] }, 200, origin);
+    const qMentor = url.searchParams.get('mentor') || '';
+    const rows = isMentor()
+      ? await db.prepare('select * from org_call_slots where org_id=? and mentor_id=? order by slot_date, slot_time limit 500').bind(org.id, me.id).all()
+      : (qMentor
+          ? await db.prepare('select * from org_call_slots where org_id=? and mentor_id=? order by slot_date, slot_time limit 500').bind(org.id, qMentor).all()
+          : await db.prepare('select * from org_call_slots where org_id=? order by slot_date, slot_time limit 500').bind(org.id).all());
+    const uRows = await db.prepare('select id,name,grade,color from users where org_id=?').bind(org.id).all();
+    const uMap = {};
+    (uRows.results || []).forEach((u) => { uMap[u.id] = u; });
+    return json({ ok: true, slots: (rows.results || []).map((r) => mapCallSlot(r, uMap)) }, 200, origin);
+  }
+
+  if (path === '/org/call-slots' && method === 'POST') {
+    const g = orgGuard(false); if (g) return g;
+    const org = await myOrgRow();
+    if (!org) return json({ ok: false, error: 'Организация не найдена' }, 400, origin);
+    const date = String(body.date || '').slice(0, 10);
+    const time = String(body.time || '17:00').trim().slice(0, 5);
+    const duration = [30, 45, 60, 90].includes(Number(body.duration)) ? Number(body.duration) : 60;
+    const link = str(body.link, 300).trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ ok: false, error: 'Укажите дату слота' }, 400, origin);
+    if (!/^\d{2}:\d{2}$/.test(time)) return json({ ok: false, error: 'Укажите время слота (ЧЧ:ММ)' }, 400, origin);
+    const targetMentorId = isMentor() ? me.id : String(body.mentorId || org.manager_id || me.id);
+
+    const dup = await db.prepare('select id from org_call_slots where org_id=? and mentor_id=? and slot_date=? and slot_time=?')
+      .bind(org.id, targetMentorId, date, time).first();
+    if (dup) return json({ ok: false, error: 'На это время слот уже открыт' }, 409, origin);
+
+    const id = uid('cs');
+    await db.prepare(
+      'insert into org_call_slots (id,org_id,mentor_id,slot_date,slot_time,duration,link,student_id,topic,importance,org_slot_id,created_at,booked_at) values (?,?,?,?,?,?,?,null,null,\'middle\',null,?,null)'
+    ).bind(id, org.id, targetMentorId, date, time, duration, link, nowISO()).run();
+    await audit(env, me.id, 'org.callslot.open', id, date + ' ' + time + ' · ' + duration + ' мин');
+    return json({ ok: true, id }, 201, origin);
+  }
+
+  m = path.match(/^\/org\/call-slots\/([^/]+)(\/cancel)?$/);
+  if (m) {
+    const g = orgGuard(false); if (g) return g;
+    const org = await myOrgRow();
+    const row = await db.prepare('select * from org_call_slots where id=?').bind(m[1]).first();
+    if (!row || !org || row.org_id !== org.id) return json({ ok: false, error: 'Слот не найден' }, 404, origin);
+    if (isMentor() && row.mentor_id !== me.id) return json({ ok: false, error: 'Чужой слот' }, 403, origin);
+
+    if (m[2] === '/cancel' && method === 'POST') {
+      if (row.org_slot_id) await db.prepare('delete from org_slots where id=?').bind(row.org_slot_id).run();
+      await db.prepare('update org_call_slots set student_id=null, topic=null, org_slot_id=null, booked_at=null where id=?').bind(row.id).run();
+      await audit(env, me.id, 'org.callslot.cancel', row.id, row.slot_date + ' ' + row.slot_time + (row.topic ? ' · ' + row.topic : ''));
+      return json({ ok: true }, 200, origin);
+    }
+
+    if (!m[2] && method === 'DELETE') {
+      if (row.org_slot_id) await db.prepare('delete from org_slots where id=?').bind(row.org_slot_id).run();
+      await db.prepare('delete from org_call_slots where id=?').bind(row.id).run();
+      await audit(env, me.id, row.student_id ? 'org.callslot.cancel' : 'org.callslot.delete', row.id, row.slot_date + ' ' + row.slot_time);
+      return json({ ok: true }, 200, origin);
+    }
+  }
+
   /* статус ученика: по плану / отстаёт / в зоне риска */
   function studentStatus(slots) {
-    const now = nowISO();
+    const todayStr = nowISO().slice(0, 10);
     const open = slots.filter((s) => !s.done);
-    const overdue = open.filter((s) => String(s.date) < now);
+    const overdue = open.filter((s) => String(s.end_date || s.date || '').slice(0, 10) < todayStr);
     if (!overdue.length) return { status: 'plan', overdue: 0, worst: '' };
-    const worst = overdue.reduce((a, b) => (String(a.date) < String(b.date) ? a : b));
-    const days = Math.round((Date.parse(now) - Date.parse(worst.date)) / 864e5);
-    const heavy = overdue.some((s) => s.kind === 'milestone');
-    return { status: heavy && days >= 14 ? 'risk' : 'lag', overdue: overdue.length, worst: worst.title, days };
+    const worst = overdue.reduce((a, b) => (String(a.end_date || a.date) < String(b.end_date || b.date) ? a : b));
+    const days = Math.max(1, Math.round((Date.parse(todayStr + 'T00:00:00Z') - Date.parse(String(worst.end_date || worst.date).slice(0, 10) + 'T00:00:00Z')) / 864e5));
+    const heavy = overdue.some((s) => s.importance === 'high' || s.kind === 'milestone');
+    return { status: (heavy || days > 14) ? 'risk' : 'lag', overdue: overdue.length, worst: worst.title, days };
   }
 
   function cardOf(row) {
@@ -2673,7 +2983,7 @@ async function api(request, env, url, origin) {
   }
 
 
-  /* ── ученик видит, что заполнил ментор ── */
+  /* ── ученик видит, что заполнил ментор + свободные слоты созвона ── */
   /* ── push-подписки ── */
 
   if (path === '/push/subscribe' && method === 'POST') {
@@ -2714,35 +3024,115 @@ async function api(request, env, url, origin) {
 
   if (path === '/me/mentor-card' && method === 'GET') {
     const row = await db.prepare('select * from org_students where user_id=?').bind(me.id).first();
-    if (!row) return json({ ok: true, card: null }, 200, origin);
-    const mentor = row.mentor_id ? await db.prepare('select id,name from users where id=?').bind(row.mentor_id).first() : null;
-    const org = me.orgId ? await db.prepare('select id,name from organizations where id=?').bind(me.orgId).first() : null;
+    const org = me.orgId ? await db.prepare('select id,name,manager_id from organizations where id=?').bind(me.orgId).first() : null;
+    if (!row && !org) return json({ ok: true, card: null, openSlots: [], myBookings: [] }, 200, origin);
+    const mentorId = (row && row.mentor_id) || (org && org.manager_id) || null;
+    const mentor = mentorId ? await db.prepare('select id,name,color from users where id=?').bind(mentorId).first() : null;
+    const todayStr = nowISO().slice(0, 10);
+    let openSlots = [];
+    let myBookings = [];
+    if (mentorId) {
+      const csRows = await db.prepare('select * from org_call_slots where mentor_id=? and slot_date >= ? order by slot_date, slot_time limit 200')
+        .bind(mentorId, todayStr).all();
+      const allCs = csRows.results || [];
+      openSlots = allCs.filter((x) => !x.student_id).map((x) => ({
+        id: x.id, date: x.slot_date, time: x.slot_time || '17:00', duration: Number(x.duration) || 60
+      }));
+      myBookings = allCs.filter((x) => x.student_id === me.id).map((x) => ({
+        id: x.id, date: x.slot_date, time: x.slot_time || '17:00', duration: Number(x.duration) || 60,
+        topic: x.topic || 'Созвон с ментором', importance: x.importance || 'middle', link: x.link || ''
+      }));
+    }
     return json({
       ok: true,
-      card: cardOf(row),
-      mentor: mentor ? { id: mentor.id, name: mentor.name } : null,
+      card: row ? cardOf(row) : { userId: me.id, mentorId, tags: [], gpa: '', sat: '', ielts: '', goal: '', status: 'plan' },
+      mentor: mentor ? { id: mentor.id, name: mentor.name, color: mentor.color || 'mint' } : null,
       org: org ? { id: org.id, name: org.name } : null,
+      openSlots,
+      myBookings,
       updatedBy: 'ментор'
     }, 200, origin);
+  }
+
+  m = path.match(/^\/me\/call-slots\/([^/]+)\/(book|cancel)$/);
+  if (m && method === 'POST') {
+    const slotRow = await db.prepare('select * from org_call_slots where id=?').bind(m[1]).first();
+    if (!slotRow) return json({ ok: false, error: 'Слот не найден' }, 404, origin);
+
+    if (m[2] === 'cancel') {
+      if (slotRow.student_id !== me.id) return json({ ok: false, error: 'Это не ваша запись' }, 403, origin);
+      if (slotRow.org_slot_id) await db.prepare('delete from org_slots where id=?').bind(slotRow.org_slot_id).run();
+      await db.prepare('update org_call_slots set student_id=null, topic=null, org_slot_id=null, booked_at=null where id=?').bind(slotRow.id).run();
+      await audit(env, me.id, 'org.callslot.cancel', slotRow.id, slotRow.slot_date + ' ' + slotRow.slot_time);
+      return json({ ok: true }, 200, origin);
+    }
+
+    // book
+    if (!me.orgId || me.orgId !== slotRow.org_id) {
+      return json({ ok: false, error: 'Слот принадлежит другой организации' }, 403, origin);
+    }
+    const stCard = await db.prepare('select mentor_id from org_students where user_id=?').bind(me.id).first();
+    const orgRow = await db.prepare('select manager_id from organizations where id=?').bind(me.orgId).first();
+    const allowedMentor = (stCard && stCard.mentor_id) || (orgRow && orgRow.manager_id) || null;
+    if (allowedMentor && slotRow.mentor_id !== allowedMentor) {
+      return json({ ok: false, error: 'Этот слот открыт другим ментором' }, 403, origin);
+    }
+    if (slotRow.student_id) {
+      return json({ ok: false, error: 'Этот слот уже занят — выберите другое время' }, 409, origin);
+    }
+    const topic = str(body.topic, 160).trim() || 'Созвон с ментором';
+    const importance = ['high', 'middle', 'low'].includes(body.importance) ? body.importance : 'middle';
+    const orgSlotId = uid('slot');
+    const slotTitle = /^созвон/i.test(topic) ? topic : 'Созвон с ментором · ' + topic;
+
+    const upd = await db.prepare(
+      'update org_call_slots set student_id=?, topic=?, importance=?, org_slot_id=?, booked_at=? where id=? and (student_id is null or student_id=\'\')'
+    ).bind(me.id, topic, importance, orgSlotId, nowISO(), slotRow.id).run();
+    if (upd && upd.meta && upd.meta.changes === 0) {
+      return json({ ok: false, error: 'Слот только что заняли — выберите другое окно' }, 409, origin);
+    }
+
+    await db.prepare(
+      'insert into org_slots (id,org_id,student_id,title,note,date,end_date,project,color,slot_time,link,kind,importance,notify,done,created_by,created_at) values (?,?,?,?,?,?,?, ?,?,?,?,?,?,1,0,?,?)'
+    ).bind(orgSlotId, slotRow.org_id, me.id, slotTitle, 'Забронировано учеником (' + (slotRow.duration || 60) + ' мин)',
+      slotRow.slot_date, '', '', '', slotRow.slot_time || '17:00', slotRow.link || '', 'call', importance, me.id, nowISO()).run();
+
+    await audit(env, me.id, 'org.callslot.book', slotRow.id, slotRow.slot_date + ' ' + (slotRow.slot_time || '') + ' · ' + topic);
+    return json({ ok: true, id: slotRow.id, orgSlotId }, 200, origin);
   }
 
   if (path === '/org/crm' && method === 'GET') {
     const g = orgGuard(false); if (g) return g;
     const org = await myOrgRow();
-    if (!org) return json({ ok: true, org: null, mentors: [], students: [], templates: [], kpi: null }, 200, origin);
+    if (!org) return json({ ok: true, org: null, mentors: [], students: [], templates: [], callSlots: [], kpi: null }, 200, origin);
 
-    const [members, cards, slots, templates, tagGroups] = await Promise.all([
+    const [members, cards, slots, templates, tagGroups, orgLogins, callSlotRows] = await Promise.all([
       db.prepare('select * from users where org_id=? order by name limit 500').bind(org.id).all(),
       db.prepare('select * from org_students').all(),
       db.prepare('select * from org_slots where org_id=? order by date limit 1000').bind(org.id).all(),
       db.prepare('select * from roadmap_templates where org_id=? order by created_at desc limit 100').bind(org.id).all(),
-      db.prepare('select * from org_tag_groups where org_id=? order by created_at asc').bind(org.id).all()
+      db.prepare('select * from org_tag_groups where org_id=? order by created_at asc').bind(org.id).all(),
+      isOrgAdmin()
+        ? db.prepare('select ul.user_id, ul.login from user_logins ul join users u on u.id=ul.user_id where u.org_id=?').bind(org.id).all()
+        : Promise.resolve({ results: [] }),
+      isMentor()
+        ? db.prepare('select * from org_call_slots where org_id=? and mentor_id=? order by slot_date, slot_time limit 500').bind(org.id, me.id).all()
+        : db.prepare('select * from org_call_slots where org_id=? order by slot_date, slot_time limit 500').bind(org.id).all()
     ]);
+
+    const loginMap = {};
+    (orgLogins.results || []).forEach((l) => { if (!loginMap[l.user_id]) loginMap[l.user_id] = l.login; });
+    const withOrgLogin = (obj) => isOrgAdmin()
+      ? Object.assign(obj, { login: loginMap[obj.id] || obj.email || '' })
+      : obj;
 
     const cardMap = {};
     (cards.results || []).forEach((c) => { cardMap[c.user_id] = c; });
     const rows = members.results || [];
-    const mentors = rows.filter((u) => u.role === 'org' || u.org_role === 'mentor').map((u) => adminUser(toUser(u)));
+    const uMap = {};
+    rows.forEach((u) => { uMap[u.id] = u; });
+    const mappedCallSlots = (callSlotRows.results || []).map((cs) => mapCallSlot(cs, uMap));
+    const mentors = rows.filter((u) => u.role === 'org' || u.org_role === 'mentor').map((u) => withOrgLogin(adminUser(toUser(u))));
     const students = rows.filter((u) => u.role === 'student' && u.org_role !== 'mentor');
 
     const slotsBy = {};
@@ -2751,41 +3141,58 @@ async function api(request, env, url, origin) {
     (cards.results || []).forEach((c) => {
       if (!c.mentor_id || mentors.some((m) => m.id === c.mentor_id)) return;
       const u = rows.find((x) => x.id === c.mentor_id);
-      if (u) mentors.push(adminUser(toUser(u)));
+      if (u) mentors.push(withOrgLogin(adminUser(toUser(u))));
     });
 
     const fullList = students.map((u) => {
       const mine = slotsBy[u.id] || [];
       const st = studentStatus(mine);
       const card = cardMap[u.id] ? cardOf(cardMap[u.id]) : { userId: u.id, tags: [], status: st.status };
-      const next = mine.filter((s) => !s.done && String(s.date) >= nowISO())
+      const todayIso = nowISO().slice(0, 10);
+      const upcomingPoint = mine.filter((s) => !s.done && String(s.date || '').slice(0, 10) >= todayIso)
         .sort((a, b) => String(a.date).localeCompare(String(b.date)))[0];
+      const ongoingCourse = mine.filter((s) => !s.done && s.end_date && String(s.end_date).slice(0, 10) >= todayIso)
+        .sort((a, b) => String(a.end_date).localeCompare(String(b.end_date)))[0];
+      const next = upcomingPoint || ongoingCourse || null;
       const mentor = mentors.find((m) => m.id === (card.mentorId || org.manager_id));
-      return Object.assign({}, adminUser(toUser(u)), {
+      return withOrgLogin(Object.assign({}, adminUser(toUser(u)), {
         tags: card.tags && card.tags.length ? card.tags : [],
         mentorId: card.mentorId || org.manager_id || null,
-        mentorName: mentor ? mentor.name.split(' ')[0] + ' ' + (mentor.name.split(' ')[1] || '').charAt(0) + '.' : '',
+        mentorName: mentor ? mentor.name.split(' ')[0] + (mentor.name.split(' ')[1] ? ' ' + mentor.name.split(' ')[1].charAt(0) + '.' : '') : '',
+        mentorFullName: mentor ? mentor.name : '',
         status: st.status, overdue: st.overdue, worst: st.worst, days: st.days || 0,
         nextTitle: next ? next.title : (st.overdue ? st.worst : ''),
         nextDate: next ? next.date : '',
+        nextEndDate: next ? (next.end_date || '') : '',
         overdueTitle: st.overdue ? st.worst : '',
         goal: card.goal || '', grade: card.grade || u.grade || ''
-      });
+      }));
     });
 
     /* МЕНТОР: видит строго ТОЛЬКО свою группу учеников и ближайшие созвоны — никаких чужих менторов, шаблонов и статистики! */
     if (isMentor()) {
       const myList = fullList.filter((s) => s.mentorId === me.id);
       const myStudentIds = new Set(myList.map((s) => s.id));
-      const myCalls = (slots.results || [])
-        .filter((s) => !s.done && myStudentIds.has(s.student_id) && String(s.date) >= nowISO().slice(0, 10))
-        .sort((a, b) => String(a.date).localeCompare(String(b.date)))
-        .slice(0, 12)
+      const bookedAsCalls = mappedCallSlots
+        .filter((cs) => cs.studentId && String(cs.date) >= nowISO().slice(0, 10))
+        .map((cs) => ({
+          id: cs.orgSlotId || cs.id, callSlotId: cs.id, title: cs.topic || 'Созвон с ментором',
+          date: cs.date, time: cs.time || '', duration: cs.duration || 60, link: cs.link || '',
+          importance: cs.importance || 'middle',
+          studentId: cs.studentId, studentName: cs.studentName || ''
+        }));
+      const slotCalls = (slots.results || [])
+        .filter((s) => !s.done && myStudentIds.has(s.student_id) && (s.kind === 'call' || /созвон/i.test(s.title || '')) && String(s.date) >= nowISO().slice(0, 10))
+        .filter((s) => !bookedAsCalls.some((b) => b.id === s.id))
         .map((s) => ({
-          id: s.id, title: s.title, date: s.date, note: s.note || '',
+          id: s.id, title: s.title, date: s.date, time: s.slot_time || '', link: s.link || '', note: s.note || '',
+          importance: s.importance || 'middle',
           studentId: s.student_id,
           studentName: (myList.find((u) => u.id === s.student_id) || {}).name || ''
         }));
+      const myCalls = bookedAsCalls.concat(slotCalls)
+        .sort((a, b) => String(a.date + ' ' + (a.time || '')).localeCompare(String(b.date + ' ' + (b.time || ''))))
+        .slice(0, 20);
       const myTags = cardMap[me.id] ? cardOf(cardMap[me.id]).tags : [];
       return json({
         ok: true,
@@ -2796,6 +3203,7 @@ async function api(request, env, url, origin) {
         mentorStats: [],
         students: myList,
         myCalls,
+        callSlots: mappedCallSlots,
         templates: [],
         tagGroups: [],
         kpi: null
@@ -2812,7 +3220,10 @@ async function api(request, env, url, origin) {
       const ok = mine.filter((s) => s.status === 'plan').length;
       return {
         id: m.id, name: m.name, color: m.color || 'lavender',
+        login: m.login || m.email || '',
+        email: m.email || '',
         isManager: m.id === org.manager_id,
+        createdAt: m.createdAt || '',
         tags: (cardMap[m.id] ? cardOf(cardMap[m.id]).tags : (m.tags || [])),
         students: mine.length, onPlan: mine.length ? Math.round((ok / mine.length) * 100) : 0,
         risk: mine.filter((s) => s.status !== 'plan').length, updated: 'сегодня'
@@ -2824,6 +3235,7 @@ async function api(request, env, url, origin) {
       myRole: 'admin',
       org: toOrg(Object.assign({}, org, { manager_name: (mentors.find((m) => m.id === org.manager_id) || {}).name || '' })),
       mentors, mentorStats, students: fullList,
+      callSlots: mappedCallSlots,
       templates: (templates.results || []).map((t) => ({
         id: t.id, title: t.title, tags: P2(t.tags, []), grade: t.grade || '', items: P2(t.items, []),
         assigned: fullList.filter((s) => (cardMap[s.id] || {}).template_id === t.id).length, createdAt: t.created_at
@@ -2840,7 +3252,7 @@ async function api(request, env, url, origin) {
     const id = url.searchParams.get('id') || '';
     if (!(await canSeeStudent(org, id))) return json({ ok: false, error: 'Нет доступа к карточке ученика' }, 403, origin);
 
-    const [row, cardRow, portfolio, slots, events, plans, reports, sprints] = await Promise.all([
+    const [row, cardRow, portfolio, slots, events, plans, reports, sprints, stLoginRow] = await Promise.all([
       db.prepare('select * from users where id=?').bind(id).first(),
       db.prepare('select * from org_students where user_id=?').bind(id).first(),
       db.prepare('select * from org_portfolio where user_id=? order by created_at desc limit 200').bind(id).all(),
@@ -2848,7 +3260,10 @@ async function api(request, env, url, origin) {
       db.prepare('select * from events where id in (select event_id from saved_events where user_id=?) limit 100').bind(id).all(),
       db.prepare("select * from plan_items where user_id=? and (chat_id is null or chat_id='') order by start_at limit 300").bind(id).all(),
       db.prepare('select * from org_reports where user_id=? order by created_at desc limit 30').bind(id).all(),
-      db.prepare('select * from org_sprints where org_id=? and user_id=? order by start_date limit 60').bind(org.id, id).all()
+      db.prepare('select * from org_sprints where org_id=? and user_id=? order by start_date limit 60').bind(org.id, id).all(),
+      isOrgAdmin()
+        ? db.prepare('select login from user_logins where user_id=? order by created_at limit 1').bind(id).first()
+        : Promise.resolve(null)
     ]);
 
     const st = studentStatus(slots.results || []);
@@ -2857,9 +3272,13 @@ async function api(request, env, url, origin) {
     const mentorRow = (cardRow && cardRow.mentor_id)
       ? await db.prepare('select id,name from users where id=?').bind(cardRow.mentor_id).first()
       : (org.manager_id ? await db.prepare('select id,name from users where id=?').bind(org.manager_id).first() : null);
+    const userPayload = Object.assign(adminUser(tu), { portfolio: tu.portfolio || null });
+    if (isOrgAdmin()) {
+      userPayload.login = (stLoginRow && stLoginRow.login) || tu.email || '';
+    }
     return json({
       ok: true,
-      user: Object.assign(adminUser(tu), { portfolio: tu.portfolio || null }),
+      user: userPayload,
       mentorName: mentorRow ? mentorRow.name : '',
       card: cardRow ? cardOf(cardRow) : { userId: id, tags: [], status: st.status },
       status: st.status, overdue: st.overdue, days: st.days || 0,
@@ -2867,7 +3286,10 @@ async function api(request, env, url, origin) {
       projects: pf.filter((x) => x.kind === 'project').map((x) => ({ id: x.id, title: x.title, note: x.note || '', year: x.year || '', file: x.file_name || '', size: x.file_size || 0, fileData: x.file_data || '' })),
       certificates: pf.filter((x) => x.kind === 'certificate').map((x) => ({ id: x.id, title: x.title, note: x.note || '', year: x.year || '', file: x.file_name || '', size: x.file_size || 0, fileData: x.file_data || '' })),
       slots: (slots.results || []).map((s) => ({
-        id: s.id, title: s.title, note: s.note || '', date: s.date, kind: s.kind, done: !!s.done,
+        id: s.id, title: s.title, note: s.note || '', date: s.date,
+        endDate: s.end_date || '', project: s.project || '', color: s.color || '',
+        slotTime: s.slot_time || '', link: s.link || '',
+        kind: s.kind, done: !!s.done,
         studentId: s.student_id, importance: s.importance || 'middle', notify: !!s.notify
       })),
       events: (events.results || []).map((x) => ({ id: x.id, title: x.title, date: x.deadline_date, category: x.category })),
@@ -2982,6 +3404,7 @@ async function api(request, env, url, origin) {
 
     if (m[2] === 'remove' && method === 'POST') {
       const stUser = await db.prepare('select name from users where id=?').bind(m[1]).first();
+      await db.prepare('update org_call_slots set student_id=null, topic=null, org_slot_id=null, booked_at=null where org_id=? and student_id=?').bind(org.id, m[1]).run();
       await db.prepare('delete from org_portfolio where user_id=?').bind(m[1]).run();
       await db.prepare('delete from org_students where user_id=?').bind(m[1]).run();
       await db.prepare('delete from org_slots where org_id=? and student_id=?').bind(org.id, m[1]).run();
@@ -3091,6 +3514,8 @@ async function api(request, env, url, origin) {
            on conflict(user_id) do update set template_id=excluded.template_id, updated_at=excluded.updated_at`
         ).bind(sid, org.manager_id || null, '[]', '', '', '', '', '', '', '', '', '', 'plan', row.id, nowISO()).run();
 
+        const COURSE_PALETTE = ['#FF9F43', '#8B8DF0', '#3CC9B5', '#FF7AA8'];
+        let cIdx = 0;
         for (const it of items) {
           let d;
           if (it.offset !== null && it.offset !== undefined) {
@@ -3099,10 +3524,14 @@ async function api(request, env, url, origin) {
             d = new Date(now.getFullYear(), it.month, it.day);
             if (d < now) d.setFullYear(d.getFullYear() + 1);
           }
+          const isCourse = it.kind === 'course';
+          const weeks = Number(it.weeks) > 0 ? Number(it.weeks) : (isCourse ? 8 : 0);
+          const endD = isCourse && weeks > 0 ? new Date(d.getTime() + weeks * 7 * 864e5).toISOString().slice(0, 10) : '';
+          const col = isCourse ? COURSE_PALETTE[(cIdx++) % COURSE_PALETTE.length] : '';
           const id2 = uid('slot');
-          await db.prepare('insert into org_slots (id,org_id,student_id,title,note,date,kind,done,created_by,created_at) values (?,?,?,?,?,?,?,0,?,?)')
-            .bind(id2, org.id, sid, it.title, it.note || '', d.toISOString().slice(0, 10),
-              it.kind === 'course' ? 'milestone' : 'internal', me.id, nowISO()).run();
+          await db.prepare('insert into org_slots (id,org_id,student_id,title,note,date,end_date,color,kind,importance,done,created_by,created_at) values (?,?,?,?,?,?,?,?,?,?,0,?,?)')
+            .bind(id2, org.id, sid, it.title, it.note || '', d.toISOString().slice(0, 10), endD, col,
+              isCourse ? 'course' : 'internal', isCourse ? 'middle' : 'high', me.id, nowISO()).run();
         }
       }
       await audit(env, me.id, 'org.template.assign', row.id, ids.length + ' ученикам с ' + startDate.toISOString().slice(0, 10));
@@ -3352,8 +3781,26 @@ async function api(request, env, url, origin) {
     const sql = me.role === 'root'
       ? 'select * from users order by role, created_at'
       : "select * from users where role != 'root' order by role, created_at";
-    const list = await db.prepare(sql).all();
-    return json({ ok: true, users: list.results.map((u) => adminUser(toUser(u))) }, 200, origin);
+    const [list, logins, cards] = await Promise.all([
+      db.prepare(sql).all(),
+      db.prepare('select user_id, login from user_logins order by created_at').all(),
+      db.prepare('select user_id, mentor_id from org_students').all()
+    ]);
+    const loginMap = {};
+    for (const l of (logins.results || [])) {
+      if (!loginMap[l.user_id]) loginMap[l.user_id] = l.login;
+    }
+    const mentorMap = {};
+    for (const c of (cards.results || [])) {
+      mentorMap[c.user_id] = c.mentor_id || null;
+    }
+    return json({
+      ok: true,
+      users: list.results.map((u) => Object.assign(adminUser(toUser(u)), {
+        login: loginMap[u.id] || u.email || '',
+        mentorId: mentorMap[u.id] || null
+      }))
+    }, 200, origin);
   }
 
   if (path === '/admin/users' && method === 'POST') {
@@ -3363,9 +3810,10 @@ async function api(request, env, url, origin) {
       const gr = notRoot(); if (gr) return json({ ok: false, error: 'Админов назначает только владелец' }, 403, origin);
     }
     let orgId = body.orgId ? String(body.orgId) : null;
+    let orgRow = null;
     if (orgId) {
-      const org = await db.prepare('select id from organizations where id=?').bind(orgId).first();
-      if (!org) return json({ ok: false, error: 'Организация не найдена' }, 400, origin);
+      orgRow = await db.prepare('select * from organizations where id=?').bind(orgId).first();
+      if (!orgRow) return json({ ok: false, error: 'Организация не найдена' }, 400, origin);
     } else if (role === 'org') {
       return json({ ok: false, error: 'Для управляющего выберите организацию' }, 400, origin);
     }
@@ -3384,10 +3832,32 @@ async function api(request, env, url, origin) {
        values (?,?,?,?,?,?,?,?,?,?,?,?)`
     ).bind(id, str(body.name, 120) || 'Без имени', login.includes('@') ? login : null,
       await hashPassword(password, salt), salt, role, orgId, str(body.grade, 40),
-      str(body.school, 120) || 'Школа №1520', 'Москва', 'sky', nowISO()).run();
+      str(body.school, 120) || (orgRow ? orgRow.name : 'Школа №1520'), (orgRow && orgRow.city) || 'Москва', 'sky', nowISO()).run();
     await db.prepare('insert into user_logins (login,user_id,created_at) values (?,?,?)')
       .bind(login, id, nowISO()).run();
-    await audit(env, me.id, 'user.create', id, login + ' / ' + role + (orgId ? ' / ' + orgId : ''));
+
+    if (role === 'student' && orgId && orgRow) {
+      let chosenMentorId = orgRow.manager_id || null;
+      let chosenMentorName = '';
+      if (body.mentorId !== undefined) {
+        if (body.mentorId) {
+          const mRow = await db.prepare("select id, name from users where id=? and org_id=? and (role='org' or org_role='mentor')")
+            .bind(String(body.mentorId), orgId).first();
+          if (mRow) { chosenMentorId = mRow.id; chosenMentorName = mRow.name; }
+        } else {
+          chosenMentorId = null;
+        }
+      }
+      await db.prepare(
+        `insert into org_students (user_id,mentor_id,tags,grade,gpa,gpa_note,sat,sat_note,ielts,ielts_note,goal,goal_note,status,updated_at)
+         values (?,?,'[]',?,'','','','','','','','','plan',?)`
+      ).bind(id, chosenMentorId, str(body.grade, 40), nowISO()).run();
+      if (chosenMentorName) {
+        await audit(env, me.id, 'org.student.mentor', id, chosenMentorName);
+      }
+    }
+
+    await audit(env, me.id, 'user.create', id, login + ' / ' + role + (orgRow ? ' / ' + orgRow.name : ''));
 
     return json({ ok: true, id, login, password }, 201, origin);
   }
@@ -3450,17 +3920,48 @@ async function api(request, env, url, origin) {
       }
 
       // привязка к организации: у управляющего она обязательна
-      if (body.orgId !== undefined) {
-        const nextOrg = body.orgId ? String(body.orgId) : null;
+      if (body.orgId !== undefined || body.mentorId !== undefined) {
+        const nextOrg = body.orgId !== undefined ? (body.orgId ? String(body.orgId) : null) : target.org_id;
         const finalRole = role && ['student', 'admin', 'org'].includes(role) ? role : target.role;
+        let orgRow = null;
         if (nextOrg) {
-          const org = await db.prepare('select id from organizations where id=?').bind(nextOrg).first();
-          if (!org) return json({ ok: false, error: 'Организация не найдена' }, 400, origin);
+          orgRow = await db.prepare('select * from organizations where id=?').bind(nextOrg).first();
+          if (!orgRow) return json({ ok: false, error: 'Организация не найдена' }, 400, origin);
         } else if (finalRole === 'org') {
           return json({ ok: false, error: 'Управляющий должен быть привязан к организации' }, 400, origin);
         }
-        await db.prepare('update users set org_id=? where id=?').bind(nextOrg, target.id).run();
-        await audit(env, me.id, 'user.org', target.id, nextOrg || '—');
+        if (body.orgId !== undefined && nextOrg !== target.org_id) {
+          await db.prepare('update users set org_id=? where id=?').bind(nextOrg, target.id).run();
+          await audit(env, me.id, 'user.org', target.id, nextOrg || '—');
+        }
+        if (finalRole === 'student' && target.org_role !== 'mentor') {
+          if (nextOrg && orgRow) {
+            let chosenMentorId = orgRow.manager_id || null;
+            let chosenMentorName = '';
+            if (body.mentorId !== undefined) {
+              if (body.mentorId) {
+                const mRow = await db.prepare("select id, name from users where id=? and org_id=? and (role='org' or org_role='mentor')")
+                  .bind(String(body.mentorId), nextOrg).first();
+                if (mRow) { chosenMentorId = mRow.id; chosenMentorName = mRow.name; }
+              } else {
+                chosenMentorId = null;
+              }
+            } else {
+              const curCard = await db.prepare('select mentor_id from org_students where user_id=?').bind(target.id).first();
+              if (curCard && curCard.mentor_id && nextOrg === target.org_id) chosenMentorId = curCard.mentor_id;
+            }
+            await db.prepare(
+              `insert into org_students (user_id,mentor_id,tags,grade,gpa,gpa_note,sat,sat_note,ielts,ielts_note,goal,goal_note,status,updated_at)
+               values (?,?,'[]',?,'','','','','','','','','plan',?)
+               on conflict(user_id) do update set mentor_id=excluded.mentor_id, updated_at=excluded.updated_at`
+            ).bind(target.id, chosenMentorId, str(body.grade !== undefined ? body.grade : target.grade, 40), nowISO()).run();
+            if (body.mentorId !== undefined) {
+              await audit(env, me.id, 'org.student.mentor', target.id, chosenMentorName || 'без ментора');
+            }
+          } else if (!nextOrg) {
+            await db.prepare('delete from org_students where user_id=?').bind(target.id).run();
+          }
+        }
       }
 
       // меняем только присланные поля — остальное не затираем
@@ -3520,8 +4021,9 @@ async function api(request, env, url, origin) {
     await db.prepare(
       'insert into otp_codes (id,user_id,code_hash,salt,expires_at,used,created_by,created_at) values (?,?,?,?,?,0,?,?)'
     ).bind(uid('otp'), target.id, await hashPassword(code, salt), salt, expires, me.id, nowISO()).run();
+    const loginRow = await db.prepare('select login from user_logins where user_id=? order by created_at limit 1').bind(target.id).first();
     await audit(env, me.id, 'user.otp', target.id, target.name);
-    return json({ ok: true, code, expires, login: target.email || target.id }, 200, origin);
+    return json({ ok: true, code, expires, login: (loginRow && loginRow.login) || target.email || target.id }, 200, origin);
   }
 
   /* снять все сессии пользователя */
@@ -3966,6 +4468,11 @@ async function api(request, env, url, origin) {
         addTargetPerson(uname);
         human = whoPhrase + ' добавил участника' +
           (uname ? ' «' + uname + '»' : '') + ' в организацию' + (d ? ' (' + d + ')' : '');
+      } else if (act === 'org.student.attach') {
+        category = 'org'; tone = 'mint';
+        const uname = resolvePersonName(t) || 'ученик';
+        addTargetPerson(uname);
+        human = whoPhrase + ' прикрепил стороннего ученика «' + uname + '» к организации' + (d ? ' (' + d + ')' : '');
       } else if (act === 'org.mentor.update') {
         category = 'org'; tone = 'sky';
         const mname = resolvePersonName(t, d) || 'ментор';
