@@ -8634,6 +8634,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
     adminUsers() { return this.request('GET', '/api/admin/users'); },
     adminCreateUser(payload) { return this.request('POST', '/api/admin/users', payload); },
     adminUpdateUser(id, patch) { return this.request('PATCH', '/api/admin/users/' + id, patch); },
+    adminUserMeta(id, patch) { return this.request('PATCH', '/api/admin/users/' + encodeURIComponent(id) + '/admin-meta', patch); },
     adminDeleteUser(id) { return this.request('DELETE', '/api/admin/users/' + id); },
     adminResetPassword(id, password) { return this.request('POST', '/api/admin/users/' + id + '/password', { password }); },
     adminOtp(id) { return this.request('POST', '/api/admin/users/' + id + '/otp', {}); },
@@ -16229,6 +16230,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
 
   let section = 'overview';
   let query = '';
+  let adminTagFilter = '';
   let auditFilter = 'all';
   let auditUser = '';
   let auditUserScope = 'any';
@@ -16517,10 +16519,42 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
 
   /* ───────────────────────── пользователи ───────────────────────── */
 
+  function adminTagsCell(u) {
+    const tags = u.adminTags || [];
+    const chips = tags.map((t) => '<span class="hash" style="margin:0 4px 2px 0">#' + e(t) + '</span>').join('');
+    const note = u.adminNote
+      ? '<span class="small muted" title="' + e(u.adminNote) + '">· заметка</span>'
+      : '';
+    if (!chips && !note) return '<span class="small muted">без меток</span>';
+    return '<div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center;max-width:230px">' + chips + note + '</div>';
+  }
+
   function usersSection() {
-    const list = cache.users
-      .filter((u) => isRoot() || u.role !== 'root')
+    const all = cache.users.filter((u) => isRoot() || u.role !== 'root');
+
+    // ── Приватные админ-метки: панель быстрых фильтров (только для админов платформы) ──
+    const tagSet = new Set();
+    all.forEach((u) => (u.adminTags || []).forEach((t) => { if (t) tagSet.add(t); }));
+    const isBotLike = (u) => (u.adminTags || []).some((t) => /бот|bot|тест|test|сид/i.test(t));
+    let byTag = all;
+    if (adminTagFilter === '__none__') byTag = all.filter((u) => !(u.adminTags || []).length);
+    else if (adminTagFilter === '__bots__') byTag = all.filter(isBotLike);
+    else if (adminTagFilter) byTag = all.filter((u) => (u.adminTags || []).includes(adminTagFilter));
+
+    const list = byTag
       .filter((u) => !query || (u.name + ' ' + (u.login || '') + ' ' + (u.email || '')).toLowerCase().includes(query.toLowerCase()));
+
+    const tagChip = (label, val) =>
+      '<button class="chip-btn' + (adminTagFilter === val ? ' is-on' : '') + '" ' +
+        'onclick="SH.views.admin.setTagFilter(\'' + String(val) + '\')">' + e(label) + '</button>';
+
+    const quickFilters =
+      '<div class="chips" style="margin:0 0 12px">' +
+        tagChip('Все', '') +
+        tagChip('Без меток (реальные)', '__none__') +
+        tagChip('Боты / тестовые', '__bots__') +
+        Array.from(tagSet).sort((x, y) => x.localeCompare(y, 'ru')).map((t) => tagChip('#' + t, t)).join('') +
+      '</div>';
 
     const picking = selectMode.users;
     const me = store.currentUser || {};
@@ -16533,10 +16567,11 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
         : '') +
       '<button class="btn btn--brand btn--sm" onclick="SH.views.admin.userForm()">' + icon('plus', 16) + 'Добавить</button>') +
       searchBox('Поиск по имени или логину') +
+      quickFilters +
       bulkBar('users', 'пользователей') +
       '<div class="panel panel--flush"><div class="table-wrap"><table class="table"><thead><tr>' +
         (picking ? '<th style="width:34px"></th>' : '') +
-        '<th>Пользователь</th><th>Роль</th><th>Класс</th><th>Состояние</th><th></th>' +
+        '<th>Пользователь</th><th>Роль</th><th>Класс</th><th>Админ-метки</th><th>Состояние</th><th></th>' +
       '</tr></thead><tbody>' +
       list.map((u) =>
         '<tr' + (picked.users.has(u.id) ? ' style="background:var(--primary-soft)"' : '') + '>' +
@@ -16547,10 +16582,12 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
             '<div style="min-width:0"><div style="font-weight:650">' + e(u.name) +
               (u.id === me.id ? ' <span class="tag" style="font-size:10px">вы</span>' : '') + '</div>' +
             '<div class="small muted mono">' + e(u.login || u.email || '—') + '</div></div></div></td>' +
-          '<td>' + roleTag(u.role) + '</td>' +
+          '<td>' + roleTag(u.role, u.orgRole) + '</td>' +
           '<td>' + e(u.grade || '—') + '</td>' +
+          '<td>' + adminTagsCell(u) + '</td>' +
           '<td>' + (u.blocked ? '<span class="tag tag--blush">заблокирован</span>' : '<span class="tag tag--mint">активен</span>') + '</td>' +
           '<td style="text-align:right;white-space:nowrap">' +
+            '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px" title="Админ-метки (приватно)" onclick="SH.views.admin.adminMetaSheet(\'' + u.id + '\')">' + icon('flag', 16) + '</button>' +
             '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px" title="Изменить" onclick="SH.views.admin.userForm(\'' + u.id + '\')">' + icon('edit', 16) + '</button>' +
             '<button class="icon-btn icon-btn--plain" style="width:32px;height:32px" title="Доступ" onclick="SH.views.admin.userAccess(\'' + u.id + '\')">' + icon('key', 16) + '</button>' +
             (u.id !== me.id
@@ -16568,7 +16605,8 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
         (isRoot()
           ? 'Владелец не отображается в списке для администраторов и не может быть изменён ими.'
           : 'Аккаунт владельца скрыт и недоступен для изменений.') +
-        ' Кнопка с человечком — вход в аккаунт ученика с возвратом в админку.</p>';
+        ' Кнопка с человечком — вход в аккаунт ученика с возвратом в админку. ' +
+        'Админ-метки и заметки приватны: их видят только администраторы платформы — ученики, менторы и админы компаний их не видят.</p>';
   }
 
   /* ───────────────────────── администраторы (только root) ───────────────────────── */
@@ -16618,7 +16656,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
                 '<div class="small muted">' + e(o.city || '—') + '</div></td>' +
               '<td><span class="tag">' + (o.plan === 'school' ? 'школа' : 'агентство') + '</span>' +
                 (o.status !== 'active' ? ' <span class="tag tag--blush">' + e(o.status === 'paused' ? 'на паузе' : 'архив') + '</span>' : '') + '</td>' +
-              '<td>' + e(o.managerName || '—') + '</td>' +
+              '<td>' + (o.managerName ? e(o.managerName) + ' ' + roleTag('org') : '—') + '</td>' +
               '<td>' + (o.students != null ? o.students : 0) + '</td>' +
               '<td>' + (o.openTasks != null ? o.openTasks : 0) + '</td>' +
               '<td style="text-align:right;white-space:nowrap">' +
@@ -16870,6 +16908,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
     else if (act === 'user.create') { const nm = resolveName(t, ''); pushTarget(nm); category = 'users'; tone = 'mint'; text = who + ' создал нового пользователя' + (nm ? ' «' + nm + '»' : '') + (d ? ' (' + d + ')' : ''); }
     else if (act === 'user.update') { const nm = resolveName(t, d || 'пользователь'); pushTarget(nm); category = 'users'; tone = 'sky'; text = who + ' изменил профиль пользователя «' + nm + '»'; }
     else if (act === 'user.role') { const nm = resolveName(t, 'пользователь'); pushTarget(nm); category = 'users'; tone = 'lav'; text = who + ' сменил роль пользователю «' + nm + '»'; }
+    else if (act === 'user.admin_meta') { const nm = resolveName(t, 'пользователь'); pushTarget(nm); category = 'users'; tone = 'lav'; text = who + ' изменил приватные админ-метки пользователя «' + nm + '»' + (d ? ' (' + d + ')' : ''); }
     else if (act === 'user.org') { const nm = resolveName(t, 'пользователь'); pushTarget(nm); category = 'users'; tone = 'lav'; text = who + ' изменил организацию пользователя «' + nm + '»'; }
     else if (act === 'user.password') { const nm = resolveName(t, d || 'пользователь'); pushTarget(nm); category = 'users'; tone = 'sun'; text = who + ' установил новый пароль пользователю «' + nm + '»'; }
     else if (act === 'user.otp') { const nm = resolveName(t, d || 'пользователь'); pushTarget(nm); category = 'users'; tone = 'sun'; text = who + ' выдал одноразовый код входа пользователю «' + nm + '»'; }
@@ -16930,7 +16969,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
     if (kind === 'register') return a === 'register';
     if (kind === 'password') return a.startsWith('password.') || a === 'user.password' || a === 'user.otp';
     if (kind === 'delete') return /\.delete$|\.remove$|bulk-delete|cleanup/.test(a);
-    if (kind === 'create_update') return /\.create$|\.update$|\.add$|\.save$|fromStudent/.test(a);
+    if (kind === 'create_update') return /\.create$|\.update$|\.add$|\.save$|fromStudent|admin_meta/.test(a);
     if (kind === 'assign') return a === 'user.role' || a === 'user.org' || a === 'org.student.mentor' || a === 'org.template.assign';
     if (kind === 'impersonate') return a === 'user.impersonate';
     if (kind === 'plans') return /^org\.(slot|callslot|sprint|report|portfolio|template|taggroup)/.test(a);
@@ -17080,7 +17119,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
       ['system', 'Модерация, ИИ и система']
     ];
 
-    const roleOrder = ['Владелец', 'Администратор', 'Руководитель организации', 'Ментор', 'Ученик', 'Удалённый аккаунт', 'Система'];
+    const roleOrder = ['Владелец', 'Администратор', 'Админ компании', 'Ментор', 'Ученик', 'Удалённый аккаунт', 'Система'];
     const availableRoles = roleOrder.filter((rl) => rolesSet[rl]);
 
     return pageHead(
@@ -17212,10 +17251,12 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
 
   /* ───────────────────────── вспомогательное ───────────────────────── */
 
-  function roleTag(role) {
+  function roleTag(role, orgRole) {
     if (role === 'root') return '<span class="tag tag--lav">владелец</span>';
     if (role === 'admin') return '<span class="tag tag--sky">админ</span>';
-    if (role === 'org') return '<span class="tag tag--lav">управляющий</span>';
+    if (role === 'org') return orgRole === 'mentor'
+      ? '<span class="tag tag--mint">ментор</span>'
+      : '<span class="tag tag--lav">админ компании</span>';
     return '<span class="tag">ученик</span>';
   }
 
@@ -17751,6 +17792,42 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
       });
     },
 
+    setTagFilter(val) {
+      adminTagFilter = val || '';
+      SH.app.render();
+    },
+
+    adminMetaSheet(id) {
+      const u = cache.users.find((x) => x.id === id);
+      if (!u) return;
+      ui.sheet({
+        title: 'Админ-метки: ' + u.name,
+        subtitle: 'Приватно — видят только администраторы платформы',
+        body:
+          ui.field('am-tags', 'Метки через запятую', { value: (u.adminTags || []).join(', '), placeholder: 'бот, сид, реальный' }) +
+          ui.field('am-note', 'Заметка админа', { value: u.adminNote || '', textarea: true, placeholder: 'Например: реальный ученик, проверить оплату' }) +
+          '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.admin.saveAdminMeta(\'' + u.id + '\')">Сохранить</button>' +
+          '<p class="small muted" style="margin:10px 0 0">Каждое изменение записывается в журнал действий. Ученики, менторы и админы компаний этих данных не видят.</p>'
+      });
+    },
+
+    async saveAdminMeta(id) {
+      const tags = ((document.getElementById('am-tags') || {}).value || '')
+        .split(',').map((x) => x.trim().replace(/^#/, '')).filter(Boolean).slice(0, 12);
+      const note = ((document.getElementById('am-note') || {}).value || '').trim();
+      try {
+        await SH.api.adminUserMeta(id, { adminTags: tags, adminNote: note });
+        ui.closeSheet();
+        ui.toast('Метки сохранены');
+        cache.loaded.users = false;
+        cache.loaded.audit = false;
+        await loadData(true);
+        SH.app.render();
+      } catch (err) {
+        ui.toast('Не сохранилось: ' + err.message);
+      }
+    },
+
     userForm(id, forcedRole) {
       const u = id ? cache.users.find((x) => x.id === id) : null;
       const roleFixed = forcedRole === 'admin';
@@ -17773,7 +17850,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
       };
 
       const initOrgId = u ? (u.orgId || '') : '';
-      const initRole = roleFixed ? 'admin' : (u ? u.role : 'student');
+      const initRole = roleFixed ? 'admin' : (u ? (u.orgRole === 'mentor' ? 'mentor' : u.role) : 'student');
       const showMentorInit = !targetIsRoot && !self && initRole === 'student' && !!initOrgId;
 
       ui.sheet({
@@ -17793,8 +17870,9 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
           (isRoot() && !targetIsRoot && !self
             ? '<div class="field" style="margin-top:12px"><label class="field-label">Роль</label>' +
               '<select id="u-role">' +
-                '<option value="student"' + (u && u.role === 'student' ? ' selected' : '') + '>Ученик</option>' +
-                '<option value="org"' + (u && u.role === 'org' ? ' selected' : '') + '>Управляющий организации</option>' +
+                '<option value="student"' + (initRole === 'student' ? ' selected' : '') + '>Ученик</option>' +
+                '<option value="mentor"' + (initRole === 'mentor' ? ' selected' : '') + '>Ментор</option>' +
+                '<option value="org"' + (initRole === 'org' ? ' selected' : '') + '>Админ компании</option>' +
                 '<option value="admin"' + ((u && u.role === 'admin') || roleFixed ? ' selected' : '') + '>Администратор</option>' +
               '</select></div>'
             : '') +
@@ -17810,6 +17888,17 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
                 '<select id="u-mentor">' + mentorOptsHtml(initOrgId, u ? u.mentorId : undefined) + '</select>' +
               '</div>'
             : '') +
+          '<div class="form-grid" style="margin-top:12px">' +
+            ui.field('u-admtags', 'Приватные метки (через запятую)', {
+              value: u ? (u.adminTags || []).join(', ') : '',
+              placeholder: 'бот, сид, реальный'
+            }) +
+            ui.field('u-admnote', 'Приватная заметка админа', {
+              value: u ? (u.adminNote || '') : '',
+              textarea: true,
+              placeholder: 'Видна только администраторам платформы'
+            }) +
+          '</div>' +
           '<button class="btn btn--brand btn--block mt-16" onclick="SH.views.admin.saveUser(' + (u ? "'" + u.id + "'" : 'null') + ')">' +
             (u ? 'Сохранить' : 'Создать') + '</button>',
         onMount(el) {
@@ -17847,7 +17936,9 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
           const mentorEl = document.getElementById('u-mentor');
           const payload = {
             name, login: v('u-login').trim(), password,
-            grade: v('u-grade'), school: v('u-school'), role, orgId
+            grade: v('u-grade'), school: v('u-school'), role, orgId,
+            adminTags: v('u-admtags').split(',').map((x) => x.trim().replace(/^#/, '')).filter(Boolean).slice(0, 12),
+            adminNote: v('u-admnote').trim()
           };
           if (role === 'student' && orgId && mentorEl) payload.mentorId = mentorEl.value;
           const res = await SH.api.adminCreateUser(payload);
@@ -17864,7 +17955,9 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
         } else {
           const patch = {
             name, login: v('u-login').trim(),
-            grade: v('u-grade'), school: v('u-school')
+            grade: v('u-grade'), school: v('u-school'),
+            adminTags: v('u-admtags').split(',').map((x) => x.trim().replace(/^#/, '')).filter(Boolean).slice(0, 12),
+            adminNote: v('u-admnote').trim()
           };
           const orgSel = document.getElementById('u-org');
           if (orgSel) patch.orgId = orgSel.value || null;
@@ -18363,6 +18456,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
   let inlineNewTags = ['premium', 'сша'];
   let templateEdit = null;
   let tplGradeTab = '10';
+  let tplExtraGrades = [];
   let alerts = null;
   let balance = null;
   let digest = null;
@@ -18430,6 +18524,8 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
         }
         if (data && data.templates && data.templates.length && !templateEdit) {
           templateEdit = JSON.parse(JSON.stringify(data.templates[0]));
+          const gTabs = tplGradeTabsFor(templateEdit);
+          tplGradeTab = gTabs[0] || '10';
         }
       })
       .catch((err) => { error = err.message || 'Не удалось загрузить кабинет организации'; })
@@ -18553,6 +18649,42 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
     const label = k === 'high' ? 'High' : k === 'low' ? 'Low' : 'Middle';
     return '<span class="kk-tag kk-tag--' + k + '">' + label + '</span>';
   }
+  function fmtGrade(g, suffix) {
+    const raw = String(g == null ? '' : g).trim();
+    if (!raw) return '';
+    if (/год/i.test(raw)) return raw;
+    const clean = raw.replace(/\s*(класс|кл\.?)\s*$/i, '').trim();
+    if (!clean) return raw;
+    if (/^\d{1,2}\s*[–\-—]\s*\d{1,2}$/.test(clean)) return clean + ' кл';
+    return clean + ' ' + (suffix || 'класс');
+  }
+
+  const SHORT_MONTHS_GEN = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+  function tplGradeTabsFor(t) {
+    const gStr = String((t && t.grade) || '').trim();
+    if (/год/i.test(gStr)) return [gStr];
+    const set = new Set();
+    const rangeM = gStr.match(/(\d{1,2})\s*[–\-—]\s*(\d{1,2})/);
+    if (rangeM) {
+      const a = Math.min(12, Math.max(1, parseInt(rangeM[1], 10)));
+      const b = Math.min(12, Math.max(a, parseInt(rangeM[2], 10)));
+      for (let x = a; x <= b; x++) set.add(String(x));
+    } else if (/^\d{1,2}(\s*(класс|кл\.?))?$/i.test(gStr)) {
+      set.add(String(parseInt(gStr, 10)));
+    }
+    ((t && t.items) || []).forEach((it) => {
+      const g = String((it && it.grade) || '').trim();
+      if (/^\d{1,2}$/.test(g)) set.add(g);
+    });
+    (tplExtraGrades || []).forEach((x) => { if (x) set.add(String(x)); });
+    if (!set.size) set.add('10');
+    return Array.from(set).sort((a, b) => {
+      const na = /^\d+$/.test(a) ? Number(a) : 999;
+      const nb = /^\d+$/.test(b) ? Number(b) : 999;
+      return na - nb;
+    });
+  }
+
   function hashTags(tags, addHandler) {
     const list = (tags || []).map((t) => String(t || '').trim().replace(/^#/, '')).filter(Boolean);
     const chips = list.map((t) => '<span class="kk-ht">#' + e(t) + '</span>').join('');
@@ -18569,21 +18701,18 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
     const mentor = isMentorRole();
     const pref = orgPrefix();
     const orgName = (data && data.org && data.org.name) ? data.org.name : 'для организаций';
-    const unread = store.unreadTotal ? store.unreadTotal() : 0;
 
+    // Навигация строго по макету kk.:
+    // Ментор — только «Мои ученики»; Админ компании — «Обзор», «Менторы», «Ученики», «Шаблоны» (без Календаря и Чатов)
     const navItems = mentor
       ? [
-          ['overview', 'person', 'Мои ученики', pref + '/overview'],
-          ['calendar', 'calendar', 'Календарь', pref + '/calendar'],
-          ['chats', 'chat', 'Чаты', '#/chats']
+          ['overview', 'person', 'Мои ученики', pref + '/overview']
         ]
       : [
           ['overview', 'grid', 'Обзор', pref + '/overview'],
           ['mentors', 'users', 'Менторы', pref + '/mentors'],
           ['students', 'person', 'Ученики', pref + '/students'],
-          ['templates', 'layers', 'Шаблоны', pref + '/templates'],
-          ['calendar', 'calendar', 'Календарь', pref + '/calendar'],
-          ['chats', 'chat', 'Чаты', '#/chats']
+          ['templates', 'layers', 'Шаблоны', pref + '/templates']
         ];
 
     const meTags = (data && data.meMentor && Array.isArray(data.meMentor.tags) && data.meMentor.tags.length)
@@ -18603,7 +18732,6 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
             '<button class="kk-sidenav__btn' + (current === id ? ' is-on' : '') + '" onclick="SH.app.go(\'' + href + '\')">' +
               icon(ico, 20) +
               '<span>' + e(label) + '</span>' +
-              (id === 'chats' && unread ? '<span class="badge-count" style="margin-left:auto">' + unread + '</span>' : '') +
             '</button>'
           ).join('') +
         '</nav>' +
@@ -18973,7 +19101,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
                           av(st, 40) +
                           '<span style="flex:1;min-width:0;cursor:pointer" onclick="SH.app.go(\'' + orgPrefix() + '/student/' + e(st.id) + '\')">' +
                             '<b style="display:block">' + e(st.name) + '</b>' +
-                            '<span class="kk-mu">' + e(st.grade ? st.grade + ' класс' : 'ученик') + '</span>' +
+                            '<span class="kk-mu">' + e(st.grade ? fmtGrade(st.grade) : 'ученик') + '</span>' +
                           '</span>' +
                           statusTag(st.status) +
                           (isMgr && otherMentors.length
@@ -19107,7 +19235,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
                 hashTags(inlineNewTags, 'SH.views.org.promptInlineTag()') +
                 '<label class="kk-fl">Шаблон роадмапа<select class="kk-inp" id="inl-u-tpl">' +
                   '<option value="">Без шаблона</option>' +
-                  tpls.map((t) => '<option value="' + e(t.id) + '">' + e(t.title) + (t.grade ? ' · ' + e(t.grade) + ' кл' : '') + '</option>').join('') +
+                  tpls.map((t) => '<option value="' + e(t.id) + '">' + e(t.title) + (t.grade ? ' · ' + e(fmtGrade(t.grade, 'кл')) : '') + '</option>').join('') +
                 '</select></label>' +
                 '<div class="kk-mu" style="margin-top:6px">Даты и курсы из шаблона сразу появятся в роадмапе ученика. Потом их можно менять.</div>' +
                 '<div style="display:flex;gap:10px">' +
@@ -19169,7 +19297,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
                       av(s, 48) +
                       '<span style="flex:1;min-width:0">' +
                         '<b style="display:block;font-size:15px">' + e(s.name) + '</b>' +
-                        '<span class="kk-mu">' + e(s.grade ? s.grade + ' класс' : 'ученик') + '</span>' +
+                        '<span class="kk-mu">' + e(s.grade ? fmtGrade(s.grade) : 'ученик') + '</span>' +
                       '</span>' +
                     '</div>' +
                     '<div style="margin:12px 0">' + hashTags(s.tags) + '</div>' +
@@ -19187,7 +19315,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
             : '<div class="kk-card">' + ui.empty('person', 'За вами пока не закреплены ученики', 'Когда администратор организации прикрепит учеников, их карточки появятся здесь.') + '</div>') +
 
           '<div class="kk-mu" style="margin-top:14px;padding:12px 16px;background:rgba(255,255,255,.7);border-radius:16px">' +
-            'Ментор видит только свою группу. Карточка ученика такая же, как у админа: роадмап, проекты, портфолио, отчёт. Свободные окна для записи учеников открываются в разделе «Календарь».' +
+            'Ментор видит только свою группу. Карточка ученика такая же, как у админа: роадмап, проекты, портфолио, отчёт. Менторов, шаблоны и общую статистику видит только админ.' +
           '</div>' +
         '</div>' +
 
@@ -19195,7 +19323,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
           '<h2 class="kk-h2 hf">Назначить созвон</h2>' +
           (mine.length
             ? '<label class="kk-fl">Ученик<select class="kk-inp" id="mc-inl-student">' +
-                mine.map((s) => '<option value="' + e(s.id) + '"' + (s.id === quickCallStudentId ? ' selected' : '') + '>' + e(s.name) + (s.grade ? ' · ' + e(s.grade) + ' кл' : '') + '</option>').join('') +
+                mine.map((s) => '<option value="' + e(s.id) + '"' + (s.id === quickCallStudentId ? ' selected' : '') + '>' + e(s.name) + (s.grade ? ' · ' + e(fmtGrade(s.grade, 'кл')) : '') + '</option>').join('') +
               '</select></label>' +
               '<div style="display:flex;gap:10px">' +
                 '<label class="kk-fl" style="flex:1">Дата<input class="kk-inp" id="mc-inl-date" type="date" value="' + e(tomorrowIso) + '"></label>' +
@@ -19221,7 +19349,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
                   impTag(c.importance || 'middle') +
                 '</div>'
               ).join('')
-            : '<p class="kk-mu" style="margin:4px 0 0">Запланированных созвонов пока нет. Вы также можете открыть свободные слоты в «Календаре».</p>') +
+            : '<p class="kk-mu" style="margin:4px 0 0">Запланированных созвонов пока нет.</p>') +
         '</div>' +
       '</div>'
     );
@@ -19238,7 +19366,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
     const gradeVal = c.grade || u.grade || '';
     const mentorName = (card && card.mentorName) || 'не назначен';
     const metaParts = [];
-    if (gradeVal) metaParts.push(gradeVal + ' класс');
+    if (gradeVal) metaParts.push(fmtGrade(gradeVal));
     metaParts.push('Ментор: ' + mentorName);
     if (u.createdAt) metaParts.push('в приложении с ' + ui.dateNum(u.createdAt));
 
@@ -19255,7 +19383,6 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
         '</div>' +
         '<div class="kk-stu-top__acts">' +
           statusTag((card && card.status) || 'plan') +
-          '<button class="kk-ib" title="Открыть чат с учеником" aria-label="Чат с учеником" onclick="SH.views.chats.openWith(\'' + e(u.id) + '\')">' + icon('chat', 18) + '</button>' +
           (isOrgAdm
             ? '<button class="kk-ib" title="Управление карточкой и доступом" aria-label="Управление карточкой" onclick="SH.views.org.studentAdminMenu(\'' + e(u.id) + '\')">' + icon('more', 18) + '</button>'
             : '') +
@@ -19422,7 +19549,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
         '<button class="kk-tab add" onclick="SH.views.org.addPortfolio(\'Проекты\')">+ Проект</button>' +
         '<span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">' +
           gradeTabs.map((g) =>
-            '<button class="kk-tab' + (g === activeGrade ? ' on' : '') + '" onclick="SH.views.org.setRoadmapGrade(' + g + ')">' + g + ' кл</button>'
+            '<button class="kk-tab' + (g === activeGrade ? ' on' : '') + '" onclick="SH.views.org.setRoadmapGrade(' + g + ')">' + e(fmtGrade(g, 'кл')) + '</button>'
           ).join('') +
           '<button class="kk-tab add" aria-label="Добавить год" title="Добавить год обучения" onclick="SH.views.org.addExtraGrade()">+</button>' +
         '</span>' +
@@ -19434,7 +19561,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
           '<div class="kk-k">Круг года · длительные и High</div>' +
           circleYearSvg({
             yearStart,
-            centerTop: activeGrade + ' класс',
+            centerTop: fmtGrade(activeGrade),
             lines: [
               yearStart + '–' + String(yearStart + 1).slice(2),
               isCurYear ? 'день ' + dayOfSchoolYear : 'учебный год'
@@ -19670,6 +19797,59 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
 
   /* ─────────────────────────── 04. АДМИН · ШАБЛОНЫ РОАДМАПОВ ─────────────────────────── */
 
+  function tplCounts(t) {
+    const items = (t && t.items) || [];
+    const dates = items.filter((x) => (x.kind || 'date') === 'date').length;
+    const courses = items.filter((x) => x.kind === 'course').length;
+    let calls = items.reduce((s, x) => s + (Number(x.calls) || 0), 0);
+    if (!calls) calls = items.filter((x) => x.kind === 'call').length;
+    return { dates, courses, calls };
+  }
+
+  function tplSumLine(t) {
+    const c = tplCounts(t);
+    return e(fmtGrade(t.grade, 'кл') || 'шаблон') +
+      ' · ' + c.dates + ' ' + ui.plural(c.dates, 'дата', 'даты', 'дат') +
+      ' · ' + c.courses + ' ' + ui.plural(c.courses, 'курс', 'курса', 'курсов') +
+      ' · ' + c.calls + ' ' + ui.plural(c.calls, 'созвон', 'созвона', 'созвонов');
+  }
+
+  function tplDotColor(it, idx) {
+    if (it.kind === 'course') return it.color || COURSE_COLORS[idx % COURSE_COLORS.length];
+    if (it.kind === 'call') return '#FFE58F';
+    return it.importance === 'high' ? '#FF8F80' : it.importance === 'low' ? '#BFD7FF' : '#FFE58F';
+  }
+
+  function tplKindTag(it) {
+    if (it.kind === 'course') return '<span class="kk-tag">Курс</span>';
+    if (it.kind === 'call') return '<span class="kk-tag">Созвон</span>';
+    return impTag(it.importance || 'high');
+  }
+
+  function tplItemSub(it) {
+    if (it.note) return it.note;
+    const g = it.grade ? fmtGrade(it.grade, 'кл') + ' · ' : '';
+    const start = (Number(it.day) || 1) + ' ' + SHORT_MONTHS_GEN[Math.max(0, Math.min(11, Number(it.month) || 0))];
+    if (it.kind === 'course') {
+      const hasEnd = it.endMonth !== null && it.endMonth !== undefined && it.endMonth !== '';
+      const end = hasEnd
+        ? (Number(it.endDay) || 1) + ' ' + SHORT_MONTHS_GEN[Math.max(0, Math.min(11, Number(it.endMonth) || 0))]
+        : (Number(it.weeks) ? '+' + Number(it.weeks) + ' нед' : '');
+      return g + start + (end ? ' – ' + end : '');
+    }
+    return g + start;
+  }
+
+  function tplTabItems(t, tab) {
+    const items = ((t && t.items) || []).map((it, idx) => ({ it, idx }));
+    const tabs = tplGradeTabsFor(t);
+    if (tabs.length <= 1) return items;
+    return items.filter(({ it }) => {
+      const g = String(it.grade == null ? '' : it.grade).trim();
+      return g === String(tab) || (!g && String(tab) === String(tabs[0]));
+    });
+  }
+
   function templatesView() {
     if (isMentorRole()) return mentorHomeView();
     const all = (data && data.templates) || [];
@@ -19680,38 +19860,79 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
     const isMgr = isOrgAdminRole();
     const t = templateEdit;
 
-    // Строим превью круга для выбранного шаблона
-    let tplSvg = '';
+    // ── Редактор выбранного шаблона (правая колонка доски 04) ──
+    let editor = '';
     if (t) {
+      const tabs = tplGradeTabsFor(t);
+      if (!tabs.includes(String(tplGradeTab))) tplGradeTab = tabs[0];
+      const tabItems = tplTabItems(t, tplGradeTab);
       const spans = [];
       const pts = [];
-      (t.items || []).forEach((it) => {
-        const m = Number(it.month) || 0;
+      tabItems.forEach(({ it, idx }) => {
+        const m = Math.max(0, Math.min(11, Number(it.month) || 0));
         const y = m >= 8 ? 2026 : 2027;
-        const d = new Date(y, m, Math.max(1, Math.min(28, Number(it.day) || 1)));
+        const from = new Date(y, m, Math.max(1, Math.min(28, Number(it.day) || 1)));
         if (it.kind === 'course') {
-          const w = Number(it.weeks) > 0 ? Number(it.weeks) : 8;
-          spans.push({
-            from: d,
-            to: new Date(d.getTime() + w * 7 * 864e5),
-            color: COURSE_COLORS[spans.length % COURSE_COLORS.length],
-            label: it.title
-          });
-        } else {
-          pts.push({ date: d, label: it.title });
+          const hasEnd = it.endMonth !== null && it.endMonth !== undefined && it.endMonth !== '';
+          const em = hasEnd ? Math.max(0, Math.min(11, Number(it.endMonth) || 0)) : m;
+          const ey = em >= 8 ? 2026 : 2027;
+          const to = hasEnd
+            ? new Date(ey, em, Math.max(1, Math.min(28, Number(it.endDay) || 1)))
+            : new Date(from.getTime() + (Number(it.weeks) || 8) * 7 * 864e5);
+          spans.push({ from, to, color: it.color || COURSE_COLORS[spans.length % COURSE_COLORS.length], label: it.title });
         }
+        if (it.importance === 'high') pts.push({ date: from, label: it.title });
       });
-      tplSvg = circleYearSvg({
+      const tplSvg = circleYearSvg({
         yearStart: 2026,
         centerTop: 'Шаблон',
-        lines: [
-          (t.grade || tplGradeTab || '10') + ' класс',
-          'без года'
-        ],
+        lines: [fmtGrade(tplGradeTab), 'без года'],
         spans,
         points: pts,
         showToday: false
       });
+
+      editor =
+        '<div class="kk-card" style="flex:1 1 420px;min-width:0">' +
+          '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+            '<b class="hf" style="font-size:22px;margin-right:auto">' + e(t.title || 'Новый шаблон') + '</b>' +
+            (t.id ? '<button class="kk-btn kk-btn--f kk-btn--sm" onclick="SH.views.org.assignTemplate()">Назначить ученикам</button>' : '') +
+            '<button class="kk-btn kk-btn--sm" onclick="SH.views.org.saveTemplate()">Сохранить</button>' +
+          '</div>' +
+          '<div class="kk-tabs" style="margin:14px 0">' +
+            tabs.map((g) =>
+              '<button class="kk-tab' + (String(g) === String(tplGradeTab) ? ' on' : '') + '" onclick="SH.views.org.tplSetGrade(\'' + String(g) + '\')">' + e(fmtGrade(g, 'кл')) + '</button>'
+            ).join('') +
+            '<button class="kk-tab add" aria-label="Добавить год" title="Добавить год обучения" onclick="SH.views.org.tplAddGrade()">+</button>' +
+          '</div>' +
+          tplSvg +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px">' +
+            '<button class="kk-btn kk-btn--f kk-btn--sm" onclick="SH.views.org.tplAdd(\'date\')">' + icon('plus', 15) + 'Дата</button>' +
+            '<button class="kk-btn kk-btn--f kk-btn--sm" onclick="SH.views.org.tplAdd(\'course\')">' + icon('plus', 15) + 'Курс</button>' +
+            '<button class="kk-btn kk-btn--f kk-btn--sm" onclick="SH.views.org.tplAdd(\'call\')">' + icon('plus', 15) + 'Созвон</button>' +
+          '</div>' +
+          (tabItems.length
+            ? tabItems.map(({ it, idx }, i) =>
+                '<div class="kk-li' + (i === 0 ? ' z' : '') + '">' +
+                  '<span class="kk-dot" style="background:' + tplDotColor(it, idx) + '"></span>' +
+                  '<span style="flex:1;min-width:0">' +
+                    '<b style="display:block">' + e(it.title) + '</b>' +
+                    '<span class="kk-mu">' + e(tplItemSub(it)) + '</span>' +
+                  '</span>' +
+                  tplKindTag(it) +
+                  '<button class="kk-ib kk-ib--sm" aria-label="Изменить" onclick="SH.views.org.tplItemSheet(' + idx + ')">' + icon('edit', 15) + '</button>' +
+                '</div>'
+              ).join('')
+            : '<p class="kk-mu">Добавьте даты, курсы или созвоны — при назначении они превратятся в реальные события роадмапа ученика.</p>') +
+          '<div class="kk-mu" style="margin-top:12px;padding:12px 14px;background:#F6F7FA;border-radius:16px;color:#5B6070">' +
+            'В шаблоне даты привязаны к классу, а не к году. При назначении ученику они превращаются в реальные даты его учебного года.' +
+          '</div>' +
+        '</div>';
+    } else {
+      editor =
+        '<div class="kk-card" style="flex:1 1 420px;min-width:0">' +
+          ui.empty('layers', 'Выберите шаблон', 'Кликните по карточке шаблона слева — откроется редактор с кругом года, датами, курсами и созвонами.') +
+        '</div>';
     }
 
     return (
@@ -19724,15 +19945,12 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
       '<div class="kk-row">' +
         '<div class="kk-row" style="flex:2 1 520px">' +
           list.map((tpl) => {
-            const items = tpl.items || [];
-            const dates = items.filter((x) => x.kind !== 'course').length;
-            const courses = items.filter((x) => x.kind === 'course').length;
             const isSel = t && t.id && t.id === tpl.id;
-            return '<div class="kk-card' + (isSel ? ' is-selected' : '') + '" style="flex:1 1 250px;cursor:pointer" onclick="SH.views.org.openTemplate(\'' + e(tpl.id) + '\')">' +
+            return '<div class="kk-card" style="flex:1 1 250px;cursor:pointer' + (isSel ? ';box-shadow:0 0 0 2px #14161F' : '') + '" onclick="SH.views.org.openTemplate(\'' + e(tpl.id) + '\')">' +
               '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">' +
                 '<b class="hf" style="font-size:18px">' + e(tpl.title) + '</b>' +
                 (isMgr
-                  ? '<button class="kk-ib kk-ib--sm" aria-label="Удалить шаблон" onclick="event.stopPropagation();SH.views.org.delTemplate(\'' + e(tpl.id) + '\')">' + icon('trash', 15) + '</button>'
+                  ? '<button class="kk-ib kk-ib--sm" aria-label="Меню шаблона" onclick="event.stopPropagation();SH.views.org.tplMenu(\'' + e(tpl.id) + '\')">' + icon('more', 15) + '</button>'
                   : '') +
               '</div>' +
               '<div style="margin:8px 0 12px">' + hashTags(tpl.tags) + '</div>' +
@@ -19741,9 +19959,10 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
                 '<i style="flex:1;height:8px;border-radius:4px;background:#EEF0F5"></i>' +
                 '<i style="flex:2;height:8px;border-radius:4px;background:#8B8DF0"></i>' +
                 '<i style="flex:1;height:8px;border-radius:4px;background:#3CC9B5"></i>' +
+                '<i style="flex:2;height:8px;border-radius:4px;background:#EEF0F5"></i>' +
                 '<i style="flex:2;height:8px;border-radius:4px;background:#FF7AA8"></i>' +
               '</div>' +
-              '<div class="kk-mu">' + (tpl.grade ? e(tpl.grade) + ' кл · ' : '') + dates + ' ' + ui.plural(dates, 'дата', 'даты', 'дат') + ' · ' + courses + ' ' + ui.plural(courses, 'курс', 'курса', 'курсов') + '</div>' +
+              '<div class="kk-mu">' + tplSumLine(tpl) + '</div>' +
               '<div class="kk-mu" style="margin-top:4px">Назначен: ' + (tpl.assigned || 0) + ' ' + ui.plural(tpl.assigned || 0, 'ученику', 'ученикам', 'ученикам') + '</div>' +
             '</div>';
           }).join('') +
@@ -19751,43 +19970,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
             ? '<button class="kk-card kk-card--dash" style="flex:1 1 250px" onclick="SH.views.org.pickStudentForTemplate()">+ Сохранить роадмап ученика как шаблон</button>'
             : '') +
         '</div>' +
-
-        (t
-          ? '<div class="kk-card" style="flex:1 1 420px;min-width:0">' +
-              '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
-                '<b class="hf" style="font-size:22px;margin-right:auto">' + e(t.title || 'Новый шаблон') + '</b>' +
-                (t.id ? '<button class="kk-btn kk-btn--f kk-btn--sm" onclick="SH.views.org.assignTemplate()">Назначить ученикам</button>' : '') +
-                '<button class="kk-btn kk-btn--sm" onclick="SH.views.org.saveTemplate()">Сохранить</button>' +
-              '</div>' +
-              '<div style="display:flex;gap:10px;margin-top:10px">' +
-                '<label class="kk-fl" style="flex:2;margin:0">Название<input class="kk-inp" id="tpl-title" value="' + e(t.title || '') + '"></label>' +
-                '<label class="kk-fl" style="flex:1;margin:0">Класс<input class="kk-inp" id="tpl-grade" value="' + e(t.grade || '10') + '"></label>' +
-              '</div>' +
-              '<label class="kk-fl" style="margin-top:10px">Теги (через запятую)<input class="kk-inp" id="tpl-tags" value="' + e((t.tags || []).join(', ')) + '" placeholder="сша, premium"></label>' +
-              '<div style="margin:12px 0">' + tplSvg + '</div>' +
-              '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 8px">' +
-                '<button class="kk-btn kk-btn--f kk-btn--sm" onclick="SH.views.org.tplAdd(\'date\')">' + icon('plus', 15) + 'Дата</button>' +
-                '<button class="kk-btn kk-btn--f kk-btn--sm" onclick="SH.views.org.tplAdd(\'course\')">' + icon('plus', 15) + 'Курс</button>' +
-              '</div>' +
-              ((t.items || []).length
-                ? (t.items || []).map((x, i) =>
-                    '<div class="kk-li' + (i === 0 ? ' z' : '') + '" style="flex-wrap:wrap;gap:8px">' +
-                      '<span class="kk-dot" style="background:' + (x.kind === 'course' ? '#FF9F43' : '#FF8F80') + '"></span>' +
-                      '<input class="kk-inp" style="flex:1 1 140px;height:36px;margin:0" value="' + e(x.title) + '" onchange="SH.views.org.tplItem(' + i + ',\'title\',this.value)">' +
-                      '<input class="kk-inp" type="number" min="1" max="28" style="width:62px;height:36px;margin:0;padding:0 8px" value="' + (x.day || 1) + '" onchange="SH.views.org.tplItem(' + i + ',\'day\',this.value)">' +
-                      '<select class="kk-inp" style="width:112px;height:36px;margin:0;padding:0 8px" onchange="SH.views.org.tplItem(' + i + ',\'month\',this.value)">' +
-                        FULL_MONTHS_NOM.map((mm, mi) => '<option value="' + mi + '"' + (mi === Number(x.month) ? ' selected' : '') + '>' + mm + '</option>').join('') +
-                      '</select>' +
-                      '<span class="kk-tag">' + (x.kind === 'course' ? 'Курс' : 'Дата') + '</span>' +
-                      '<button class="kk-ib kk-ib--sm" aria-label="Удалить" onclick="SH.views.org.tplRemove(' + i + ')">' + icon('close', 14) + '</button>' +
-                    '</div>'
-                  ).join('')
-                : '<p class="kk-mu">Добавьте даты или курсы — при назначении они превратятся в реальные события роадмапа ученика.</p>') +
-              '<div class="kk-mu" style="margin-top:12px;padding:12px 14px;background:#F6F7FA;border-radius:16px;color:#5B6070">' +
-                'В шаблоне даты привязаны к классу, а не к году. При назначении ученику они превращаются в реальные даты его учебного года.' +
-              '</div>' +
-            '</div>'
-          : '') +
+        editor +
       '</div>'
     );
   }
@@ -19874,7 +20057,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
               '<span class="kk-mu" style="color:#5B6070">' + e(periodLabel) + ' · ' + e(ui.fullDateTime(new Date())) + '</span>' +
             '</div>' +
             '<h2 class="hf" style="font-size:24px;margin:20px 0 4px">Отчёт об успеваемости</h2>' +
-            '<div style="font-size:15px"><b>' + e(r.user.name) + '</b>' + (r.user.grade ? ' · ' + e(r.user.grade) + ' класс' : '') + ' · Ментор: ' + e(mentorName) + '</div>' +
+            '<div style="font-size:15px"><b>' + e(r.user.name) + '</b>' + (r.user.grade ? ' · ' + e(fmtGrade(r.user.grade)) : '') + ' · Ментор: ' + e(mentorName) + '</div>' +
 
             (reportParts.status
               ? '<h3>Итог</h3>' +
@@ -20150,7 +20333,13 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
     if (p === 'student') return studentView(arg(1));
     if (p === 'templates') return templatesView();
     if (p === 'report') return reportView(arg(1));
-    if (p === 'calendar') return calendarView();
+    if (p === 'calendar') {
+      // Раздел «Календарь» изъят из кабинета kk. — перенаправляем на обзор
+      if (typeof history !== 'undefined' && history.replaceState) {
+        history.replaceState(null, '', '#' + orgPrefix() + '/overview');
+      }
+      return overviewView();
+    }
     return overviewView();
   }
 
@@ -20158,7 +20347,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
     const p = page();
     let activeNav = p;
     if (isMentorRole()) {
-      activeNav = p === 'calendar' ? 'calendar' : 'overview';
+      activeNav = 'overview';
     } else {
       if (p === 'mentor') activeNav = 'mentors';
       else if (p === 'student' || p === 'report') activeNav = 'students';
@@ -20817,7 +21006,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
           '</div>' +
           '<label class="fl" style="margin-top:10px">ССЫЛКА (необязательно)<input class="inp" id="call-link" placeholder="Zoom / Google Meet"></label>' +
           '<button class="btn btn--brand btn--block" style="margin-top:16px" onclick="SH.views.org.saveCall()">Назначить</button>' +
-          '<p class="hint">Созвон сразу появится в роадмапе ученика и в вашем разделе «Календарь».</p>'
+          '<p class="hint">Созвон сразу появится в роадмапе ученика.</p>'
       });
     },
 
@@ -20918,7 +21107,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
           '<div class="pick">' +
             list.map((s, i) =>
               '<label class="pick__i"><input type="radio" name="tpl_stu" value="' + e(s.id) + '"' + (i === 0 ? ' checked' : '') + '>' +
-                av(s, 34) + '<span>' + e(s.name) + (s.grade ? ' · ' + e(s.grade) + ' кл' : '') + '</span></label>'
+                av(s, 34) + '<span>' + e(s.name) + (s.grade ? ' · ' + e(fmtGrade(s.grade, 'кл')) : '') + '</span></label>'
             ).join('') +
           '</div>' +
           '<button class="btn btn--brand btn--block" style="margin-top:14px" onclick="const r=document.querySelector(\'input[name=tpl_stu]:checked\');if(r)SH.views.org.fromStudentTemplate(r.value)">Создать шаблон</button>'
@@ -20980,48 +21169,203 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
 
     /* Шаблоны роадмапов (доска 04) */
     newTemplate() {
-      templateEdit = { id: '', title: 'Новый шаблон', tags: ['сша'], grade: '10', items: [] };
+      templateEdit = { id: '', title: 'Новый шаблон', tags: [], grade: '10–12', items: [], assigned: 0 };
+      tplGradeTab = '10';
+      tplExtraGrades = [];
       SH.app.render();
+      SH.views.org.tplMetaSheet();
     },
     openTemplate(id) {
       const t = ((data && data.templates) || []).find((x) => x.id === id);
       if (!t) return;
       templateEdit = JSON.parse(JSON.stringify(t));
+      tplExtraGrades = [];
+      const tabs = tplGradeTabsFor(templateEdit);
+      tplGradeTab = tabs[0] || '10';
       SH.app.render();
     },
-    tplItem(i, key, value) {
-      if (!templateEdit || !templateEdit.items[i]) return;
-      templateEdit.items[i][key] = (key === 'day' || key === 'month') ? Number(value) : value;
+    tplSetGrade(g) {
+      tplGradeTab = String(g);
+      SH.app.render();
+    },
+    tplAddGrade() {
+      const t = templateEdit; if (!t) return;
+      const have = tplGradeTabsFor(t).map(String);
+      const opts = ['9', '10', '11', '12', '1 год', '2 год'];
+      const free = opts.filter((o) => !have.includes(o));
+      if (!free.length) { ui.toast('Все годы обучения уже добавлены'); return; }
+      ui.sheet({
+        title: 'Добавить год обучения',
+        subtitle: t.title || '',
+        body:
+          '<div style="display:flex;flex-wrap:wrap;gap:8px">' +
+            free.map((o) => '<button class="btn btn--soft" onclick="SH.views.org.tplDoAddGrade(\'' + String(o) + '\')">' + e(fmtGrade(o, 'кл')) + '</button>').join('') +
+          '</div>' +
+          '<p class="hint" style="margin-top:12px">Год обучения — это класс (9–12) или год программы («1 год»). Даты нового года появятся в редакторе.</p>'
+      });
+    },
+    tplDoAddGrade(g) {
+      ui.closeSheet();
+      tplExtraGrades = (tplExtraGrades || []).concat([String(g)]);
+      tplGradeTab = String(g);
+      SH.app.render();
+    },
+    tplMetaSheet() {
+      const t = templateEdit; if (!t) return;
+      ui.sheet({
+        title: t.id ? 'Параметры шаблона' : 'Новый шаблон',
+        subtitle: t.id ? t.title : '',
+        body:
+          '<label class="fl">Название<input class="inp" id="tm-title" value="' + e(t.title || '') + '" placeholder="США · Premium"></label>' +
+          '<label class="fl" style="margin-top:10px">Классы / год<input class="inp" id="tm-grade" value="' + e(t.grade || '') + '" placeholder="10–12, 11–12 или 1 год"></label>' +
+          '<label class="fl" style="margin-top:10px">Теги через запятую<input class="inp" id="tm-tags" value="' + e((t.tags || []).join(', ')) + '" placeholder="сша, premium"></label>' +
+          '<button class="btn btn--brand btn--block" style="margin-top:14px" onclick="SH.views.org.tplMetaSave()">Сохранить</button>' +
+          '<p class="hint">Классы описывают учебные годы шаблона: «10–12» — три класса, «1 год» — годовая программа.</p>'
+      });
+    },
+    tplMetaSave() {
+      const t = templateEdit; if (!t) return;
+      const val = (id) => { const el = document.querySelector(id); return el ? el.value.trim() : ''; };
+      t.title = val('#tm-title') || t.title || 'Шаблон';
+      t.grade = val('#tm-grade') || t.grade || '10';
+      t.tags = (val('#tm-tags') || '').split(',').map((x) => x.trim().replace(/^#/, '')).filter(Boolean).slice(0, 12);
+      const tabs = tplGradeTabsFor(t);
+      if (!tabs.includes(String(tplGradeTab))) tplGradeTab = tabs[0] || '10';
+      ui.closeSheet();
+      SH.app.render();
+    },
+    tplItemSheet(i) {
+      const t = templateEdit; if (!t || !t.items[i]) return;
+      const it = t.items[i];
+      const monthOpts = (sel) => FULL_MONTHS_NOM.map((mm, mi) =>
+        '<option value="' + mi + '"' + (mi === Number(sel) ? ' selected' : '') + '>' + mm + '</option>').join('');
+      const kindLabel = it.kind === 'course' ? 'Курс' : it.kind === 'call' ? 'Созвон' : 'Дата';
+      ui.sheet({
+        title: kindLabel,
+        subtitle: it.title || '',
+        body:
+          '<label class="fl">Название<input class="inp" id="ti-title" value="' + e(it.title || '') + '"></label>' +
+          '<div style="display:flex;gap:10px">' +
+            '<label class="fl" style="flex:1;margin-top:10px">Класс<input class="inp" id="ti-grade" value="' + e(it.grade || '') + '" placeholder="10"></label>' +
+            '<label class="fl" style="flex:1;margin-top:10px">Тип<select class="inp" id="ti-kind">' +
+              ['date', 'course', 'call'].map((k) =>
+                '<option value="' + k + '"' + ((it.kind || 'date') === k ? ' selected' : '') + '>' +
+                (k === 'course' ? 'Курс' : k === 'call' ? 'Созвон' : 'Дата') + '</option>').join('') +
+            '</select></label>' +
+          '</div>' +
+          '<div style="display:flex;gap:10px">' +
+            '<label class="fl" style="flex:2;margin-top:10px">Месяц<select class="inp" id="ti-month">' + monthOpts(it.month) + '</select></label>' +
+            '<label class="fl" style="flex:1;margin-top:10px">День<input class="inp" type="number" min="1" max="28" id="ti-day" value="' + (Number(it.day) || 1) + '"></label>' +
+          '</div>' +
+          '<div style="display:flex;gap:10px">' +
+            '<label class="fl" style="flex:2;margin-top:10px">Конец (месяц)<select class="inp" id="ti-endmonth">' +
+              '<option value=""' + (it.endMonth === null || it.endMonth === undefined || it.endMonth === '' ? ' selected' : '') + '>—</option>' +
+              monthOpts(it.endMonth) +
+            '</select></label>' +
+            '<label class="fl" style="flex:1;margin-top:10px">Конец (день)<input class="inp" type="number" min="1" max="28" id="ti-endday" value="' +
+              (it.endDay !== null && it.endDay !== undefined && it.endDay !== '' ? Number(it.endDay) : '') + '"></label>' +
+          '</div>' +
+          '<div style="display:flex;gap:10px">' +
+            '<label class="fl" style="flex:1;margin-top:10px">Недель<input class="inp" type="number" min="0" max="60" id="ti-weeks" value="' + (Number(it.weeks) || 0) + '"></label>' +
+            '<label class="fl" style="flex:1;margin-top:10px">Созвонов<input class="inp" type="number" min="0" max="52" id="ti-calls" value="' + (Number(it.calls) || 0) + '"></label>' +
+          '</div>' +
+          '<div style="display:flex;gap:10px">' +
+            '<label class="fl" style="flex:1;margin-top:10px">Важность<select class="inp" id="ti-imp">' +
+              [['high', 'High'], ['middle', 'Middle'], ['low', 'Low']].map(([v, l]) =>
+                '<option value="' + v + '"' + ((it.importance || 'high') === v ? ' selected' : '') + '>' + l + '</option>').join('') +
+            '</select></label>' +
+            '<label class="fl" style="flex:1;margin-top:10px">Цвет курса<select class="inp" id="ti-color">' +
+              '<option value=""' + (!it.color ? ' selected' : '') + '>Авто</option>' +
+              COURSE_COLORS.map((c) => '<option value="' + c + '"' + (it.color === c ? ' selected' : '') + '>' + c + '</option>').join('') +
+            '</select></label>' +
+          '</div>' +
+          '<label class="fl" style="margin-top:10px">Заметка<input class="inp" id="ti-note" value="' + e(it.note || '') + '" placeholder="10 кл · 1 окт – 10 дек"></label>' +
+          '<button class="btn btn--brand btn--block" style="margin-top:14px" onclick="SH.views.org.tplItemSave(' + i + ')">Сохранить</button>' +
+          '<button class="btn btn--danger btn--block" style="margin-top:8px" onclick="SH.ui.closeSheet();SH.views.org.tplRemove(' + i + ')">' + icon('trash', 16) + 'Удалить пункт</button>'
+      });
+    },
+    tplItemSave(i) {
+      const t = templateEdit; if (!t || !t.items[i]) return;
+      const val = (id) => { const el = document.querySelector(id); return el ? el.value.trim() : ''; };
+      const num = (id, dflt) => { const v = val(id); return v === '' ? dflt : Number(v); };
+      const it = t.items[i];
+      it.title = val('#ti-title') || it.title || 'Пункт';
+      it.grade = val('#ti-grade');
+      it.kind = ['course', 'call', 'date'].includes(val('#ti-kind')) ? val('#ti-kind') : 'date';
+      it.month = Math.max(0, Math.min(11, num('#ti-month', 8)));
+      it.day = Math.max(1, Math.min(28, num('#ti-day', 1)));
+      const em = val('#ti-endmonth');
+      it.endMonth = em === '' ? null : Math.max(0, Math.min(11, Number(em)));
+      const ed = val('#ti-endday');
+      it.endDay = (it.endMonth === null || ed === '') ? null : Math.max(1, Math.min(28, Number(ed)));
+      it.weeks = Math.max(0, Math.min(60, num('#ti-weeks', 0)));
+      it.calls = Math.max(0, Math.min(52, num('#ti-calls', 0)));
+      it.importance = ['high', 'middle', 'low'].includes(val('#ti-imp')) ? val('#ti-imp') : 'middle';
+      it.color = val('#ti-color');
+      it.note = val('#ti-note');
+      ui.closeSheet();
       SH.app.render();
     },
     tplAdd(kind) {
       if (!templateEdit) return;
       const items = templateEdit.items;
       const last = items[items.length - 1];
-      items.push({
-        title: kind === 'course' ? 'Новый курс' : 'Новая дата',
-        month: last ? last.month : 8,
-        day: last ? Math.min(28, Number(last.day || 1) + 7) : 10,
-        kind: kind === 'course' ? 'course' : 'date',
-        weeks: kind === 'course' ? 8 : 0,
-        note: ''
-      });
+      const tab = String(tplGradeTab || '');
+      const gradeVal = /^\d{1,2}$/.test(tab) ? tab : (String((items[0] || {}).grade || '') || '10');
+      const month = last ? Math.max(0, Math.min(11, Number(last.month) || 0)) : 8;
+      const day = last ? Math.min(28, Number(last.day || 1) + 7) : 10;
+      const base = {
+        title: '', month, day, kind: kind === 'course' ? 'course' : kind === 'call' ? 'call' : 'date',
+        grade: gradeVal, importance: kind === 'date' ? 'high' : 'middle', color: '', calls: 0, note: ''
+      };
+      if (kind === 'course') {
+        base.title = 'Новый курс';
+        base.endMonth = (month + 2) % 12;
+        base.endDay = Math.min(28, day);
+        base.weeks = 8;
+        base.color = COURSE_COLORS[items.filter((x) => x.kind === 'course').length % COURSE_COLORS.length];
+      } else if (kind === 'call') {
+        base.title = 'Новый созвон';
+        base.calls = 8;
+        base.note = 'каждые 2 недели';
+      } else {
+        base.title = 'Новая дата';
+      }
+      items.push(base);
       SH.app.render();
+      SH.views.org.tplItemSheet(items.length - 1);
     },
     tplRemove(i) {
       if (!templateEdit) return;
       templateEdit.items.splice(i, 1);
+      ui.closeSheet();
       SH.app.render();
+    },
+    tplMenu(id) {
+      const t = ((data && data.templates) || []).find((x) => x.id === id);
+      if (!t) return;
+      ui.sheet({
+        title: 'Меню шаблона',
+        subtitle: t.title,
+        body:
+          '<div style="display:flex;flex-direction:column;gap:8px">' +
+            '<button class="btn btn--soft btn--block" onclick="SH.ui.closeSheet();SH.views.org.openTemplate(\'' + e(id) + '\')">' + icon('edit', 16) + 'Редактировать</button>' +
+            '<button class="btn btn--soft btn--block" onclick="SH.ui.closeSheet();SH.views.org.openTemplate(\'' + e(id) + '\');SH.views.org.tplMetaSheet()">' + icon('settings', 16) + 'Параметры: название, классы, теги</button>' +
+            '<button class="btn btn--soft btn--block" onclick="SH.ui.closeSheet();SH.views.org.openTemplate(\'' + e(id) + '\');SH.views.org.assignTemplate()">' + icon('users', 16) + 'Назначить ученикам</button>' +
+            '<button class="btn btn--soft btn--block" onclick="SH.ui.closeSheet();SH.views.org.pickStudentForTemplate()">' + icon('layers', 16) + 'Сохранить роадмап ученика как шаблон</button>' +
+            '<button class="btn btn--danger btn--block" style="margin-top:4px" onclick="SH.ui.closeSheet();SH.views.org.delTemplate(\'' + e(id) + '\')">' + icon('trash', 16) + 'Удалить шаблон</button>' +
+          '</div>'
+      });
     },
     saveTemplate() {
       if (!templateEdit) return;
-      const val = (id) => { const el = document.querySelector(id); return el ? el.value.trim() : ''; };
+      const t = templateEdit;
       const payload = {
-        id: templateEdit.id || undefined,
-        title: val('#tpl-title') || templateEdit.title || 'Шаблон',
-        grade: val('#tpl-grade') || templateEdit.grade || '10',
-        tags: (val('#tpl-tags') || (templateEdit.tags || []).join(',')).split(',').map((x) => x.trim().replace(/^#/, '')).filter(Boolean),
-        items: templateEdit.items || []
+        id: t.id || undefined,
+        title: t.title || 'Шаблон',
+        grade: t.grade || '10',
+        tags: t.tags || [],
+        items: t.items || []
       };
       SH.api.orgTemplateSave(payload)
         .then((d) => { templateEdit.id = d.id; ui.toast('Шаблон сохранён'); return load(true); })
@@ -21048,7 +21392,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
           '<div class="pick">' +
             list.map((s) =>
               '<label class="pick__i"><input type="checkbox" class="tpl-asg-chk" value="' + e(s.id) + '">' +
-                av(s, 34) + '<span>' + e(s.name) + (s.grade ? ' · ' + e(s.grade) + ' кл' : '') + '</span></label>'
+                av(s, 34) + '<span>' + e(s.name) + (s.grade ? ' · ' + e(fmtGrade(s.grade, 'кл')) : '') + '</span></label>'
             ).join('') +
           '</div>' +
           '<button class="btn btn--brand btn--block" style="margin-top:14px" onclick="SH.views.org.doAssign()">Назначить</button>'
@@ -21245,7 +21589,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
               '</select></label>' +
               '<label class="fl" style="margin-top:10px">ТЕГИ (через запятую)<input class="inp" id="u-tags" placeholder="premium, сша"></label>' +
               '<label class="fl" style="margin-top:10px">ШАБЛОН РОАДМАПА<select class="inp" id="u-tpl"><option value="">Без шаблона</option>' +
-                tpls.map((t) => '<option value="' + e(t.id) + '">' + e(t.title) + (t.grade ? ' · ' + e(t.grade) + ' кл' : '') + '</option>').join('') +
+                tpls.map((t) => '<option value="' + e(t.id) + '">' + e(t.title) + (t.grade ? ' · ' + e(fmtGrade(t.grade, 'кл')) : '') + '</option>').join('') +
               '</select></label>' +
               '<p class="hint" style="margin-top:8px">Даты из шаблона сразу появятся в роадмапе ученика.</p>') +
           '<label class="fl" style="margin-top:10px">ПАРОЛЬ (пусто — сгенерируем)<input class="inp" id="u-pass" placeholder="автогенерация"></label>' +
@@ -21654,7 +21998,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
     // жёсткое разделение ролей: никакой «франкенштейн»-смеси интерфейса ученика и организации
     if (store.isAuthed) {
       if (isOrgStaff()) {
-        const orgAllowed = ['org', 'chats', 'chat', 'user', 'install'];
+        const orgAllowed = ['org', 'install'];
         if (orgAllowed.indexOf(route.name) === -1) {
           setHash('#/org');
           route = { name: 'org', params: [] };

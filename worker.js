@@ -1,6 +1,6 @@
 /* ============================================================
    Student Hub — единый файл бэкенда для Cloudflare Workers
-   Сборка: 2026-11-24 17:29 · 5999b887
+   Сборка: 2026-11-24 19:23 · 091885c9
    Вставлять целиком в Dashboard → Edit code → Deploy.
    Переменные: DB (биндинг D1), GEMINI_KEYS (secret), ALLOW_ORIGIN
    ============================================================ */
@@ -286,7 +286,7 @@
 
 /* ───────────────────────── базовое ───────────────────────── */
 
-const BUILD = '2026-11-24 17:29 · 5999b887';
+const BUILD = '2026-11-24 19:23 · 091885c9';
 
 const CORS = (o) => ({
   'access-control-allow-origin': o,
@@ -476,7 +476,9 @@ const COLUMNS = [
   ['messages', 'reactions', 'text'],
   ['messages', 'updated_at', 'text'],
   ['chats', 'pinned_msg_id', 'text'],
-  ['plan_items', 'chat_id', 'text']
+  ['plan_items', 'chat_id', 'text'],
+  ['users', 'admin_tags', "text default '[]'"],
+  ['users', 'admin_note', 'text']
 ];
 
 const MONTHS_RU = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
@@ -793,10 +795,11 @@ async function seedDemo(env) {
     const login = String(u.email || '').toLowerCase();
     if (!login) {
       st.push(env.DB.prepare(
-        `insert or ignore into users (id,name,role,grade,school,city,color,skills,interests,created_at)
-         values (?,?,?,?,?,?,?,?,?,?)`
+        `insert or ignore into users (id,name,role,grade,school,city,color,skills,interests,admin_tags,admin_note,created_at)
+         values (?,?,?,?,?,?,?,?,?,?,?,?)`
       ).bind(u.id, u.name, u.role || 'student', u.grade || null, u.school || null,
-        u.city || null, u.color || 'sky', K(u.skills || []), K(u.interests || []), nowISO()));
+        u.city || null, u.color || 'sky', K(u.skills || []), K(u.interests || []),
+        '["бот","сид"]', 'Системный демо-аккаунт (seedDemo)', nowISO()));
       continue;
     }
     const dup = await env.DB.prepare('select id from users where email=?').bind(login).first();
@@ -807,11 +810,12 @@ async function seedDemo(env) {
     const id = u.id === 'u_admin' ? 'u_admin_demo' : u.id;
 
     st.push(env.DB.prepare(
-      `insert or ignore into users (id,name,email,pass_hash,salt,role,grade,school,city,color,position,rating,skills,interests,created_at)
-       values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+      `insert or ignore into users (id,name,email,pass_hash,salt,role,grade,school,city,color,position,rating,skills,interests,admin_tags,admin_note,created_at)
+       values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     ).bind(id, u.name, login, hash, salt, u.role === 'admin' ? 'admin' : 'student',
       u.grade || null, u.school || null, u.city || null, u.color || 'sky',
-      u.position || null, u.rating || 0, K(u.skills || []), K(u.interests || []), nowISO()));
+      u.position || null, u.rating || 0, K(u.skills || []), K(u.interests || []),
+      '["бот","сид"]', 'Системный демо-аккаунт (seedDemo)', nowISO()));
 
     st.push(env.DB.prepare('insert or replace into user_logins (login,user_id,created_at) values (?,?,?)')
       .bind(login, id, nowISO()));
@@ -919,9 +923,10 @@ async function seedOrgDemo(env) {
   ];
   for (const dm of demoMentors) {
     await put(
-      `insert or ignore into users (id,name,email,pass_hash,salt,role,org_id,org_role,school,city,color,created_at)
-       values (?,?,?,?,?,'org',?,'mentor',?,?,?,?)`,
-      dm.id, dm.name, dm.email, hash, salt, org.id, org.name, org.city || 'Москва', dm.color, nowISO());
+      `insert or ignore into users (id,name,email,pass_hash,salt,role,org_id,org_role,school,city,color,admin_tags,admin_note,created_at)
+       values (?,?,?,?,?,'org',?,'mentor',?,?,?,?,?,?)`,
+      dm.id, dm.name, dm.email, hash, salt, org.id, org.name, org.city || 'Москва', dm.color,
+      '["бот","тест-макет"]', 'Тестовый ментор организации из макета kk. · создан автоматически', nowISO());
     await put('insert or replace into user_logins (login,user_id,created_at) values (?,?,?)', dm.email, dm.id, nowISO());
     await put(
       `insert or replace into org_students (user_id,mentor_id,tags,grade,gpa,gpa_note,sat,sat_note,ielts,ielts_note,goal,goal_note,status,updated_at)
@@ -929,45 +934,78 @@ async function seedOrgDemo(env) {
       dm.id, JSON.stringify(dm.tags), nowISO());
   }
   const mentorAssign = ['u_kk_daniyar', 'u_kk_daniyar', 'u_kk_madina', 'u_kk_madina', org.manager_id || 'u_kk_daniyar', 'u_kk_daniyar'];
+  const tplAssign = ['tpl_kk_usa_premium', 'tpl_kk_usa_base', 'tpl_kk_italy', 'tpl_kk_italy', 'tpl_kk_usa_premium', 'tpl_kk_usa_premium'];
   let pi = 0;
   for (const p of people) {
     const id = 'u_kk_' + p.email.split('@')[0].replace(/[^a-z0-9]/g, '');
-    const assignedMentor = mentorAssign[pi++] || org.manager_id || null;
+    const idx = pi++;
+    const assignedMentor = mentorAssign[idx] || org.manager_id || null;
     await put(
-      `insert or ignore into users (id,name,email,pass_hash,salt,role,grade,school,city,color,org_id,created_at)
-       values (?,?,?,?,?,'student',?,?,?,?,?,?)`,
+      `insert or ignore into users (id,name,email,pass_hash,salt,role,grade,school,city,color,org_id,admin_tags,admin_note,created_at)
+       values (?,?,?,?,?,'student',?,?,?,?,?,?,?,?)`,
       id, p.name, p.email, hash, salt, p.grade, org.name, org.city || 'Москва',
-      ['pink', 'mint', 'sky', 'sun', 'lavender'][id.length % 5], org.id, nowISO());
+      ['pink', 'mint', 'sky', 'sun', 'lavender'][id.length % 5], org.id,
+      '["бот","тест-макет"]', 'Тестовый ученик организации из макета kk. · создан автоматически', nowISO());
     await put('insert or replace into user_logins (login,user_id,created_at) values (?,?,?)', p.email, id, nowISO());
     await put(
       `insert or replace into org_students (user_id,mentor_id,tags,grade,gpa,gpa_note,sat,sat_note,ielts,ielts_note,goal,goal_note,status,template_id,updated_at)
        values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       id, assignedMentor, JSON.stringify(p.tags), p.grade, p.gpa, p.gpaNote,
-      p.sat, p.satNote, p.ielts, p.ieltsNote, p.goal, p.goalNote, 'plan', null, nowISO());
+      p.sat, p.satNote, p.ielts, p.ieltsNote, p.goal, p.goalNote, 'plan', tplAssign[idx] || null, nowISO());
   }
 
+  const nowDt = new Date();
+  const sy0 = nowDt.getMonth() >= 8 ? nowDt.getFullYear() : nowDt.getFullYear() - 1;
+  const sy1 = sy0 + 1;
   const ids = people.map((p) => 'u_kk_' + p.email.split('@')[0].replace(/[^a-z0-9]/g, ''));
-  const slotsBy = [
-    [0, 'Пробный SAT', 4, 'milestone', 0],
-    [0, 'Эссе Common App', 34, 'internal', 0],
-    [0, 'Хакатон · 20 ноя', 9, 'external', 0],
-    [1, 'Эссе', -3, 'milestone', 0],
-    [1, 'Созвон с ментором', 6, 'internal', 0],
-    [2, 'Подача документов', 9, 'milestone', 0],
-    [2, 'IELTS', 26, 'external', 0],
-    [3, 'Созвон с ментором', 18, 'internal', 0],
-    [3, 'Портфолио', -2, 'internal', 0],
-    [4, 'SAT', 20, 'external', 0],
-    [4, 'Пробный IELTS', -8, 'milestone', 0],
-    [5, 'Подача в вузы', -19, 'milestone', 0],
-    [5, 'Созвон с ментором', 12, 'internal', 0]
+  // Плотность 1-в-1 из макета 05_student_card_roadmap: длительные курсы + High/Middle/Low даты + проекты
+  const richSlots = [
+    [0, 'Марафон SAT', `${sy0}-10-01`, `${sy0}-12-10`, '', '#FF9F43', '', 'course', 'middle', 1, 0, 'Ежедневная практика Reading + Math'],
+    [0, 'Проект MVP', `${sy0}-12-20`, `${sy1}-02-10`, '', '#8B8DF0', '', 'course', 'middle', 1, 0, 'Сборка прототипа и презентации'],
+    [0, 'Буткемп', `${sy1}-01-10`, `${sy1}-01-31`, '', '#3CC9B5', '', 'course', 'middle', 1, 0, 'Зимний интенсив по STEM и олимпиадам'],
+    [0, 'Стажировка', `${sy1}-06-15`, `${sy1}-08-20`, '', '#FF7AA8', '', 'course', 'middle', 1, 0, 'Летняя стажировка в лаборатории'],
+    [0, 'Урок по SAT · диагностика', `${sy0}-10-12`, '', '', '', '', 'internal', 'low', 0, 1, 'Входной срез'],
+    [0, 'Пробный IELTS', `${sy0}-10-28`, '', '', '', '', 'internal', 'middle', 1, 1, 'Результат 7.0'],
+    [0, 'Урок по SAT', `${sy0}-11-09`, '', '', '', '', 'internal', 'low', 0, 1, 'Разбор ошибок Math'],
+    [0, 'Созвон с ментором', `${sy0}-11-14`, '', '', '', '18:00', 'call', 'middle', 1, 1, 'Разбор пробного IELTS'],
+    [0, 'Отборочный тур Хакатона', `${sy0}-11-20`, '', '', '', '', 'milestone', 'high', 1, 1, 'Командный этап пройден'],
+    [0, 'Финал Хакатона STEM', day(6), '', '', '', '', 'milestone', 'high', 1, 0, 'Защита перед жюри'],
+    [0, 'IELTS', `${sy0}-12-14`, '', '', '', '', 'milestone', 'high', 1, 0, 'Официальная сдача Academic'],
+    [0, 'Ревью MVP с ментором', `${sy1}-01-15`, '', '', '', '18:00', 'call', 'middle', 1, 0, 'Проверка готовности'],
+    [0, 'Zerde · научный конкурс', `${sy1}-02-20`, '', '', '', '', 'milestone', 'high', 1, 0, 'Республиканский этап'],
+    [0, 'Подбор летних программ', `${sy1}-03-12`, '', '', '', '', 'internal', 'low', 0, 0, 'Шорт-лист стажировок'],
+    [0, 'Пробный SAT · весенний срез', `${sy1}-04-05`, '', '', '', '', 'internal', 'middle', 1, 0, 'Цель 1460+'],
+    [0, 'Сборка платы и калибровка сенсоров', `${sy0}-10-15`, `${sy0}-12-05`, 'Эко-датчик', '#3CC9B5', '', 'course', 'middle', 1, 0, 'Аппаратная часть'],
+    [0, 'Демо школьному совету', `${sy0}-12-18`, '', 'Эко-датчик', '', '', 'milestone', 'high', 1, 0, 'Замеры в 4 кабинетах'],
+    [0, 'Запись сезона №2 (выпуски 13–18)', `${sy0}-11-01`, `${sy1}-01-25`, 'Школьный подкаст', '#8B8DF0', '', 'course', 'middle', 1, 0, 'Интервью с выпускниками'],
+    [1, 'Курс SAT Base', `${sy0}-10-01`, `${sy0}-12-10`, '', '#FF9F43', '', 'course', 'middle', 1, 0, 'Базовый поток'],
+    [1, 'Курс IELTS Base', `${sy1}-01-15`, `${sy1}-03-25`, '', '#8B8DF0', '', 'course', 'middle', 1, 0, 'Подготовка на 6.5+'],
+    [1, 'Эссе Common App · черновик', day(-3), '', '', '', '', 'internal', 'middle', 1, 0, 'Нужно дослать структуру'],
+    [1, 'Созвон с ментором', day(5), '', '', '', '17:30', 'call', 'middle', 1, 0, 'Разбор эссе и плана'],
+    [1, 'Пробный SAT', `${sy0}-12-12`, '', '', '', '', 'milestone', 'high', 1, 0, 'Полный тайминг'],
+    [2, 'Интенсив IELTS Academic', `${sy0}-09-20`, `${sy0}-12-05`, '', '#8B8DF0', '', 'course', 'middle', 1, 0, 'Подготовка к сдаче'],
+    [2, 'Подготовка портфолио для вузов Италии', `${sy0}-11-01`, `${sy1}-02-20`, '', '#FF9F43', '', 'course', 'middle', 1, 0, '12 проектов + описание'],
+    [2, 'Мотивационное письмо · финал', day(-5), '', '', '', '', 'milestone', 'high', 1, 0, 'Требуется срочная вычитка'],
+    [2, 'Подача документов (1-я волна)', day(9), '', '', '', '', 'milestone', 'high', 1, 0, 'Politecnico di Milano / NABA'],
+    [3, 'Итальянский язык A2–B1', `${sy0}-10-05`, `${sy0}-12-22`, '', '#3CC9B5', '', 'course', 'middle', 1, 0, 'Разговорный и академический'],
+    [3, 'Курс IELTS', `${sy1}-01-10`, `${sy1}-03-20`, '', '#8B8DF0', '', 'course', 'middle', 1, 0, 'Цель 6.5+'],
+    [3, 'Созвон с ментором', day(7), '', '', '', '18:00', 'call', 'middle', 1, 0, 'Проверка плана на зиму'],
+    [3, 'Сдача экзамена TOLC-E', `${sy1}-03-28`, '', '', '', '', 'milestone', 'high', 1, 0, 'Онлайн-сессия'],
+    [4, 'SAT Math & Reading 1500+', `${sy0}-09-25`, `${sy0}-12-03`, '', '#FF9F43', '', 'course', 'middle', 1, 0, 'Продвинутая группа'],
+    [4, 'Лабораторный практикум по биохимии', `${sy1}-01-12`, `${sy1}-03-30`, '', '#3CC9B5', '', 'course', 'middle', 1, 0, 'Исследовательский проект'],
+    [4, 'Официальный SAT', `${sy0}-12-05`, '', '', '', '', 'milestone', 'high', 1, 0, 'Цель 1500+'],
+    [4, 'Подача на летнюю школу KAIST', `${sy1}-02-15`, '', '', '', '', 'milestone', 'high', 1, 0, 'Пакет документов'],
+    [5, 'Марафон эссе США (RD)', `${sy0}-10-10`, `${sy0}-12-25`, '', '#8B8DF0', '', 'course', 'middle', 1, 0, 'Supplemental Essays'],
+    [5, 'Регистрация и результат SAT', day(-7), '', '', '', '', 'milestone', 'high', 1, 0, 'Нет загруженного сертификата'],
+    [5, 'Созвон с ментором · антикризисный план', day(3), '', '', '', '19:00', 'call', 'middle', 1, 0, 'Пересборка списка вузов'],
+    [5, 'Дедлайн Regular Decision', `${sy1}-01-03`, '', '', '', '', 'milestone', 'high', 1, 0, 'Отправка Common App']
   ];
-  for (const [ui, title, offset, kind, done] of slotsBy) {
-    const id = 'slot_kk_' + ui + '_' + title.replace(/[^a-zа-я0-9]/gi, '').slice(0, 8);
+  let si = 0;
+  for (const [ui, title, dt, endDt, proj, col, stime, kind, imp, ntf, done, note] of richSlots) {
     await put(
-      `insert or replace into org_slots (id,org_id,student_id,title,note,date,kind,done,created_by,created_at)
-       values (?,?,?,?,?,?,?,?,?,?)`,
-      id, org.id, ids[ui], title, '', day(offset), kind, done, org.manager_id, nowISO());
+      `insert or replace into org_slots (id,org_id,student_id,title,note,date,end_date,project,color,slot_time,kind,importance,notify,done,created_by,created_at)
+       values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      'slot_kk_v22_' + (si++), org.id, ids[ui], title, note, dt, endDt, proj, col, stime, kind, imp, ntf, done, org.manager_id, nowISO());
   }
 
   const pf = [
@@ -989,31 +1027,86 @@ async function seedOrgDemo(env) {
       'pf_kk_' + (n++), ids[ui], kind, title, note, year, nowISO());
   }
 
+  // Шаблоны роадмапов 1-в-1 из доски 04_admin_templates.html
   const templates = [
     {
       id: 'tpl_kk_usa_premium', title: 'США · Premium', tags: ['сша', 'premium'], grade: '10–12',
       items: [
-        { title: 'Курс SAT', month: 9, day: 1, kind: 'course', note: '10 кл · 1 окт – 10 дек' },
-        { title: 'Пробный SAT', month: 11, day: 12, kind: 'date', note: '2-я суббота декабря' },
-        { title: 'Курс IELTS', month: 0, day: 10, kind: 'course', note: '10 янв – 20 мар' },
-        { title: 'Созвон с ментором', month: 9, day: 15, kind: 'date', note: 'каждые 2 недели' },
-        { title: 'Хакатон', month: 10, day: 20, kind: 'date', note: '' }
+        { title: 'Курс SAT', grade: '10', month: 9, day: 1, endMonth: 11, endDay: 10, weeks: 10, kind: 'course', color: '#FF9F43', importance: 'middle', note: '10 кл · 1 окт – 10 дек' },
+        { title: 'Пробный SAT', grade: '10', month: 11, day: 12, kind: 'date', importance: 'high', note: '10 кл · 2-я суббота декабря' },
+        { title: 'Курс IELTS', grade: '10', month: 0, day: 10, endMonth: 2, endDay: 20, weeks: 10, kind: 'course', color: '#8B8DF0', importance: 'middle', note: '10 кл · 10 янв – 20 мар' },
+        { title: 'Созвон с ментором', grade: '10', month: 8, day: 15, kind: 'call', calls: 8, importance: 'middle', note: 'каждые 2 недели' },
+        { title: 'Хакатон / STEM-конкурс', grade: '10', month: 10, day: 20, kind: 'date', importance: 'middle', note: '10 кл · 20 ноября' },
+        { title: 'Сдача IELTS', grade: '10', month: 2, day: 25, kind: 'date', importance: 'high', note: '10 кл · конец марта' },
+        { title: 'Защита школьного проекта', grade: '10', month: 4, day: 10, kind: 'date', importance: 'high', note: '10 кл · 10 мая' },
+        { title: 'Летняя стажировка / лагерь', grade: '10', month: 5, day: 15, endMonth: 7, endDay: 10, weeks: 8, kind: 'course', color: '#FF7AA8', importance: 'middle', note: '10 кл · 15 июн – 10 авг' },
+        { title: 'Итоговый разбор 10 класса', grade: '10', month: 7, day: 20, kind: 'date', importance: 'low', note: '10 кл · 20 августа' },
+        { title: 'SAT Intensive · 1500+', grade: '11', month: 8, day: 15, endMonth: 10, endDay: 30, weeks: 11, kind: 'course', color: '#FF9F43', importance: 'middle', note: '11 кл · 15 сен – 30 ноя' },
+        { title: 'Официальный SAT', grade: '11', month: 11, day: 5, kind: 'date', importance: 'high', note: '11 кл · 1-я суббота декабря' },
+        { title: 'Research / Проект MVP', grade: '11', month: 0, day: 12, endMonth: 3, endDay: 15, weeks: 13, kind: 'course', color: '#3CC9B5', importance: 'middle', note: '11 кл · 12 янв – 15 апр' },
+        { title: 'Список вузов (College List)', grade: '11', month: 3, day: 20, kind: 'date', importance: 'middle', note: '11 кл · 20 апреля' },
+        { title: 'AP / профильная олимпиада', grade: '11', month: 4, day: 8, kind: 'date', importance: 'high', note: '11 кл · май' },
+        { title: 'Запрос рекомендательных писем', grade: '11', month: 4, day: 22, kind: 'date', importance: 'middle', note: '11 кл · конец мая' },
+        { title: 'Черновик Personal Statement', grade: '11', month: 7, day: 15, kind: 'date', importance: 'high', note: '11 кл · 15 августа' },
+        { title: 'Созвон с ментором', grade: '11', month: 8, day: 15, kind: 'call', calls: 8, importance: 'middle', note: 'каждые 2 недели' },
+        { title: 'Марафон эссе Common App', grade: '12', month: 8, day: 1, endMonth: 9, endDay: 25, weeks: 8, kind: 'course', color: '#8B8DF0', importance: 'middle', note: '12 кл · 1 сен – 25 окт' },
+        { title: 'Дедлайн Early Action / ED', grade: '12', month: 10, day: 1, kind: 'date', importance: 'high', note: '12 кл · 1 ноября' },
+        { title: 'Финализация CSS Profile / FinAid', grade: '12', month: 10, day: 20, kind: 'date', importance: 'high', note: '12 кл · 20 ноября' },
+        { title: 'Дедлайн Regular Decision', grade: '12', month: 0, day: 3, kind: 'date', importance: 'high', note: '12 кл · 3 января' },
+        { title: 'Выбор оффера и виза F-1', grade: '12', month: 4, day: 1, kind: 'date', importance: 'high', note: '12 кл · 1 мая' },
+        { title: 'Созвон с ментором', grade: '12', month: 8, day: 15, kind: 'call', calls: 8, importance: 'middle', note: 'каждые 2 недели' }
       ]
     },
     {
       id: 'tpl_kk_usa_base', title: 'США · Base', tags: ['сша', 'base'], grade: '10–12',
       items: [
-        { title: 'Курс SAT', month: 9, day: 1, kind: 'course', note: '10 кл · 1 окт – 10 дек' },
-        { title: 'Пробный SAT', month: 11, day: 12, kind: 'date', note: '' },
-        { title: 'Созвон с ментором', month: 8, day: 20, kind: 'date', note: 'каждые 3 недели' }
+        { title: 'Курс SAT', grade: '10', month: 9, day: 1, endMonth: 11, endDay: 10, weeks: 10, kind: 'course', color: '#FF9F43', importance: 'middle', note: '10 кл · 1 окт – 10 дек' },
+        { title: 'Пробный SAT', grade: '10', month: 11, day: 12, kind: 'date', importance: 'high', note: '10 кл · 2-я суббота декабря' },
+        { title: 'Диагностика IELTS', grade: '10', month: 1, day: 15, kind: 'date', importance: 'middle', note: '10 кл · 15 февраля' },
+        { title: 'Летний план портфолио', grade: '10', month: 5, day: 10, kind: 'date', importance: 'low', note: '10 кл · 10 июня' },
+        { title: 'Созвон с ментором', grade: '10', month: 8, day: 20, kind: 'call', calls: 3, importance: 'middle', note: 'раз в четверть' },
+        { title: 'Курс IELTS', grade: '11', month: 0, day: 15, endMonth: 2, endDay: 25, weeks: 10, kind: 'course', color: '#8B8DF0', importance: 'middle', note: '11 кл · 15 янв – 25 мар' },
+        { title: 'Официальный SAT', grade: '11', month: 2, day: 6, kind: 'date', importance: 'high', note: '11 кл · март' },
+        { title: 'Сдача IELTS', grade: '11', month: 3, day: 18, kind: 'date', importance: 'high', note: '11 кл · апрель' },
+        { title: 'Подбор вузов США', grade: '11', month: 4, day: 20, kind: 'date', importance: 'middle', note: '11 кл · 20 мая' },
+        { title: 'Созвон с ментором', grade: '11', month: 8, day: 20, kind: 'call', calls: 3, importance: 'middle', note: 'раз в четверть' },
+        { title: 'Практикум Common App', grade: '12', month: 8, day: 10, endMonth: 9, endDay: 25, weeks: 7, kind: 'course', color: '#3CC9B5', importance: 'middle', note: '12 кл · 10 сен – 25 окт' },
+        { title: 'Дедлайн Early Action', grade: '12', month: 10, day: 1, kind: 'date', importance: 'high', note: '12 кл · 1 ноября' },
+        { title: 'Вычитка эссе перед RD', grade: '12', month: 11, day: 10, kind: 'date', importance: 'middle', note: '12 кл · 10 декабря' },
+        { title: 'Дедлайн Regular Decision', grade: '12', month: 0, day: 5, kind: 'date', importance: 'high', note: '12 кл · 5 января' },
+        { title: 'Решение по офферам', grade: '12', month: 4, day: 1, kind: 'date', importance: 'high', note: '12 кл · 1 мая' },
+        { title: 'Созвон с ментором', grade: '12', month: 9, day: 1, kind: 'call', calls: 2, importance: 'middle', note: 'перед дедлайнами' }
       ]
     },
     {
       id: 'tpl_kk_italy', title: 'Италия · Premium', tags: ['италия', 'premium'], grade: '11–12',
       items: [
-        { title: 'Курс IELTS', month: 0, day: 10, kind: 'course', note: '10 янв – 20 мар' },
-        { title: 'Портфолио', month: 2, day: 5, kind: 'date', note: 'до 5 марта' },
-        { title: 'Подача документов', month: 4, day: 15, kind: 'date', note: '' }
+        { title: 'Итальянский язык A1–A2', grade: '11', month: 9, day: 1, endMonth: 11, endDay: 20, weeks: 11, kind: 'course', color: '#FF9F43', importance: 'middle', note: '11 кл · 1 окт – 20 дек' },
+        { title: 'Пробный IELTS', grade: '11', month: 11, day: 15, kind: 'date', importance: 'middle', note: '11 кл · 15 декабря' },
+        { title: 'Курс IELTS', grade: '11', month: 0, day: 10, endMonth: 2, endDay: 20, weeks: 10, kind: 'course', color: '#8B8DF0', importance: 'middle', note: '11 кл · 10 янв – 20 мар' },
+        { title: 'Сдача IELTS Academic', grade: '11', month: 2, day: 28, kind: 'date', importance: 'high', note: '11 кл · конец марта' },
+        { title: 'Структура портфолио / CV', grade: '11', month: 4, day: 5, kind: 'date', importance: 'middle', note: '11 кл · 5 мая' },
+        { title: 'Летний воркшоп по профилю', grade: '11', month: 5, day: 20, kind: 'date', importance: 'low', note: '11 кл · 20 июня' },
+        { title: 'Созвон с ментором', grade: '11', month: 8, day: 15, kind: 'call', calls: 8, importance: 'middle', note: 'каждые 2 недели' },
+        { title: 'Подготовка к TOLC / IMAT', grade: '12', month: 8, day: 15, endMonth: 10, endDay: 30, weeks: 11, kind: 'course', color: '#3CC9B5', importance: 'middle', note: '12 кл · 15 сен – 30 ноя' },
+        { title: 'Сдача экзамена TOLC', grade: '12', month: 11, day: 10, kind: 'date', importance: 'high', note: '12 кл · 10 декабря' },
+        { title: 'Оформление DSU и документов', grade: '12', month: 0, day: 15, endMonth: 2, endDay: 15, weeks: 9, kind: 'course', color: '#FF7AA8', importance: 'middle', note: '12 кл · 15 янв – 15 мар' },
+        { title: 'Финал портфолио', grade: '12', month: 2, day: 5, kind: 'date', importance: 'high', note: '12 кл · до 5 марта' },
+        { title: 'Предрегистрация Universitaly', grade: '12', month: 3, day: 25, kind: 'date', importance: 'high', note: '12 кл · 25 апреля' },
+        { title: 'Подача документов и стипендия DSU', grade: '12', month: 4, day: 15, kind: 'date', importance: 'high', note: '12 кл · 15 мая' },
+        { title: 'Подача на студвизу D', grade: '12', month: 6, day: 20, kind: 'date', importance: 'high', note: '12 кл · 20 июля' },
+        { title: 'Созвон с ментором', grade: '12', month: 8, day: 15, kind: 'call', calls: 8, importance: 'middle', note: 'каждые 2 недели' }
+      ]
+    },
+    {
+      id: 'tpl_kk_sat_group', title: 'Группа SAT · интенсив', tags: ['группа_sat'], grade: '1 год',
+      items: [
+        { title: 'Входная диагностика SAT', grade: '10', month: 8, day: 28, kind: 'date', importance: 'middle', note: '28 сентября' },
+        { title: 'Курс SAT Intensive', grade: '10', month: 9, day: 1, endMonth: 11, endDay: 15, weeks: 11, kind: 'course', color: '#FF9F43', importance: 'middle', note: '1 окт – 15 дек' },
+        { title: 'Пробный SAT #1', grade: '10', month: 9, day: 26, kind: 'date', importance: 'middle', note: '4-я суббота октября' },
+        { title: 'Пробный SAT #2', grade: '10', month: 10, day: 23, kind: 'date', importance: 'high', note: '4-я суббота ноября' },
+        { title: 'Официальная сдача SAT', grade: '10', month: 11, day: 7, kind: 'date', importance: 'high', note: '1-я суббота декабря' },
+        { title: 'Групповой разбор с ментором', grade: '10', month: 9, day: 5, kind: 'call', calls: 10, importance: 'middle', note: 'еженедельно · 10 встреч' }
       ]
     }
   ];
@@ -1045,10 +1138,10 @@ async function seedOwnerDemo(env, ownerId) {
     const salt = newSalt();
     const hash = await hashPassword('demo2026', salt);
     st.push(env.DB.prepare(
-      `insert or ignore into users (id,name,email,pass_hash,salt,role,grade,school,city,color,skills,interests,created_at)
-       values (?,?,?,?,?,'student',?,?,?,?,?,?,?)`
+      `insert or ignore into users (id,name,email,pass_hash,salt,role,grade,school,city,color,skills,interests,admin_tags,admin_note,created_at)
+       values (?,?,?,?,?,'student',?,?,?,?,?,?,?,?,?)`
     ).bind(u.id, u.name, u.email, hash, salt, u.grade, 'Школа №1520', 'Москва', u.color,
-      K(u.skills), K(u.interests), nowISO()));
+      K(u.skills), K(u.interests), '["бот","сид"]', 'Демо-ученик ленты и команд · создан автоматически', nowISO()));
     st.push(env.DB.prepare('insert or replace into user_logins (login,user_id,created_at) values (?,?,?)')
       .bind(u.email, u.id, nowISO()));
   }
@@ -3420,18 +3513,43 @@ async function api(request, env, url, origin) {
     const org = await myOrgRow();
     const id = String(body.userId || '');
     if (!(await canSeeStudent(org, id))) return json({ ok: false, error: 'Ученик не найден' }, 404, origin);
-    const [user, slots] = await Promise.all([
+    const [user, stCard, slots] = await Promise.all([
       db.prepare('select * from users where id=?').bind(id).first(),
-      db.prepare('select * from org_slots where org_id=? and student_id=? order by date').bind(org.id, id).all()
+      db.prepare('select * from org_students where user_id=?').bind(id).first(),
+      db.prepare('select * from org_slots where org_id=? and student_id=? and (project is null or project=\'\') order by date').bind(org.id, id).all()
     ]);
+    const nowDt = new Date();
+    const baseSchoolYear = nowDt.getMonth() >= 8 ? nowDt.getFullYear() : nowDt.getFullYear() - 1;
+    const rawGrade = parseInt(String((stCard && stCard.grade) || (user && user.grade) || '10'), 10);
+    const stuGrade = [9, 10, 11, 12].includes(rawGrade) ? rawGrade : 10;
     const items = (slots.results || []).map((s) => {
-      const d = new Date(s.date);
-      return { title: s.title, month: d.getMonth(), day: d.getDate(), kind: s.kind === 'milestone' ? 'course' : 'date', note: s.note || '' };
+      const d = new Date(String(s.date).slice(0, 10) + 'T12:00:00Z');
+      const sy = d.getUTCMonth() >= 8 ? d.getUTCFullYear() : d.getUTCFullYear() - 1;
+      const gNum = Math.max(9, Math.min(12, stuGrade + (sy - baseSchoolYear)));
+      const isCourse = s.kind === 'course' || (s.end_date && s.end_date > s.date);
+      const isCall = s.kind === 'call' || /созвон/i.test(s.title || '');
+      const ed = isCourse && s.end_date ? new Date(String(s.end_date).slice(0, 10) + 'T12:00:00Z') : null;
+      return {
+        title: s.title,
+        month: d.getUTCMonth(),
+        day: d.getUTCDate(),
+        endMonth: ed ? ed.getUTCMonth() : null,
+        endDay: ed ? ed.getUTCDate() : null,
+        kind: isCourse ? 'course' : (isCall ? 'call' : 'date'),
+        grade: String(gNum),
+        importance: ['high', 'middle', 'low'].includes(s.importance) ? s.importance : (isCourse || isCall ? 'middle' : 'high'),
+        color: s.color || '',
+        calls: isCall ? 1 : 0,
+        note: s.note || ''
+      };
     });
     const tid = uid('tpl');
+    const gSet = Array.from(new Set(items.map((x) => Number(x.grade)).filter(Boolean))).sort((a, b) => a - b);
+    const gradeRange = gSet.length > 1 ? (gSet[0] + '–' + gSet[gSet.length - 1]) : String(gSet[0] || stuGrade);
+    const tagsJson = stCard && stCard.tags ? stCard.tags : '[]';
     await db.prepare('insert into roadmap_templates (id,org_id,title,tags,grade,items,created_at) values (?,?,?,?,?,?,?)')
-      .bind(tid, org.id, 'Из роадмапа · ' + (user ? user.name.split(' ')[0] : ''), '[]',
-        str(user ? user.grade : '', 20), JSON.stringify(items), nowISO()).run();
+      .bind(tid, org.id, 'Из роадмапа · ' + (user ? user.name.split(' ')[0] : ''), tagsJson,
+        gradeRange, JSON.stringify(items), nowISO()).run();
     await audit(env, me.id, 'org.template.fromStudent', tid, id);
     return json({ ok: true, id: tid, items: items.length }, 201, origin);
   }
@@ -3472,9 +3590,19 @@ async function api(request, env, url, origin) {
     if (!title) return json({ ok: false, error: 'Нужно название шаблона' }, 400, origin);
     const id = body.id ? String(body.id) : uid('tpl');
     const items = JSON.stringify((Array.isArray(body.items) ? body.items : []).slice(0, 200).map((it) => ({
-      title: str(it.title, 160), month: Math.max(0, Math.min(11, Number(it.month) || 0)),
-      day: Math.max(1, Math.min(28, Number(it.day) || 1)), kind: str(it.kind || 'date', 20),
-      grade: str(it.grade || '', 10), note: str(it.note, 200),
+      title: str(it.title, 160),
+      month: Math.max(0, Math.min(11, Number(it.month) || 0)),
+      day: Math.max(1, Math.min(28, Number(it.day) || 1)),
+      endMonth: (it.endMonth === null || it.endMonth === undefined || it.endMonth === '') ? null
+        : Math.max(0, Math.min(11, Number(it.endMonth) || 0)),
+      endDay: (it.endDay === null || it.endDay === undefined || it.endDay === '') ? null
+        : Math.max(1, Math.min(28, Number(it.endDay) || 1)),
+      kind: ['course', 'call', 'date'].includes(it.kind) ? it.kind : 'date',
+      importance: ['high', 'middle', 'low'].includes(it.importance) ? it.importance : (it.kind === 'course' || it.kind === 'call' ? 'middle' : 'high'),
+      color: str(it.color || '', 20),
+      calls: Math.max(0, Math.min(52, Number(it.calls) || 0)),
+      grade: str(it.grade || '', 10),
+      note: str(it.note, 200),
       offset: (it.offset === null || it.offset === undefined || it.offset === '') ? null
         : Math.max(-365, Math.min(1460, Number(it.offset) || 0)),
       weeks: Math.max(0, Math.min(60, Number(it.weeks) || 0))
@@ -3502,36 +3630,88 @@ async function api(request, env, url, origin) {
       const ids = Array.isArray(body.userIds) ? body.userIds.map(String).slice(0, 200) : [];
       const items = P2(row.items, []);
       const now = new Date();
+      const baseSchoolYear = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+      const todayIso = nowISO().slice(0, 10);
       // дата старта потока: от неё считаются относительные слоты (offset)
       const startRaw = String(body.startDate || '').slice(0, 10);
       const startDate = /^\d{4}-\d{2}-\d{2}$/.test(startRaw)
         ? new Date(startRaw + 'T09:00:00') : new Date(now.getFullYear(), now.getMonth(), now.getDate());
       for (const sid of ids) {
         if (!(await canSeeStudent(org, sid))) continue;
+        const [stUser, stCard] = await Promise.all([
+          db.prepare('select grade from users where id=?').bind(sid).first(),
+          db.prepare('select grade from org_students where user_id=?').bind(sid).first()
+        ]);
+        const parsedStuGrade = parseInt(String((stCard && stCard.grade) || (stUser && stUser.grade) || '10'), 10);
+        const stuGrade = [9, 10, 11, 12].includes(parsedStuGrade) ? parsedStuGrade : 10;
+
         await db.prepare(
           `insert into org_students (user_id,mentor_id,tags,grade,gpa,gpa_note,sat,sat_note,ielts,ielts_note,goal,goal_note,status,template_id,updated_at)
            values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
            on conflict(user_id) do update set template_id=excluded.template_id, updated_at=excluded.updated_at`
-        ).bind(sid, org.manager_id || null, '[]', '', '', '', '', '', '', '', '', '', 'plan', row.id, nowISO()).run();
+        ).bind(sid, org.manager_id || null, '[]', String(stuGrade), '', '', '', '', '', '', '', '', 'plan', row.id, nowISO()).run();
 
         const COURSE_PALETTE = ['#FF9F43', '#8B8DF0', '#3CC9B5', '#FF7AA8'];
         let cIdx = 0;
+        const pad2 = (n) => String(n).padStart(2, '0');
         for (const it of items) {
-          let d;
-          if (it.offset !== null && it.offset !== undefined) {
-            d = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + Number(it.offset));
+          const itemGradeNum = parseInt(String(it.grade || ''), 10);
+          // Если у шаблона несколько классов (10, 11, 12), не дублируем уже прошедшие младшие классы
+          if ([9, 10, 11, 12].includes(itemGradeNum) && itemGradeNum < stuGrade) continue;
+          const itemSchoolYear = [9, 10, 11, 12].includes(itemGradeNum)
+            ? baseSchoolYear + (itemGradeNum - stuGrade)
+            : baseSchoolYear;
+
+          const monthIdx = Math.max(0, Math.min(11, Number(it.month) || 0));
+          const dayNum = Math.max(1, Math.min(28, Number(it.day) || 1));
+          let startIso;
+          if (it.offset !== null && it.offset !== undefined && it.offset !== '') {
+            const dOff = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + Number(it.offset)));
+            startIso = dOff.toISOString().slice(0, 10);
           } else {
-            d = new Date(now.getFullYear(), it.month, it.day);
-            if (d < now) d.setFullYear(d.getFullYear() + 1);
+            const calY = monthIdx >= 8 ? itemSchoolYear : itemSchoolYear + 1;
+            startIso = calY + '-' + pad2(monthIdx + 1) + '-' + pad2(dayNum);
           }
+
           const isCourse = it.kind === 'course';
-          const weeks = Number(it.weeks) > 0 ? Number(it.weeks) : (isCourse ? 8 : 0);
-          const endD = isCourse && weeks > 0 ? new Date(d.getTime() + weeks * 7 * 864e5).toISOString().slice(0, 10) : '';
-          const col = isCourse ? COURSE_PALETTE[(cIdx++) % COURSE_PALETTE.length] : '';
-          const id2 = uid('slot');
-          await db.prepare('insert into org_slots (id,org_id,student_id,title,note,date,end_date,color,kind,importance,done,created_by,created_at) values (?,?,?,?,?,?,?,?,?,?,0,?,?)')
-            .bind(id2, org.id, sid, it.title, it.note || '', d.toISOString().slice(0, 10), endD, col,
-              isCourse ? 'course' : 'internal', isCourse ? 'middle' : 'high', me.id, nowISO()).run();
+          const isCall = it.kind === 'call';
+          if (isCall && Number(it.calls) > 1) {
+            const totalCalls = Math.min(12, Number(it.calls) || 4);
+            const stepDays = Math.max(7, Math.round(240 / totalCalls));
+            const baseUtc = new Date(startIso + 'T12:00:00Z');
+            for (let ci = 0; ci < totalCalls; ci++) {
+              const cd = new Date(baseUtc.getTime() + ci * stepDays * 864e5).toISOString().slice(0, 10);
+              const isPast = cd < todayIso ? 1 : 0;
+              await db.prepare(
+                'insert into org_slots (id,org_id,student_id,title,note,date,end_date,color,slot_time,kind,importance,notify,done,created_by,created_at) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+              ).bind(uid('slot'), org.id, sid, it.title, it.note || '', cd, '', '', '18:00', 'call',
+                it.importance || 'middle', 1, isPast, me.id, nowISO()).run();
+            }
+            continue;
+          }
+
+          let endD = '';
+          if (isCourse) {
+            if (it.endMonth !== null && it.endMonth !== undefined && it.endMonth !== '') {
+              const em = Math.max(0, Math.min(11, Number(it.endMonth) || 0));
+              const ed = Math.max(1, Math.min(28, Number(it.endDay) || 15));
+              let endY = em >= 8 ? itemSchoolYear : itemSchoolYear + 1;
+              const cand = endY + '-' + pad2(em + 1) + '-' + pad2(ed);
+              if (cand < startIso) endY += 1;
+              endD = endY + '-' + pad2(em + 1) + '-' + pad2(ed);
+            } else {
+              const weeks = Number(it.weeks) > 0 ? Number(it.weeks) : 8;
+              endD = new Date(new Date(startIso + 'T12:00:00Z').getTime() + weeks * 7 * 864e5).toISOString().slice(0, 10);
+            }
+          }
+          const col = isCourse ? (it.color || COURSE_PALETTE[(cIdx++) % COURSE_PALETTE.length]) : '';
+          const imp = ['high', 'middle', 'low'].includes(it.importance) ? it.importance : (isCourse || isCall ? 'middle' : 'high');
+          const dbKind = isCourse ? 'course' : (isCall ? 'call' : (imp === 'high' ? 'milestone' : 'internal'));
+          const doneVal = (endD || startIso) < todayIso ? 1 : 0;
+          await db.prepare(
+            'insert into org_slots (id,org_id,student_id,title,note,date,end_date,color,slot_time,kind,importance,notify,done,created_by,created_at) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+          ).bind(uid('slot'), org.id, sid, it.title, it.note || '', startIso, endD, col, isCall ? '18:00' : '',
+            dbKind, imp, 1, doneVal, me.id, nowISO()).run();
         }
       }
       await audit(env, me.id, 'org.template.assign', row.id, ids.length + ' ученикам с ' + startDate.toISOString().slice(0, 10));
@@ -3775,6 +3955,30 @@ async function api(request, env, url, origin) {
     return json({ ok: true, id: rid }, 201, origin);
   }
 
+  const normalizeAdminTags = (raw) => {
+    const arr = Array.isArray(raw) ? raw : String(raw || '').split(',');
+    const out = [];
+    for (const item of arr) {
+      const clean = str(item, 40).toLowerCase().replace(/^#+/, '').replace(/\s+/g, '_').trim();
+      if (clean && !out.includes(clean)) out.push(clean);
+      if (out.length >= 16) break;
+    }
+    return out;
+  };
+
+  const formatAdminMetaDiff = (prevTags, nextTags, prevNote, nextNote) => {
+    const parts = [];
+    if (JSON.stringify(prevTags) !== JSON.stringify(nextTags)) {
+      const p = prevTags.length ? prevTags.map((t) => '#' + t).join(', ') : 'нет';
+      const n = nextTags.length ? nextTags.map((t) => '#' + t).join(', ') : 'нет';
+      parts.push('теги: ' + p + ' → ' + n);
+    }
+    if (prevNote !== nextNote) {
+      parts.push('заметка: ' + (nextNote ? '«' + nextNote.slice(0, 120) + (nextNote.length > 120 ? '…' : '') + '»' : 'очищена'));
+    }
+    return parts.join(' · ');
+  };
+
   if (path === '/admin/users' && method === 'GET') {
     const g = notAdmin(); if (g) return g;
     // админ не видит root; root видит всех
@@ -3794,18 +3998,46 @@ async function api(request, env, url, origin) {
     for (const c of (cards.results || [])) {
       mentorMap[c.user_id] = c.mentor_id || null;
     }
+    // Строгая приватность: adminTags и adminNote отдаются ТОЛЬКО здесь под notAdmin() (root и admin платформы)
     return json({
       ok: true,
       users: list.results.map((u) => Object.assign(adminUser(toUser(u)), {
         login: loginMap[u.id] || u.email || '',
-        mentorId: mentorMap[u.id] || null
+        mentorId: mentorMap[u.id] || null,
+        adminTags: P(u.admin_tags, []),
+        adminNote: u.admin_note || ''
       }))
     }, 200, origin);
   }
 
+  /* ── приватные админ-теги и заметки («для себя») с обязательной записью в audit_log ── */
+  m = path.match(/^\/admin\/users\/([^/]+)\/admin-meta$/);
+  if (m && method === 'PATCH') {
+    const g = notAdmin(); if (g) return g;
+    const target = await db.prepare('select * from users where id=?').bind(m[1]).first();
+    if (!target) return json({ ok: false, error: 'Пользователь не найден' }, 404, origin);
+    if (target.role === 'root' && me.role !== 'root') {
+      return json({ ok: false, error: 'Недостаточно прав' }, 403, origin);
+    }
+
+    const prevTags = P(target.admin_tags, []);
+    const prevNote = String(target.admin_note || '');
+    const nextTags = body.adminTags !== undefined ? normalizeAdminTags(body.adminTags) : prevTags;
+    const nextNote = body.adminNote !== undefined ? str(body.adminNote, 500) : prevNote;
+
+    await db.prepare('update users set admin_tags=?, admin_note=? where id=?')
+      .bind(JSON.stringify(nextTags), nextNote || null, target.id).run();
+
+    const diff = formatAdminMetaDiff(prevTags, nextTags, prevNote, nextNote);
+    await audit(env, me.id, 'user.admin_meta', target.id, diff || 'обновлены метки');
+    return json({ ok: true, id: target.id, adminTags: nextTags, adminNote: nextNote }, 200, origin);
+  }
+
   if (path === '/admin/users' && method === 'POST') {
     const g = notAdmin(); if (g) return g;
-    const role = ['student', 'admin', 'org'].includes(body.role) ? body.role : 'student';
+    const reqRole = ['student', 'admin', 'org', 'mentor'].includes(body.role) ? body.role : 'student';
+    const role = reqRole === 'mentor' ? 'org' : reqRole;
+    const orgRole = (reqRole === 'mentor' || body.orgRole === 'mentor') ? 'mentor' : null;
     if (role === 'admin') {
       const gr = notRoot(); if (gr) return json({ ok: false, error: 'Админов назначает только владелец' }, 403, origin);
     }
@@ -3815,7 +4047,7 @@ async function api(request, env, url, origin) {
       orgRow = await db.prepare('select * from organizations where id=?').bind(orgId).first();
       if (!orgRow) return json({ ok: false, error: 'Организация не найдена' }, 400, origin);
     } else if (role === 'org') {
-      return json({ ok: false, error: 'Для управляющего выберите организацию' }, 400, origin);
+      return json({ ok: false, error: orgRole === 'mentor' ? 'Для ментора выберите организацию' : 'Для админа компании выберите организацию' }, 400, origin);
     }
 
     const login = str(body.login, 120).toLowerCase();
@@ -3827,12 +4059,15 @@ async function api(request, env, url, origin) {
     const password = String(body.password || '') || makeOtp();
     const salt = newSalt();
     const id = uid('u');
+    const initAdminTags = body.adminTags !== undefined ? normalizeAdminTags(body.adminTags) : [];
+    const initAdminNote = body.adminNote !== undefined ? str(body.adminNote, 500) : '';
     await db.prepare(
-      `insert into users (id,name,email,pass_hash,salt,role,org_id,grade,school,city,color,created_at)
-       values (?,?,?,?,?,?,?,?,?,?,?,?)`
+      `insert into users (id,name,email,pass_hash,salt,role,org_id,org_role,grade,school,city,color,admin_tags,admin_note,created_at)
+       values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     ).bind(id, str(body.name, 120) || 'Без имени', login.includes('@') ? login : null,
-      await hashPassword(password, salt), salt, role, orgId, str(body.grade, 40),
-      str(body.school, 120) || (orgRow ? orgRow.name : 'Школа №1520'), (orgRow && orgRow.city) || 'Москва', 'sky', nowISO()).run();
+      await hashPassword(password, salt), salt, role, orgId, orgRole, str(body.grade, 40),
+      str(body.school, 120) || (orgRow ? orgRow.name : 'Школа №1520'), (orgRow && orgRow.city) || 'Москва', 'sky',
+      JSON.stringify(initAdminTags), initAdminNote || null, nowISO()).run();
     await db.prepare('insert into user_logins (login,user_id,created_at) values (?,?,?)')
       .bind(login, id, nowISO()).run();
 
@@ -3857,7 +4092,11 @@ async function api(request, env, url, origin) {
       }
     }
 
-    await audit(env, me.id, 'user.create', id, login + ' / ' + role + (orgRow ? ' / ' + orgRow.name : ''));
+    await audit(env, me.id, 'user.create', id, login + ' / ' + (orgRole === 'mentor' ? 'mentor' : role) + (orgRow ? ' / ' + orgRow.name : ''));
+    if (initAdminTags.length || initAdminNote) {
+      const diff = formatAdminMetaDiff([], initAdminTags, '', initAdminNote);
+      await audit(env, me.id, 'user.admin_meta', id, diff);
+    }
 
     return json({ ok: true, id, login, password }, 201, origin);
   }
@@ -3907,34 +4146,40 @@ async function api(request, env, url, origin) {
           .bind(login.includes('@') ? login : null, target.id).run();
       }
 
-      const role = body.role;
-      if (role && role !== target.role) {
-        const gr = notRoot(); if (gr) return json({ ok: false, error: 'Роли меняет только владелец' }, 403, origin);
-        if (target.role === 'root') return json({ ok: false, error: 'Роль владельца неизменна' }, 403, origin);
-        if (!['student', 'admin', 'org'].includes(role)) return json({ ok: false, error: 'Неизвестная роль' }, 400, origin);
-        if (role === 'admin') {
-          const gr = notRoot(); if (gr) return json({ ok: false, error: 'Админов назначает только владелец' }, 403, origin);
+      const reqRole = body.role;
+      let finalDbRole = target.role;
+      let finalDbOrgRole = target.org_role || null;
+      if (reqRole) {
+        if (!['student', 'admin', 'org', 'mentor'].includes(reqRole)) {
+          return json({ ok: false, error: 'Неизвестная роль' }, 400, origin);
         }
-        await db.prepare('update users set role=? where id=?').bind(role, target.id).run();
-        await audit(env, me.id, 'user.role', target.id, role);
+        const nextDbRole = reqRole === 'mentor' ? 'org' : reqRole;
+        const nextDbOrgRole = reqRole === 'mentor' ? 'mentor' : (body.orgRole === 'mentor' ? 'mentor' : null);
+        if (nextDbRole !== target.role || nextDbOrgRole !== (target.org_role || null)) {
+          const gr = notRoot(); if (gr) return json({ ok: false, error: 'Роли меняет только владелец' }, 403, origin);
+          if (target.role === 'root') return json({ ok: false, error: 'Роль владельца неизменна' }, 403, origin);
+          await db.prepare('update users set role=?, org_role=? where id=?').bind(nextDbRole, nextDbOrgRole, target.id).run();
+          await audit(env, me.id, 'user.role', target.id, nextDbOrgRole === 'mentor' ? 'mentor' : nextDbRole);
+          finalDbRole = nextDbRole;
+          finalDbOrgRole = nextDbOrgRole;
+        }
       }
 
-      // привязка к организации: у управляющего она обязательна
+      // привязка к организации: у админа компании и ментора она обязательна
       if (body.orgId !== undefined || body.mentorId !== undefined) {
         const nextOrg = body.orgId !== undefined ? (body.orgId ? String(body.orgId) : null) : target.org_id;
-        const finalRole = role && ['student', 'admin', 'org'].includes(role) ? role : target.role;
         let orgRow = null;
         if (nextOrg) {
           orgRow = await db.prepare('select * from organizations where id=?').bind(nextOrg).first();
           if (!orgRow) return json({ ok: false, error: 'Организация не найдена' }, 400, origin);
-        } else if (finalRole === 'org') {
-          return json({ ok: false, error: 'Управляющий должен быть привязан к организации' }, 400, origin);
+        } else if (finalDbRole === 'org') {
+          return json({ ok: false, error: 'Сотрудник организации должен быть привязан к организации' }, 400, origin);
         }
         if (body.orgId !== undefined && nextOrg !== target.org_id) {
           await db.prepare('update users set org_id=? where id=?').bind(nextOrg, target.id).run();
           await audit(env, me.id, 'user.org', target.id, nextOrg || '—');
         }
-        if (finalRole === 'student' && target.org_role !== 'mentor') {
+        if (finalDbRole === 'student' && finalDbOrgRole !== 'mentor') {
           if (nextOrg && orgRow) {
             let chosenMentorId = orgRow.manager_id || null;
             let chosenMentorName = '';
@@ -3964,6 +4209,22 @@ async function api(request, env, url, origin) {
         }
       }
 
+      // приватные админ-теги и заметка (если переданы вместе с формой редактирования)
+      let metaChanged = false;
+      if (body.adminTags !== undefined || body.adminNote !== undefined) {
+        const prevTags = P(target.admin_tags, []);
+        const prevNote = String(target.admin_note || '');
+        const nextTags = body.adminTags !== undefined ? normalizeAdminTags(body.adminTags) : prevTags;
+        const nextNote = body.adminNote !== undefined ? str(body.adminNote, 500) : prevNote;
+        const diff = formatAdminMetaDiff(prevTags, nextTags, prevNote, nextNote);
+        if (diff) {
+          await db.prepare('update users set admin_tags=?, admin_note=? where id=?')
+            .bind(JSON.stringify(nextTags), nextNote || null, target.id).run();
+          await audit(env, me.id, 'user.admin_meta', target.id, diff);
+          metaChanged = true;
+        }
+      }
+
       // меняем только присланные поля — остальное не затираем
       const fields = [], vals = [];
       const put = (col, val) => { fields.push(col + '=?'); vals.push(val); };
@@ -3979,7 +4240,9 @@ async function api(request, env, url, origin) {
       }
 
       if (body.blocked) await db.prepare('delete from sessions where user_id=?').bind(target.id).run();
-      await audit(env, me.id, 'user.update', target.id, target.name);
+      if (fields.length || login || !metaChanged) {
+        await audit(env, me.id, 'user.update', target.id, target.name);
+      }
       return json({ ok: true }, 200, origin);
     }
   }
@@ -4325,14 +4588,14 @@ async function api(request, env, url, origin) {
       if (!u) return '';
       if (u.role === 'root') return 'Владелец';
       if (u.role === 'admin') return 'Администратор';
-      if (u.role === 'org') return u.org_role === 'mentor' ? 'Ментор' : 'Руководитель организации';
+      if (u.role === 'org') return u.org_role === 'mentor' ? 'Ментор' : 'Админ компании';
       if (u.org_role === 'mentor') return 'Ментор';
       return 'Ученик';
     };
     const roleCodeRu = (code) => {
       if (code === 'root') return 'Владелец';
       if (code === 'admin') return 'Администратор';
-      if (code === 'org') return 'Сотрудник организации';
+      if (code === 'org') return 'Админ компании';
       if (code === 'mentor') return 'Ментор';
       if (code === 'student') return 'Ученик';
       return code || '';
@@ -4397,10 +4660,15 @@ async function api(request, env, url, origin) {
         category = 'users'; tone = 'mint';
         const createdName = resolvePersonName(t);
         addTargetPerson(createdName);
-        const cleanDetail = d.replace(/\/\s*(student|org|admin)/i, (_, rc) => '· роль: ' + roleCodeRu(rc.toLowerCase()));
+        const cleanDetail = d.replace(/\/\s*(student|org|mentor|admin)/i, (_, rc) => '· роль: ' + roleCodeRu(rc.toLowerCase()));
         human = whoPhrase + ' создал нового пользователя' +
           (createdName ? ' «' + createdName + '»' : '') +
           (cleanDetail ? ' (' + cleanDetail + ')' : '');
+      } else if (act === 'user.admin_meta') {
+        category = 'users'; tone = 'lav';
+        const uname = resolvePersonName(t) || 'пользователь';
+        addTargetPerson(uname);
+        human = whoPhrase + ' изменил приватные админ-метки пользователя «' + uname + '»' + (d ? ' (' + d + ')' : '');
       } else if (act === 'user.update') {
         category = 'users'; tone = 'sky';
         const uname = resolvePersonName(t, d) || 'без имени';
