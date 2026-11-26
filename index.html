@@ -8042,6 +8042,36 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
 
 
 
+/* ── v1.23: фидбек «новые правки» ── */
+/* Пузырь чата: реакции и время прижаты к низу пузыря */
+.tg-bubble .tg-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+.tg-bubble .tg-foot .tg-meta {
+  float: none;
+  margin: 0 0 0 auto;
+}
+.tg-bubble .tg-foot .tg-rx-row {
+  margin-right: 0;
+}
+.tg-bubble .tg-rx-row + .tg-meta { margin-top: 0; }
+
+/* Неделя роадмапа: только выбранный день, ровной колонкой */
+.rm-days.rm-days--solo { grid-template-columns: 1fr; }
+.rm-days--solo .rm-day { display: block; }
+.rm-days--solo .rm-day__body { gap: 10px; }
+
+/* Теги: чипы-переключатели в шторке тегов */
+.kk-ht.tag-pick { cursor: pointer; user-select: none; }
+.kk-ht.tag-pick.is-on {
+  box-shadow: 0 0 0 2px #14161F;
+  font-weight: 800;
+}
+
 </style>
 </head>
 <body>
@@ -10925,6 +10955,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
         '</div>' +
 
         installBanner() +
+        (SH.views.profile && SH.views.profile.mentorRoadmapBanner ? SH.views.profile.mentorRoadmapBanner() : '') +
 
         '<div class="row" style="margin-bottom:14px;gap:8px">' +
           '<div class="search grow">' + icon('search') +
@@ -12674,7 +12705,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
       }).join('') +
     '</div>';
 
-    const dayCards = byDay.map((info) => {
+    const dayCards = byDay.filter((info) => info.k === selectedKey).map((info) => {
       const active = info.k === selectedKey;
       const isToday = sameDay(info.date, today());
       const rows = [];
@@ -12728,6 +12759,8 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
     }).join('');
 
     const br = baseRoute();
+    const selDay = byDay.find((x) => x.k === selectedKey) || byDay[0];
+    const dayTotal = selDay ? selDay.tasks.length + selDay.stones.length + selDay.tracks.length : 0;
     return '<div class="screen">' +
       teamBanner() +
       head(activeChatId ? 'Роадмап команды' : 'Роадмап', 'Неделя и день') +
@@ -12736,13 +12769,13 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
       '<div class="rm-weekhead">' +
         '<button class="icon-btn icon-btn--plain" onclick="SH.views.roadmap.shiftWeek(-1)" aria-label="Прошлая неделя">' + icon('arrowLeft', 20) + '</button>' +
         '<button class="grow rm-weekhead__title" onclick="SH.app.go(\'' + br + '\')">' + e(range) +
-          '<span>' + (total ? total + ' ' + plural(total, 'пункт', 'пункта', 'пунктов') + ' на неделе' : 'пока пусто') + '</span>' +
+          '<span>' + (dayTotal ? dayTotal + ' ' + plural(dayTotal, 'пункт', 'пункта', 'пунктов') + ' в выбранный день' : 'на выбранный день пока пусто') + '</span>' +
         '</button>' +
         '<button class="icon-btn icon-btn--plain" onclick="SH.views.roadmap.shiftWeek(1)" aria-label="Следующая неделя">' + icon('arrowRight', 20) + '</button>' +
         '<button class="btn btn--soft btn--xs" onclick="SH.views.roadmap.goToday()">Сегодня</button>' +
       '</div>' +
       strip +
-      '<div class="rm-days">' + dayCards + '</div>' +
+      '<div class="rm-days rm-days--solo">' + dayCards + '</div>' +
     '</div>';
   }
 
@@ -13389,7 +13422,11 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
 
   function msgClock(isoStr) {
     if (!isoStr) return '';
-    return ui.fullDateTime(isoStr);
+    // в пузыре сообщения — только время (по фидбеку: дата «наплывала» на время)
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return String(isoStr);
+    const pad = (n) => (n < 10 ? '0' + n : '' + n);
+    return pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
 
   function listClock(isoStr) {
@@ -13758,15 +13795,17 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
                 renderQuoteAndForward(att) +
                 (att ? renderAttachment(att) : '') +
                 (m.text ? '<span class="chat-text tg-text">' + e(m.text) + '</span>' : '') +
-                rxBar +
-                '<span class="tg-meta">' +
-                  '<span class="chat-time">' + e(msgClock(m.editedAt || m.at)) + (m.editedAt ? ' · изм.' : '') + '</span>' +
-                  (own
-                    ? ' <span class="chat-flag' + (m.failed ? ' chat-flag--fail' : (m.pending ? ' chat-flag--wait' : '')) + '">' +
-                        (m.failed ? 'не отпр.' : (m.pending ? '⏳' : '✓✓')) +
-                      '</span>'
-                    : '') +
-                '</span>' +
+                '<div class="tg-foot">' +
+                  rxBar +
+                  '<span class="tg-meta">' +
+                    '<span class="chat-time">' + e(msgClock(m.editedAt || m.at)) + (m.editedAt ? ' · изм.' : '') + '</span>' +
+                    (own
+                      ? ' <span class="chat-flag' + (m.failed ? ' chat-flag--fail' : (m.pending ? ' chat-flag--wait' : '')) + '">' +
+                          (m.failed ? 'не отпр.' : (m.pending ? '⏳' : '✓✓')) +
+                        '</span>'
+                      : '') +
+                  '</span>' +
+                '</div>' +
               '</div>') +
         '</div>' +
       '</div>'
@@ -14732,9 +14771,8 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
             : (openSlots.length ? 'Свободных окон для созвона: ' + openSlots.length : 'Свободных слотов пока нет — напишите в чат')) +
         '</div>' +
       '</div>' +
-      (openSlots.length
-        ? '<button class="btn btn--brand btn--xs" onclick="SH.views.profile.mentorCallBookingSheet()">' + icon('video', 14) + 'Записаться (' + openSlots.length + ')</button>'
-        : '<button class="btn btn--soft btn--xs" onclick="SH.views.chats.openWith(\'' + e(m.id) + '\')">' + icon('chat', 14) + 'Чат</button>') +
+      '<button class="btn btn--brand btn--xs" onclick="SH.views.profile.mentorCallBookingSheet()">' + icon('video', 14) + (openSlots.length ? 'Записаться (' + openSlots.length + ')' : 'Записаться') + '</button>' +
+      '<button class="btn btn--soft btn--xs" onclick="SH.views.chats.openWith(\'' + e(m.id) + '\')">' + icon('chat', 14) + 'Чат</button>' +
     '</div>';
   }
 
@@ -18693,6 +18731,135 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
     return '<div class="kk-tags">' + chips + btn + '</div>';
   }
 
+  /* ─────────────── Единая система тегов (v1.23): выбор + создание ─────────────── */
+
+  function tagCatalog() {
+    const set = new Set();
+    allTags().forEach((t) => set.add(String(t)));
+    ((data && data.tagGroups) || []).forEach((g) => (g.tags || []).forEach((t) => set.add(String(t))));
+    ((data && data.students) || []).forEach((s) => (s.tags || []).forEach((t) => set.add(String(t))));
+    ((data && data.mentorStats) || []).forEach((m) => (m.tags || []).forEach((t) => set.add(String(t))));
+    ((data && data.templates) || []).forEach((t) => (t.tags || []).forEach((x) => set.add(String(x))));
+    (inlineNewTags || []).forEach((t) => set.add(String(t)));
+    return Array.from(set).map((t) => t.trim().replace(/^#/, '')).filter(Boolean)
+      .sort((x, y) => x.localeCompare(y, 'ru'));
+  }
+
+  let tagSheetState = null;
+
+  function tagChipBtn(t, on) {
+    return '<button type="button" class="kk-ht tag-pick' + (on ? ' is-on' : '') + '" data-tag="' + e(t) + '" ' +
+      'onclick="SH.views.org.tagSheetToggle(this)">#' + e(t) + '</button>';
+  }
+
+  function tagSheet(kind, id) {
+    if (!['student', 'mentor', 'inline', 'template'].includes(kind)) return;
+    let current = [];
+    if (kind === 'student') {
+      const s = ((data && data.students) || []).find((x) => x.id === id) || (card && card.user && card.user.id === id ? (card.card || {}) : null) || {};
+      current = (s.tags || []).slice();
+    } else if (kind === 'mentor') {
+      const m = ((data && data.mentorStats) || []).find((x) => x.id === id) || {};
+      current = (m.tags || []).slice();
+    } else if (kind === 'inline') {
+      current = (inlineNewTags || []).slice();
+    } else if (kind === 'template') {
+      current = ((templateEdit && templateEdit.tags) || []).slice();
+    }
+    tagSheetState = { kind: kind, id: id || '', current: current };
+    const all = tagCatalog();
+    const union = Array.from(new Set(all.concat(current))).sort((x, y) => x.localeCompare(y, 'ru'));
+    const titles = {
+      student: 'Теги ученика', mentor: 'Теги ментора', inline: 'Теги карточки', template: 'Теги шаблона'
+    };
+    ui.sheet({
+      title: titles[kind] || 'Теги',
+      subtitle: 'Отметьте нужные или создайте новые',
+      body:
+        '<div class="kk-tags" id="tag-sheet-chips" style="gap:8px">' +
+          union.map((t) => tagChipBtn(t, current.includes(t))).join('') +
+        '</div>' +
+        '<div class="kk-k" style="margin:18px 0 8px">Новый тег</div>' +
+        '<div style="display:flex;gap:8px;align-items:center">' +
+          '<input class="inp" id="tag-new" placeholder="например, портфолио" style="flex:1" ' +
+            'onkeydown="if(event.key===\'Enter\'){event.preventDefault();SH.views.org.tagSheetCreate();}" oninput="SH.views.org.tagSheetColorSync()">' +
+          '<button class="btn btn--soft" onclick="SH.views.org.tagSheetCreate()">Создать</button>' +
+        '</div>' +
+        '<div class="wrap" style="gap:10px;margin-top:12px" id="tag-color-box">' +
+          '<button type="button" class="rm-color is-sel" data-color="" style="background:#EEF0F5;color:#8A8FA8;font-size:10px;font-weight:800;border-radius:10px" ' +
+            'onclick="SH.views.org.tplPickColor(this)" id="tag-color-auto">Авто</button>' +
+          COURSE_COLORS.map((c) =>
+            '<button type="button" class="rm-color" data-color="' + c + '" style="background:' + c + '" ' +
+              'onclick="SH.views.org.tplPickColor(this)" aria-label="Цвет ' + c + '" title="' + c + '">' +
+              '<span class="rm-color__check">' + icon('check', 14) + '</span></button>').join('') +
+        '</div>' +
+        '<button class="btn btn--brand btn--block" style="margin-top:18px" onclick="SH.views.org.tagSheetSave()">Сохранить</button>'
+    });
+  }
+
+  function tagSheetToggle(btn) {
+    btn.classList.toggle('is-on');
+    if (tagSheetState) {
+      const t = btn.getAttribute('data-tag') || '';
+      const i = tagSheetState.current.indexOf(t);
+      if (btn.classList.contains('is-on') && i === -1) tagSheetState.current.push(t);
+      if (!btn.classList.contains('is-on') && i !== -1) tagSheetState.current.splice(i, 1);
+    }
+  }
+
+  function tagSheetCreate() {
+    const inp = document.querySelector('#tag-new');
+    const raw = inp ? inp.value : '';
+    const names = raw.split(',').map((x) => x.trim().replace(/^#/, '')).filter(Boolean);
+    if (!names.length) { ui.toast('Введите название тега'); return; }
+    const box = document.querySelector('#tag-sheet-chips');
+    names.forEach((t) => {
+      if (tagSheetState && !tagSheetState.current.includes(t)) tagSheetState.current.push(t);
+      if (box && !box.querySelector('[data-tag="' + t.replace(/"/g, '\\"') + '"]')) {
+        box.insertAdjacentHTML('beforeend', tagChipBtn(t, true));
+      } else if (box) {
+        const ex = Array.from(box.querySelectorAll('.tag-pick')).find((b) => b.getAttribute('data-tag') === t);
+        if (ex) ex.classList.add('is-on');
+      }
+    });
+    if (inp) inp.value = '';
+    ui.toast('Тег добавлен — сохраните выбор');
+  }
+
+  function tagSheetColorSync() { /* цвет выбирается по желанию — визуальный свотч над полем */ }
+
+  function tagSheetSave() {
+    const st = tagSheetState;
+    if (!st) return;
+    const box = document.querySelector('#tag-sheet-chips');
+    const tags = box
+      ? Array.from(box.querySelectorAll('.tag-pick.is-on')).map((b) => b.getAttribute('data-tag')).filter(Boolean)
+      : st.current.slice();
+    const done = (msg) => { ui.closeSheet(); ui.toast(msg); return load(true); };
+    if (st.kind === 'student') {
+      SH.api.orgStudentSave({ userId: st.id, tags: tags })
+        .then(() => done('Теги ученика сохранены'))
+        .then(() => { if (card && card.user && card.user.id === st.id) return loadCard(st.id, true); })
+        .catch((err) => ui.toast('Не сохранилось: ' + err.message));
+    } else if (st.kind === 'mentor') {
+      const m = ((data && data.mentorStats) || []).find((x) => x.id === st.id) || {};
+      const payload = { name: m.name || '', tags: tags };
+      const oArg = orgIdArg();
+      if (oArg) payload.orgId = oArg;
+      SH.api.orgUpdateMentor(st.id, payload)
+        .then(() => done('Теги ментора сохранены'))
+        .catch((err) => ui.toast('Не сохранилось: ' + err.message));
+    } else if (st.kind === 'inline') {
+      inlineNewTags = tags.slice();
+      ui.closeSheet();
+      SH.app.render();
+    } else if (st.kind === 'template') {
+      if (templateEdit) templateEdit.tags = tags.slice();
+      ui.closeSheet();
+      SH.app.render();
+    }
+  }
+
   /* ─────────────────────────── САЙДБАР (.kk-side) ─────────────────────────── */
 
   function kkSidebar(current) {
@@ -19088,7 +19255,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
                       : '') +
                   '</div>' +
                   '<div class="kk-k" style="margin:18px 0 6px">База (пишет админ)</div>' +
-                  hashTags(sel.tags, isMgr ? 'SH.views.org.mentorForm(\'' + e(sel.id) + '\')' : '') +
+                  hashTags(sel.tags, isMgr ? 'SH.views.org.tagSheet(\'mentor\',\'' + e(sel.id) + '\')' : '') +
                   '<div style="display:flex;justify-content:space-between;align-items:center;margin:20px 0 6px;gap:8px">' +
                     '<span class="kk-k" style="margin:0">Ученики</span>' +
                     (isMgr
@@ -19232,7 +19399,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
                   '</select></label>' +
                 '</div>' +
                 '<div class="kk-fl" style="margin-bottom:6px">Теги</div>' +
-                hashTags(inlineNewTags, 'SH.views.org.promptInlineTag()') +
+                hashTags(inlineNewTags, 'SH.views.org.tagSheet(\'inline\')') +
                 '<label class="kk-fl">Шаблон роадмапа<select class="kk-inp" id="inl-u-tpl">' +
                   '<option value="">Без шаблона</option>' +
                   tpls.map((t) => '<option value="' + e(t.id) + '">' + e(t.title) + (t.grade ? ' · ' + e(fmtGrade(t.grade, 'кл')) : '') + '</option>').join('') +
@@ -19300,7 +19467,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
                         '<span class="kk-mu">' + e(s.grade ? fmtGrade(s.grade) : 'ученик') + '</span>' +
                       '</span>' +
                     '</div>' +
-                    '<div style="margin:12px 0">' + hashTags(s.tags) + '</div>' +
+                    '<div style="margin:12px 0">' + hashTags(s.tags, 'SH.views.org.tagSheet(\'student\',\'' + e(s.id) + '\')') + '</div>' +
                     '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">' +
                       statusTag(s.status) +
                     '</div>' +
@@ -19379,7 +19546,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
             e(metaParts.join(' · ')) +
             (isOrgAdm && stLogin ? ' · <span class="mono" style="font-weight:700">логин: ' + e(stLogin) + '</span>' : '') +
           '</div>' +
-          hashTags(c.tags, canWrite ? 'SH.views.org.editCard()' : '') +
+          hashTags(c.tags, canWrite ? 'SH.views.org.tagSheet(\'student\',\'' + e(u.id || (card && card.user ? card.user.id : '')) + '\')' : '') +
         '</div>' +
         '<div class="kk-stu-top__acts">' +
           statusTag((card && card.status) || 'plan') +
@@ -19966,9 +20133,6 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
               '<div class="kk-mu" style="margin-top:4px">Назначен: ' + (tpl.assigned || 0) + ' ' + ui.plural(tpl.assigned || 0, 'ученику', 'ученикам', 'ученикам') + '</div>' +
             '</div>';
           }).join('') +
-          (isMgr
-            ? '<button class="kk-card kk-card--dash" style="flex:1 1 250px" onclick="SH.views.org.pickStudentForTemplate()">+ Сохранить роадмап ученика как шаблон</button>'
-            : '') +
         '</div>' +
         editor +
       '</div>'
@@ -20458,6 +20622,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
     },
 
     /* Инлайн «Новый ученик» на экране Ученики (доска 03) */
+    tagSheet, tagSheetToggle, tagSheetCreate, tagSheetSave, tagSheetColorSync,
     promptInlineTag() {
       ui.sheet({
         title: 'Добавить тег к карточке',
@@ -21042,9 +21207,6 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
             '<button class="btn btn--soft btn--block" onclick="SH.ui.closeSheet();SH.views.org.mentorPicker()">' +
               icon('users', 16) + 'Назначить или сменить ментора' +
             '</button>' +
-            '<button class="btn btn--soft btn--block" onclick="SH.ui.closeSheet();SH.views.org.fromStudentTemplate()">' +
-              icon('layers', 16) + 'Сохранить роадмап ученика как шаблон' +
-            '</button>' +
             '<button class="btn btn--danger btn--block" style="margin-top:4px" onclick="SH.ui.closeSheet();SH.views.org.removeStudent()">' +
               icon('trash', 16) + 'Открепить ученика от организации' +
             '</button>' +
@@ -21087,30 +21249,6 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
         SH.api.orgRemoveStudent(id)
           .then(() => { ui.toast('Карточка откреплена'); card = null; SH.app.go(orgPrefix() + '/students'); return load(true); })
           .catch((err) => ui.toast('Не получилось: ' + err.message));
-      });
-    },
-
-    fromStudentTemplate(userIdParam) {
-      const id = userIdParam || (card && card.user ? card.user.id : arg(1));
-      SH.api.orgTemplateFromStudent(id)
-        .then((d) => { ui.closeSheet && ui.closeSheet(); ui.toast('Шаблон создан · ' + d.items + ' событий'); return load(true); })
-        .then(() => SH.app.go(orgPrefix() + '/templates'))
-        .catch((err) => ui.toast('Не получилось: ' + err.message));
-    },
-
-    pickStudentForTemplate() {
-      const list = myStudents();
-      if (!list.length) { SH.views.org.newTemplate(); return; }
-      ui.sheet({
-        title: 'Сохранить роадмап ученика как шаблон',
-        body:
-          '<div class="pick">' +
-            list.map((s, i) =>
-              '<label class="pick__i"><input type="radio" name="tpl_stu" value="' + e(s.id) + '"' + (i === 0 ? ' checked' : '') + '>' +
-                av(s, 34) + '<span>' + e(s.name) + (s.grade ? ' · ' + e(fmtGrade(s.grade, 'кл')) : '') + '</span></label>'
-            ).join('') +
-          '</div>' +
-          '<button class="btn btn--brand btn--block" style="margin-top:14px" onclick="const r=document.querySelector(\'input[name=tpl_stu]:checked\');if(r)SH.views.org.fromStudentTemplate(r.value)">Создать шаблон</button>'
       });
     },
 
@@ -21218,7 +21356,8 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
         body:
           '<label class="fl">Название<input class="inp" id="tm-title" value="' + e(t.title || '') + '" placeholder="США · Premium"></label>' +
           '<label class="fl" style="margin-top:10px">Классы / год<input class="inp" id="tm-grade" value="' + e(t.grade || '') + '" placeholder="10–12, 11–12 или 1 год"></label>' +
-          '<label class="fl" style="margin-top:10px">Теги через запятую<input class="inp" id="tm-tags" value="' + e((t.tags || []).join(', ')) + '" placeholder="сша, premium"></label>' +
+          '<div class="fl" style="margin-top:10px">Теги</div>' +
+          hashTags(t.tags, 'SH.views.org.tagSheet(\'template\')') +
           '<button class="btn btn--brand btn--block" style="margin-top:14px" onclick="SH.views.org.tplMetaSave()">Сохранить</button>' +
           '<p class="hint">Классы описывают учебные годы шаблона: «10–12» — три класса, «1 год» — годовая программа.</p>'
       });
@@ -21228,7 +21367,7 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
       const val = (id) => { const el = document.querySelector(id); return el ? el.value.trim() : ''; };
       t.title = val('#tm-title') || t.title || 'Шаблон';
       t.grade = val('#tm-grade') || t.grade || '10';
-      t.tags = (val('#tm-tags') || '').split(',').map((x) => x.trim().replace(/^#/, '')).filter(Boolean).slice(0, 12);
+      t.tags = ((templateEdit && templateEdit.tags) || t.tags || []).slice(0, 12);
       const tabs = tplGradeTabsFor(t);
       if (!tabs.includes(String(tplGradeTab))) tplGradeTab = tabs[0] || '10';
       ui.closeSheet();
@@ -21237,26 +21376,36 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
     tplItemSheet(i) {
       const t = templateEdit; if (!t || !t.items[i]) return;
       const it = t.items[i];
+      const kind = it.kind === 'course' ? 'course' : it.kind === 'call' ? 'call' : (it.kind === 'task' ? 'task' : 'date');
+      const kindLabel = kind === 'course' ? 'Курс' : kind === 'call' ? 'Созвон' : kind === 'task' ? 'Дело' : 'Дата';
       const monthOpts = (sel) => FULL_MONTHS_NOM.map((mm, mi) =>
         '<option value="' + mi + '"' + (mi === Number(sel) ? ' selected' : '') + '>' + mm + '</option>').join('');
-      const kindLabel = it.kind === 'course' ? 'Курс' : it.kind === 'call' ? 'Созвон' : 'Дата';
-      ui.sheet({
-        title: kindLabel,
-        subtitle: it.title || '',
-        body:
-          '<label class="fl">Название<input class="inp" id="ti-title" value="' + e(it.title || '') + '"></label>' +
-          '<div style="display:flex;gap:10px">' +
-            '<label class="fl" style="flex:1;margin-top:10px">Класс<input class="inp" id="ti-grade" value="' + e(it.grade || '') + '" placeholder="10"></label>' +
-            '<label class="fl" style="flex:1;margin-top:10px">Тип<select class="inp" id="ti-kind">' +
-              ['date', 'course', 'call'].map((k) =>
-                '<option value="' + k + '"' + ((it.kind || 'date') === k ? ' selected' : '') + '>' +
-                (k === 'course' ? 'Курс' : k === 'call' ? 'Созвон' : 'Дата') + '</option>').join('') +
-            '</select></label>' +
+      const colorSwatches = (label, sel) =>
+        '<div style="margin-top:10px" id="ti-color-box">' +
+          '<div class="fl" style="margin:0 0 8px">' + label + '</div>' +
+          '<div class="wrap" style="gap:10px;align-items:center">' +
+            '<button type="button" class="rm-color' + (!sel ? ' is-sel' : '') + '" data-color="" ' +
+              'style="background:#EEF0F5;color:#8A8FA8;font-size:10px;font-weight:800;border-radius:10px" ' +
+              'onclick="SH.views.org.tplPickColor(this)">Авто</button>' +
+            COURSE_COLORS.map((c) =>
+              '<button type="button" class="rm-color' + (sel === c ? ' is-sel' : '') + '" data-color="' + c + '" ' +
+                'style="background:' + c + '" onclick="SH.views.org.tplPickColor(this)" ' +
+                'aria-label="Цвет ' + c + '" title="' + c + '">' +
+                '<span class="rm-color__check">' + icon('check', 14) + '</span>' +
+              '</button>').join('') +
           '</div>' +
-          '<div style="display:flex;gap:10px">' +
-            '<label class="fl" style="flex:2;margin-top:10px">Месяц<select class="inp" id="ti-month">' + monthOpts(it.month) + '</select></label>' +
-            '<label class="fl" style="flex:1;margin-top:10px">День<input class="inp" type="number" min="1" max="28" id="ti-day" value="' + (Number(it.day) || 1) + '"></label>' +
-          '</div>' +
+        '</div>';
+      let fields =
+        '<label class="fl">Название<input class="inp" id="ti-title" value="' + e(it.title || '') + '"></label>' +
+        '<label class="fl" style="margin-top:10px">Класс<input class="inp" id="ti-grade" value="' + e(it.grade || '') + '" placeholder="10"></label>' +
+        '<div style="display:flex;gap:10px">' +
+          '<label class="fl" style="flex:2;margin-top:10px">' + (kind === 'course' ? 'Начало (месяц)' : 'Месяц') +
+            '<select class="inp" id="ti-month">' + monthOpts(it.month) + '</select></label>' +
+          '<label class="fl" style="flex:1;margin-top:10px">' + (kind === 'course' ? 'Начало (день)' : 'День') +
+            '<input class="inp" type="number" min="1" max="28" id="ti-day" value="' + (Number(it.day) || 1) + '"></label>' +
+        '</div>';
+      if (kind === 'course') {
+        fields +=
           '<div style="display:flex;gap:10px">' +
             '<label class="fl" style="flex:2;margin-top:10px">Конец (месяц)<select class="inp" id="ti-endmonth">' +
               '<option value=""' + (it.endMonth === null || it.endMonth === undefined || it.endMonth === '' ? ' selected' : '') + '>—</option>' +
@@ -21265,43 +21414,59 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
             '<label class="fl" style="flex:1;margin-top:10px">Конец (день)<input class="inp" type="number" min="1" max="28" id="ti-endday" value="' +
               (it.endDay !== null && it.endDay !== undefined && it.endDay !== '' ? Number(it.endDay) : '') + '"></label>' +
           '</div>' +
-          '<div style="display:flex;gap:10px">' +
-            '<label class="fl" style="flex:1;margin-top:10px">Недель<input class="inp" type="number" min="0" max="60" id="ti-weeks" value="' + (Number(it.weeks) || 0) + '"></label>' +
-            '<label class="fl" style="flex:1;margin-top:10px">Созвонов<input class="inp" type="number" min="0" max="52" id="ti-calls" value="' + (Number(it.calls) || 0) + '"></label>' +
-          '</div>' +
-          '<div style="display:flex;gap:10px">' +
-            '<label class="fl" style="flex:1;margin-top:10px">Важность<select class="inp" id="ti-imp">' +
-              [['high', 'High'], ['middle', 'Middle'], ['low', 'Low']].map(([v, l]) =>
-                '<option value="' + v + '"' + ((it.importance || 'high') === v ? ' selected' : '') + '>' + l + '</option>').join('') +
-            '</select></label>' +
-            '<label class="fl" style="flex:1;margin-top:10px">Цвет курса<select class="inp" id="ti-color">' +
-              '<option value=""' + (!it.color ? ' selected' : '') + '>Авто</option>' +
-              COURSE_COLORS.map((c) => '<option value="' + c + '"' + (it.color === c ? ' selected' : '') + '>' + c + '</option>').join('') +
-            '</select></label>' +
-          '</div>' +
-          '<label class="fl" style="margin-top:10px">Заметка<input class="inp" id="ti-note" value="' + e(it.note || '') + '" placeholder="10 кл · 1 окт – 10 дек"></label>' +
+          '<label class="fl" style="margin-top:10px">Недель<input class="inp" type="number" min="0" max="60" id="ti-weeks" value="' + (Number(it.weeks) || 0) + '"></label>' +
+          colorSwatches('Цвет курса', it.color || '');
+      }
+      if (kind === 'date') {
+        fields += colorSwatches('Цвет даты', it.color || '');
+      }
+      if (kind === 'call') {
+        fields += '<label class="fl" style="margin-top:10px">Созвонов<input class="inp" type="number" min="1" max="52" id="ti-calls" value="' + (Number(it.calls) || 1) + '"></label>';
+      }
+      fields +=
+        '<label class="fl" style="margin-top:10px">Важность<select class="inp" id="ti-imp">' +
+          [['high', 'Высокая'], ['middle', 'Средняя'], ['low', 'Низкая']].map(([v, l]) =>
+            '<option value="' + v + '"' + ((it.importance || 'high') === v ? ' selected' : '') + '>' + l + '</option>').join('') +
+        '</select></label>' +
+        '<label class="fl" style="margin-top:10px">Заметка<input class="inp" id="ti-note" value="' + e(it.note || '') + '" placeholder="10 кл · 1 окт – 10 дек"></label>';
+      ui.sheet({
+        title: kindLabel,
+        subtitle: it.title || '',
+        body: fields +
           '<button class="btn btn--brand btn--block" style="margin-top:14px" onclick="SH.views.org.tplItemSave(' + i + ')">Сохранить</button>' +
           '<button class="btn btn--danger btn--block" style="margin-top:8px" onclick="SH.ui.closeSheet();SH.views.org.tplRemove(' + i + ')">' + icon('trash', 16) + 'Удалить пункт</button>'
       });
+    },
+    tplPickColor(btn) {
+      const box = btn.parentElement;
+      if (!box) return;
+      box.querySelectorAll('.rm-color').forEach((b) => b.classList.remove('is-sel'));
+      btn.classList.add('is-sel');
     },
     tplItemSave(i) {
       const t = templateEdit; if (!t || !t.items[i]) return;
       const val = (id) => { const el = document.querySelector(id); return el ? el.value.trim() : ''; };
       const num = (id, dflt) => { const v = val(id); return v === '' ? dflt : Number(v); };
       const it = t.items[i];
+      const kind = it.kind === 'course' ? 'course' : it.kind === 'call' ? 'call' : (it.kind === 'task' ? 'task' : 'date');
       it.title = val('#ti-title') || it.title || 'Пункт';
       it.grade = val('#ti-grade');
-      it.kind = ['course', 'call', 'date'].includes(val('#ti-kind')) ? val('#ti-kind') : 'date';
       it.month = Math.max(0, Math.min(11, num('#ti-month', 8)));
       it.day = Math.max(1, Math.min(28, num('#ti-day', 1)));
-      const em = val('#ti-endmonth');
-      it.endMonth = em === '' ? null : Math.max(0, Math.min(11, Number(em)));
-      const ed = val('#ti-endday');
-      it.endDay = (it.endMonth === null || ed === '') ? null : Math.max(1, Math.min(28, Number(ed)));
-      it.weeks = Math.max(0, Math.min(60, num('#ti-weeks', 0)));
-      it.calls = Math.max(0, Math.min(52, num('#ti-calls', 0)));
+      if (kind === 'course') {
+        const em = val('#ti-endmonth');
+        it.endMonth = em === '' ? null : Math.max(0, Math.min(11, Number(em)));
+        const ed = val('#ti-endday');
+        it.endDay = (it.endMonth === null || ed === '') ? null : Math.max(1, Math.min(28, Number(ed)));
+        it.weeks = Math.max(0, Math.min(60, num('#ti-weeks', 0)));
+        it.calls = 0;
+      } else {
+        it.endMonth = null; it.endDay = null; it.weeks = 0;
+        it.calls = kind === 'call' ? Math.max(1, Math.min(52, num('#ti-calls', 1))) : 0;
+      }
       it.importance = ['high', 'middle', 'low'].includes(val('#ti-imp')) ? val('#ti-imp') : 'middle';
-      it.color = val('#ti-color');
+      const colorEl = document.querySelector('#ti-color-box .rm-color.is-sel');
+      it.color = (kind === 'course' || kind === 'date') && colorEl ? (colorEl.getAttribute('data-color') || '') : '';
       it.note = val('#ti-note');
       ui.closeSheet();
       SH.app.render();
@@ -21352,7 +21517,6 @@ html[data-theme='dark'] .kk-cy-hand-dot { fill: #F2F4F8; }
             '<button class="btn btn--soft btn--block" onclick="SH.ui.closeSheet();SH.views.org.openTemplate(\'' + e(id) + '\')">' + icon('edit', 16) + 'Редактировать</button>' +
             '<button class="btn btn--soft btn--block" onclick="SH.ui.closeSheet();SH.views.org.openTemplate(\'' + e(id) + '\');SH.views.org.tplMetaSheet()">' + icon('settings', 16) + 'Параметры: название, классы, теги</button>' +
             '<button class="btn btn--soft btn--block" onclick="SH.ui.closeSheet();SH.views.org.openTemplate(\'' + e(id) + '\');SH.views.org.assignTemplate()">' + icon('users', 16) + 'Назначить ученикам</button>' +
-            '<button class="btn btn--soft btn--block" onclick="SH.ui.closeSheet();SH.views.org.pickStudentForTemplate()">' + icon('layers', 16) + 'Сохранить роадмап ученика как шаблон</button>' +
             '<button class="btn btn--danger btn--block" style="margin-top:4px" onclick="SH.ui.closeSheet();SH.views.org.delTemplate(\'' + e(id) + '\')">' + icon('trash', 16) + 'Удалить шаблон</button>' +
           '</div>'
       });
